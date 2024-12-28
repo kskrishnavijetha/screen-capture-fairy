@@ -79,12 +79,12 @@ select, input[type="checkbox"] {
 }
 
 .button.primary {
-  background-color: #2563eb;
+  background-color: #9b87f5;
   color: white;
 }
 
 .button.primary:hover {
-  background-color: #1d4ed8;
+  background-color: #8b75f3;
 }
 
 .button.secondary {
@@ -112,7 +112,7 @@ select, input[type="checkbox"] {
   text-align: center;
   font-size: 18px;
   font-weight: 600;
-  color: #2563eb;
+  color: #9b87f5;
 }
 
 .hidden {
