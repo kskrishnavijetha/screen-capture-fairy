@@ -12,7 +12,7 @@ const Index = () => {
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
-          cursor: "always"
+          displaySurface: 'monitor',
         },
         audio: true
       });
