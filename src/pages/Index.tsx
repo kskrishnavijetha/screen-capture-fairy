@@ -6,6 +6,7 @@ import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeS
 import { RecordingControls } from '@/components/RecordingControls';
 import { Timer } from '@/components/Timer';
 import { DownloadRecording } from '@/components/DownloadRecording';
+import { CameraPreview } from '@/components/CameraPreview';
 
 const Index = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -170,6 +171,11 @@ const Index = () => {
         />
 
         {isRecording && <Timer duration={duration} />}
+
+        <CameraPreview 
+          isRecording={isRecording} 
+          captureMode={captureMode} 
+        />
 
         <div className="space-y-4">
           {!isRecording ? (
