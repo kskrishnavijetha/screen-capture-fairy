@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { Video, StopCircle, MonitorPlay, Download, Pause, Play } from 'lucide-react';
+import { MonitorPlay } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
+import { RecordingControls } from '@/components/RecordingControls';
+import { Timer } from '@/components/Timer';
+import { DownloadRecording } from '@/components/DownloadRecording';
 
 const Index = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -41,12 +43,6 @@ const Index = () => {
       clearInterval(timerRef.current);
     }
     setDuration(0);
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const getMediaConstraints = async () => {
@@ -134,6 +130,7 @@ const Index = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
       resetTimer();
     }
   };
@@ -162,24 +159,6 @@ const Index = () => {
     }
   };
 
-  const downloadRecording = () => {
-    if (recordedBlob) {
-      const url = URL.createObjectURL(recordedBlob);
-      const a = document.createElement('a');
-      document.body.appendChild(a);
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `${filename}.webm`;
-      a.click();
-      URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast({
-        title: "Download started",
-        description: "Your recording is being downloaded"
-      });
-    }
-  };
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
       <div className="text-center space-y-6 w-full max-w-md">
@@ -190,11 +169,7 @@ const Index = () => {
           onChange={setCaptureMode}
         />
 
-        {isRecording && (
-          <div className="text-xl font-mono text-primary">
-            {formatTime(duration)}
-          </div>
-        )}
+        {isRecording && <Timer duration={duration} />}
 
         <div className="space-y-4">
           {!isRecording ? (
@@ -206,56 +181,21 @@ const Index = () => {
               Start Recording
             </Button>
           ) : (
-            <div className="space-y-2">
-              {!isPaused ? (
-                <Button 
-                  onClick={pauseRecording}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Pause className="mr-2 h-5 w-5" />
-                  Pause Recording
-                </Button>
-              ) : (
-                <Button 
-                  onClick={resumeRecording}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Play className="mr-2 h-5 w-5" />
-                  Resume Recording
-                </Button>
-              )}
-              <Button 
-                onClick={stopRecording}
-                variant="destructive"
-                className="w-full"
-              >
-                <StopCircle className="mr-2 h-5 w-5" />
-                Stop Recording
-              </Button>
-            </div>
+            <RecordingControls
+              isPaused={isPaused}
+              onPause={pauseRecording}
+              onResume={resumeRecording}
+              onStop={stopRecording}
+            />
           )}
         </div>
 
         {recordedBlob && !isRecording && (
-          <div className="space-y-4">
-            <Input
-              type="text"
-              placeholder="Enter filename"
-              value={filename}
-              onChange={(e) => setFilename(e.target.value)}
-              className="w-full"
-            />
-            <Button
-              onClick={downloadRecording}
-              variant="outline"
-              className="w-full bg-green-500 text-white hover:bg-green-600"
-            >
-              <Download className="mr-2 h-5 w-5" />
-              Download Recording
-            </Button>
-          </div>
+          <DownloadRecording
+            recordedBlob={recordedBlob}
+            filename={filename}
+            onFilenameChange={setFilename}
+          />
         )}
       </div>
     </div>
