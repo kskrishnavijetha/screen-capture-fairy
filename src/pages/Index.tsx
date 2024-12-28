@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
-import { Video, StopCircle } from 'lucide-react';
+import { Video, StopCircle, MonitorPlay } from 'lucide-react';
 
 const Index = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -83,7 +83,7 @@ const Index = () => {
               onClick={startRecording}
               className="bg-primary hover:bg-primary/90"
             >
-              <Video className="mr-2 h-4 w-4" />
+              <MonitorPlay className="mr-2 h-5 w-5" />
               Start Recording
             </Button>
           ) : (
@@ -91,7 +91,7 @@ const Index = () => {
               onClick={stopRecording}
               variant="destructive"
             >
-              <StopCircle className="mr-2 h-4 w-4" />
+              <StopCircle className="mr-2 h-5 w-5" />
               Stop Recording
             </Button>
           )}
