@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Circle, IText, Path } from 'fabric';
+import { Canvas as FabricCanvas, Circle, IText } from 'fabric';
 import { Button } from "@/components/ui/button";
 import { Pencil, Type, Highlighter, Eraser } from 'lucide-react';
 
@@ -20,10 +20,13 @@ export const AnnotationTools = ({ isRecording }: AnnotationToolsProps) => {
       width: window.innerWidth,
       height: window.innerHeight,
       isDrawingMode: false,
+      selection: true,
+      renderOnAddRemove: true,
     });
 
-    // Make canvas background transparent
+    // Make canvas background transparent and enable interaction
     canvas.backgroundColor = 'rgba(0,0,0,0)';
+    canvas.preserveObjectStacking = true;
     
     setFabricCanvas(canvas);
 
@@ -42,6 +45,7 @@ export const AnnotationTools = ({ isRecording }: AnnotationToolsProps) => {
         width: window.innerWidth,
         height: window.innerHeight,
       });
+      fabricCanvas.renderAll();
     };
 
     window.addEventListener('resize', handleResize);
@@ -52,7 +56,7 @@ export const AnnotationTools = ({ isRecording }: AnnotationToolsProps) => {
     if (!fabricCanvas) return;
 
     setActiveTool(tool);
-    fabricCanvas.isDrawingMode = tool === 'draw' || tool === 'highlight';
+    fabricCanvas.isDrawingMode = tool === 'draw' || tool === 'highlight' || tool === 'eraser';
 
     if (tool === 'draw') {
       fabricCanvas.freeDrawingBrush.width = 2;
@@ -62,55 +66,67 @@ export const AnnotationTools = ({ isRecording }: AnnotationToolsProps) => {
       fabricCanvas.freeDrawingBrush.color = 'rgba(255, 255, 0, 0.4)';
     } else if (tool === 'text') {
       const text = new IText('Click to edit', {
-        left: 100,
-        top: 100,
+        left: fabricCanvas.width! / 2,
+        top: fabricCanvas.height! / 2,
         fontSize: 20,
         fill: '#ff0000',
+        originX: 'center',
+        originY: 'center',
       });
       fabricCanvas.add(text);
+      fabricCanvas.setActiveObject(text);
+      text.enterEditing();
+      text.selectAll();
     } else if (tool === 'eraser') {
       fabricCanvas.freeDrawingBrush.width = 20;
       fabricCanvas.freeDrawingBrush.color = 'rgba(0,0,0,0)';
     }
+
+    fabricCanvas.renderAll();
   };
 
   if (!isRecording) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 bg-black/80 rounded-lg p-2 flex gap-2">
-      <Button
-        variant={activeTool === 'draw' ? 'default' : 'secondary'}
-        size="icon"
-        onClick={() => handleToolClick('draw')}
-      >
-        <Pencil className="h-4 w-4" />
-      </Button>
-      <Button
-        variant={activeTool === 'highlight' ? 'default' : 'secondary'}
-        size="icon"
-        onClick={() => handleToolClick('highlight')}
-      >
-        <Highlighter className="h-4 w-4" />
-      </Button>
-      <Button
-        variant={activeTool === 'text' ? 'default' : 'secondary'}
-        size="icon"
-        onClick={() => handleToolClick('text')}
-      >
-        <Type className="h-4 w-4" />
-      </Button>
-      <Button
-        variant={activeTool === 'eraser' ? 'default' : 'secondary'}
-        size="icon"
-        onClick={() => handleToolClick('eraser')}
-      >
-        <Eraser className="h-4 w-4" />
-      </Button>
+    <>
       <canvas
         ref={canvasRef}
         className="fixed inset-0 pointer-events-auto"
-        style={{ zIndex: 1000 }}
+        style={{ 
+          zIndex: 1000,
+          touchAction: 'none'
+        }}
       />
-    </div>
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[1001] bg-black/80 rounded-lg p-2 flex gap-2">
+        <Button
+          variant={activeTool === 'draw' ? 'default' : 'secondary'}
+          size="icon"
+          onClick={() => handleToolClick('draw')}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button
+          variant={activeTool === 'highlight' ? 'default' : 'secondary'}
+          size="icon"
+          onClick={() => handleToolClick('highlight')}
+        >
+          <Highlighter className="h-4 w-4" />
+        </Button>
+        <Button
+          variant={activeTool === 'text' ? 'default' : 'secondary'}
+          size="icon"
+          onClick={() => handleToolClick('text')}
+        >
+          <Type className="h-4 w-4" />
+        </Button>
+        <Button
+          variant={activeTool === 'eraser' ? 'default' : 'secondary'}
+          size="icon"
+          onClick={() => handleToolClick('eraser')}
+        >
+          <Eraser className="h-4 w-4" />
+        </Button>
+      </div>
+    </>
   );
 };
