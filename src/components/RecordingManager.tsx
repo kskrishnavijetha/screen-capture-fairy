@@ -23,9 +23,23 @@ export const RecordingManager = ({
 }: RecordingManagerProps) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    // Cleanup function to ensure streams are properly closed
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   const getMediaConstraints = async () => {
     try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+
       let stream: MediaStream | null = null;
 
       switch (captureMode) {
@@ -62,11 +76,17 @@ export const RecordingManager = ({
               noiseSuppression: true,
             }
           });
+          
           const tracks = [...screenStream.getTracks(), ...cameraStream.getTracks()];
           stream = new MediaStream(tracks);
           break;
       }
 
+      if (!stream) {
+        throw new Error('Failed to get media stream');
+      }
+
+      streamRef.current = stream;
       return stream;
     } catch (error) {
       console.error('Error getting media stream:', error);
@@ -77,10 +97,7 @@ export const RecordingManager = ({
   const startRecording = async () => {
     try {
       const stream = await getMediaConstraints();
-      if (!stream) {
-        throw new Error('Failed to get media stream');
-      }
-
+      
       const options = { mimeType: 'video/webm;codecs=vp8,opus' };
       mediaRecorderRef.current = new MediaRecorder(stream, options);
       chunksRef.current = [];
@@ -94,13 +111,13 @@ export const RecordingManager = ({
       mediaRecorderRef.current.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
         onRecordingStop(blob);
-        stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorderRef.current.start();
       setIsRecording(true);
       setIsPaused(false);
       onRecordingStart();
+      
       toast({
         title: "Recording started",
         description: "Your recording has begun"
@@ -118,7 +135,10 @@ export const RecordingManager = ({
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
       setIsRecording(false);
       toast({
         title: "Recording stopped",
