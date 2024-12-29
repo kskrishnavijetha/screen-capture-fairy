@@ -25,50 +25,64 @@ export const RecordingManager = ({
   const chunksRef = useRef<Blob[]>([]);
 
   const getMediaConstraints = async () => {
-    let stream: MediaStream | null = null;
-    let audioStream: MediaStream | null = null;
+    try {
+      let stream: MediaStream | null = null;
 
-    switch (captureMode) {
-      case 'screen':
-        stream = await navigator.mediaDevices.getDisplayMedia({
-          video: { displaySurface: 'monitor' },
-          audio: true
-        });
-        break;
-      case 'camera':
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true
-        });
-        break;
-      case 'both':
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { displaySurface: 'monitor' },
-          audio: true
-        });
-        const cameraStream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true
-        });
-        const tracks = [...screenStream.getTracks(), ...cameraStream.getTracks()];
-        stream = new MediaStream(tracks);
-        break;
+      switch (captureMode) {
+        case 'screen':
+          stream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+            }
+          });
+          break;
+        case 'camera':
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+            }
+          });
+          break;
+        case 'both':
+          const screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+            }
+          });
+          const cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+            }
+          });
+          const tracks = [...screenStream.getTracks(), ...cameraStream.getTracks()];
+          stream = new MediaStream(tracks);
+          break;
+      }
+
+      return stream;
+    } catch (error) {
+      console.error('Error getting media stream:', error);
+      throw error;
     }
-
-    if (stream && audioStream) {
-      const tracks = [...stream.getTracks(), ...audioStream.getTracks()];
-      return new MediaStream(tracks);
-    }
-
-    return stream;
   };
 
   const startRecording = async () => {
     try {
       const stream = await getMediaConstraints();
-      if (!stream) return;
+      if (!stream) {
+        throw new Error('Failed to get media stream');
+      }
 
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      const options = { mimeType: 'video/webm;codecs=vp8,opus' };
+      mediaRecorderRef.current = new MediaRecorder(stream, options);
       chunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -80,6 +94,7 @@ export const RecordingManager = ({
       mediaRecorderRef.current.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
         onRecordingStop(blob);
+        stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorderRef.current.start();
@@ -91,11 +106,11 @@ export const RecordingManager = ({
         description: "Your recording has begun"
       });
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error starting recording:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to start recording"
+        description: "Failed to start recording. Please ensure you have granted the necessary permissions."
       });
     }
   };
@@ -105,6 +120,10 @@ export const RecordingManager = ({
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       setIsRecording(false);
+      toast({
+        title: "Recording stopped",
+        description: "Your recording has been saved"
+      });
     }
   };
 
