@@ -4,7 +4,8 @@ body {
   text-align: center;
   width: 320px;
   margin: 0;
-  background: #ffffff;
+  background: #000000;
+  color: #ffffff;
 }
 
 button {
@@ -32,17 +33,17 @@ h1 {
   margin: 0;
   font-size: 20px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #ffffff;
 }
 
 .subtitle {
   margin: 4px 0 0;
   font-size: 14px;
-  color: #666;
+  color: #999;
 }
 
 .settings {
-  background: #f5f5f5;
+  background: #1A1F2C;
   border-radius: 8px;
   padding: 12px;
 }
@@ -60,13 +61,15 @@ h1 {
 
 .setting-item label {
   font-size: 14px;
-  color: #333;
+  color: #ffffff;
 }
 
 select, input[type="checkbox"] {
-  border: 1px solid #ddd;
+  border: 1px solid #333;
   border-radius: 4px;
   padding: 4px 8px;
+  background: #222;
+  color: #ffffff;
 }
 
 .controls {
@@ -108,13 +111,13 @@ select, input[type="checkbox"] {
 }
 
 .button:disabled {
-  background-color: #94a3b8;
+  background-color: #555;
   cursor: not-allowed;
 }
 
 .status {
   text-align: center;
-  color: #64748b;
+  color: #999;
   font-size: 14px;
   min-height: 20px;
 }
