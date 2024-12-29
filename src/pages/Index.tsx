@@ -9,6 +9,7 @@ import { CameraPreview } from '@/components/CameraPreview';
 import { MediaPlayer } from '@/components/MediaPlayer';
 import { RecordingManager } from '@/components/RecordingManager';
 import { AnnotationTools } from '@/components/AnnotationTools';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Index = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -17,6 +18,7 @@ const Index = () => {
   const [filename, setFilename] = useState('screen-recording');
   const [duration, setDuration] = useState(0);
   const [captureMode, setCaptureMode] = useState<CaptureMode>('screen');
+  const [frameRate, setFrameRate] = useState<number>(30);
 
   const handleRecordingStart = () => {
     setDuration(0);
@@ -29,6 +31,7 @@ const Index = () => {
 
   const recordingManager = RecordingManager({
     captureMode,
+    frameRate,
     onRecordingStart: handleRecordingStart,
     onRecordingStop: handleRecordingStop,
     isRecording,
@@ -46,6 +49,28 @@ const Index = () => {
           mode={captureMode} 
           onChange={setCaptureMode}
         />
+
+        <div className="space-y-4">
+          <div className="flex flex-col space-y-2">
+            <label htmlFor="frameRate" className="text-sm font-medium">
+              Frame Rate
+            </label>
+            <Select
+              value={frameRate.toString()}
+              onValueChange={(value) => setFrameRate(Number(value))}
+              disabled={isRecording}
+            >
+              <SelectTrigger id="frameRate">
+                <SelectValue placeholder="Select frame rate" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="15">15 FPS</SelectItem>
+                <SelectItem value="30">30 FPS</SelectItem>
+                <SelectItem value="60">60 FPS</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         {isRecording && <Timer duration={duration} />}
 

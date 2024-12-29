@@ -4,6 +4,7 @@ import { CaptureMode } from './CaptureModeSelector';
 
 interface RecordingManagerProps {
   captureMode: CaptureMode;
+  frameRate: number;
   onRecordingStart: () => void;
   onRecordingStop: (blob: Blob) => void;
   isRecording: boolean;
@@ -14,6 +15,7 @@ interface RecordingManagerProps {
 
 export const RecordingManager = ({
   captureMode,
+  frameRate,
   onRecordingStart,
   onRecordingStop,
   isRecording,
@@ -26,7 +28,6 @@ export const RecordingManager = ({
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
-    // Cleanup function to ensure streams are properly closed
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
@@ -42,10 +43,14 @@ export const RecordingManager = ({
 
       let stream: MediaStream | null = null;
 
+      const videoConstraints = {
+        frameRate: frameRate
+      };
+
       switch (captureMode) {
         case 'screen':
           stream = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
+            video: videoConstraints,
             audio: {
               echoCancellation: true,
               noiseSuppression: true,
@@ -54,7 +59,7 @@ export const RecordingManager = ({
           break;
         case 'camera':
           stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+            video: videoConstraints,
             audio: {
               echoCancellation: true,
               noiseSuppression: true,
@@ -63,14 +68,14 @@ export const RecordingManager = ({
           break;
         case 'both':
           const screenStream = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
+            video: videoConstraints,
             audio: {
               echoCancellation: true,
               noiseSuppression: true,
             }
           });
           const cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+            video: videoConstraints,
             audio: {
               echoCancellation: true,
               noiseSuppression: true,
