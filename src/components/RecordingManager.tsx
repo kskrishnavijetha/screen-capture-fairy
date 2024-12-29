@@ -36,17 +36,17 @@ export const RecordingManager = ({
   }, []);
 
   const getMediaConstraints = async () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+
+    let stream: MediaStream | null = null;
+
+    const videoConstraints = {
+      frameRate: frameRate
+    };
+
     try {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-
-      let stream: MediaStream | null = null;
-
-      const videoConstraints = {
-        frameRate: frameRate
-      };
-
       switch (captureMode) {
         case 'screen':
           stream = await navigator.mediaDevices.getDisplayMedia({
@@ -108,14 +108,16 @@ export const RecordingManager = ({
       chunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
           chunksRef.current.push(event.data);
         }
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-        onRecordingStop(blob);
+        if (chunksRef.current.length > 0) {
+          const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+          onRecordingStop(blob);
+        }
       };
 
       mediaRecorderRef.current.start();
@@ -134,43 +136,71 @@ export const RecordingManager = ({
         title: "Error",
         description: "Failed to start recording. Please ensure you have granted the necessary permissions."
       });
+      setIsRecording(false);
     }
   };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
+      try {
+        mediaRecorderRef.current.stop();
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+        setIsRecording(false);
+        toast({
+          title: "Recording stopped",
+          description: "Your recording has been saved"
+        });
+      } catch (error) {
+        console.error('Error stopping recording:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to stop recording properly."
+        });
       }
-      setIsRecording(false);
-      toast({
-        title: "Recording stopped",
-        description: "Your recording has been saved"
-      });
     }
   };
 
   const pauseRecording = () => {
     if (mediaRecorderRef.current && isRecording && !isPaused) {
-      mediaRecorderRef.current.pause();
-      setIsPaused(true);
-      toast({
-        title: "Recording paused",
-        description: "Click resume to continue recording"
-      });
+      try {
+        mediaRecorderRef.current.pause();
+        setIsPaused(true);
+        toast({
+          title: "Recording paused",
+          description: "Click resume to continue recording"
+        });
+      } catch (error) {
+        console.error('Error pausing recording:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to pause recording."
+        });
+      }
     }
   };
 
   const resumeRecording = () => {
     if (mediaRecorderRef.current && isRecording && isPaused) {
-      mediaRecorderRef.current.resume();
-      setIsPaused(false);
-      toast({
-        title: "Recording resumed",
-        description: "Your screen is being recorded again"
-      });
+      try {
+        mediaRecorderRef.current.resume();
+        setIsPaused(false);
+        toast({
+          title: "Recording resumed",
+          description: "Your screen is being recorded again"
+        });
+      } catch (error) {
+        console.error('Error resuming recording:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to resume recording."
+        });
+      }
     }
   };
 
