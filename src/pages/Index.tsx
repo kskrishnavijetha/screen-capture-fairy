@@ -8,6 +8,7 @@ import { DownloadRecording } from '@/components/DownloadRecording';
 import { CameraPreview } from '@/components/CameraPreview';
 import { MediaPlayer } from '@/components/MediaPlayer';
 import { RecordingManager } from '@/components/RecordingManager';
+import { AnnotationTools } from '@/components/AnnotationTools';
 
 const Index = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -83,6 +84,8 @@ const Index = () => {
           </>
         )}
       </div>
+      
+      <AnnotationTools isRecording={isRecording} />
     </div>
   );
 };
