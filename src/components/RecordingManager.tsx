@@ -1,6 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
 import { CaptureMode } from './CaptureModeSelector';
+import { getMediaStream, stopMediaStream } from '@/utils/mediaUtils';
+import { useRecordingState } from '@/hooks/useRecordingState';
 
 interface RecordingManagerProps {
   captureMode: CaptureMode;
@@ -23,85 +25,18 @@ export const RecordingManager = ({
   setIsPaused,
   isPaused
 }: RecordingManagerProps) => {
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
+  const { mediaRecorderRef, chunksRef, streamRef } = useRecordingState();
 
   useEffect(() => {
     return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
+      stopMediaStream(streamRef.current);
     };
   }, []);
 
-  const getMediaConstraints = async () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-    }
-
-    let stream: MediaStream | null = null;
-
-    const videoConstraints = {
-      frameRate: frameRate
-    };
-
-    try {
-      switch (captureMode) {
-        case 'screen':
-          stream = await navigator.mediaDevices.getDisplayMedia({
-            video: videoConstraints,
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-            }
-          });
-          break;
-        case 'camera':
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: videoConstraints,
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-            }
-          });
-          break;
-        case 'both':
-          const screenStream = await navigator.mediaDevices.getDisplayMedia({
-            video: videoConstraints,
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-            }
-          });
-          const cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: videoConstraints,
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-            }
-          });
-          
-          const tracks = [...screenStream.getTracks(), ...cameraStream.getTracks()];
-          stream = new MediaStream(tracks);
-          break;
-      }
-
-      if (!stream) {
-        throw new Error('Failed to get media stream');
-      }
-
-      streamRef.current = stream;
-      return stream;
-    } catch (error) {
-      console.error('Error getting media stream:', error);
-      throw error;
-    }
-  };
-
   const startRecording = async () => {
     try {
-      const stream = await getMediaConstraints();
+      const stream = await getMediaStream(captureMode, frameRate);
+      streamRef.current = stream;
       
       const options = { mimeType: 'video/webm;codecs=vp8,opus' };
       mediaRecorderRef.current = new MediaRecorder(stream, options);
@@ -144,10 +79,8 @@ export const RecordingManager = ({
     if (mediaRecorderRef.current && isRecording) {
       try {
         mediaRecorderRef.current.stop();
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-          streamRef.current = null;
-        }
+        stopMediaStream(streamRef.current);
+        streamRef.current = null;
         setIsRecording(false);
         toast({
           title: "Recording stopped",
