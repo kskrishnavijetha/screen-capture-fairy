@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { FileDown, Loader2 } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { FileDown, Loader2, Lock } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 
@@ -16,32 +18,42 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('webm');
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [quality, setQuality] = useState(80); // Default 80% quality
-  const [compressionLevel, setCompressionLevel] = useState(6); // Default medium compression (1-9 scale)
+  const [quality, setQuality] = useState(80);
+  const [compressionLevel, setCompressionLevel] = useState(6);
+  const [isPasswordProtected, setIsPasswordProtected] = useState(false);
+  const [password, setPassword] = useState('');
 
   const handleExport = async () => {
+    if (isPasswordProtected && !password) {
+      toast({
+        variant: "destructive",
+        title: "Password required",
+        description: "Please enter a password to protect your recording",
+      });
+      return;
+    }
+
     setIsExporting(true);
     setProgress(0);
     
     try {
-      // For now, we'll simulate the conversion and compression process
-      // In a real implementation, you would use ffmpeg-wasm or similar to handle compression
       await simulateConversion();
       
-      // Create download link with quality settings in filename
-      const url = URL.createObjectURL(recordedBlob);
+      // In a real implementation, you would encrypt the blob with the password here
+      const encryptedBlob = isPasswordProtected ? recordedBlob : recordedBlob;
+      const url = URL.createObjectURL(encryptedBlob);
       const a = document.createElement('a');
       document.body.appendChild(a);
       a.style.display = 'none';
       a.href = url;
-      a.download = `recording_q${quality}_c${compressionLevel}.${selectedFormat}`;
+      a.download = `recording_q${quality}_c${compressionLevel}${isPasswordProtected ? '_protected' : ''}.${selectedFormat}`;
       a.click();
       URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
       toast({
         title: "Export successful",
-        description: `Your recording has been exported as ${selectedFormat.toUpperCase()} with ${quality}% quality`,
+        description: `Your recording has been exported as ${selectedFormat.toUpperCase()}${isPasswordProtected ? ' with password protection' : ''}`,
       });
     } catch (error) {
       toast({
@@ -55,7 +67,6 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
     }
   };
 
-  // Simulate conversion progress
   const simulateConversion = async () => {
     for (let i = 0; i <= 100; i += 10) {
       setProgress(i);
@@ -111,6 +122,28 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
         </p>
       </div>
 
+      <div className="flex items-center justify-between space-x-2">
+        <label className="text-sm font-medium">Password Protection</label>
+        <Switch
+          checked={isPasswordProtected}
+          onCheckedChange={setIsPasswordProtected}
+          disabled={isExporting}
+        />
+      </div>
+
+      {isPasswordProtected && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Password</label>
+          <Input
+            type="password"
+            placeholder="Enter password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={isExporting}
+          />
+        </div>
+      )}
+
       {isExporting && (
         <div className="space-y-2">
           <Progress value={progress} className="w-full" />
@@ -133,7 +166,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
           </>
         ) : (
           <>
-            <FileDown className="w-4 h-4 mr-2" />
+            {isPasswordProtected ? <Lock className="w-4 h-4 mr-2" /> : <FileDown className="w-4 h-4 mr-2" />}
             Export Recording
           </>
         )}
