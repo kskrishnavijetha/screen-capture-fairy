@@ -1,11 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Scissors } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { BlurControls } from './video/BlurControls';
 import { TrimControls } from './video/TrimControls';
 import { CaptionControls, type Caption } from './video/CaptionControls';
 import { CloudStorageSelector } from './cloud/CloudStorageSelector';
+import { ShareControls } from './video/ShareControls';
+import { ProcessControls } from './video/ProcessControls';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface VideoEditorProps {
@@ -22,7 +22,6 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
   const [blurRegions, setBlurRegions] = useState<Array<{ x: number, y: number, width: number, height: number }>>([]);
   const [captions, setCaptions] = useState<Caption[]>([]);
   const [transitionType, setTransitionType] = useState<TransitionType>('none');
-  const [clips, setClips] = useState<Blob[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
@@ -44,19 +43,6 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
     }
   };
 
-  const splitClip = async () => {
-    if (!videoRef.current || !recordedBlob) return;
-    
-    const currentTime = videoRef.current.currentTime;
-    const blob = await fetch(URL.createObjectURL(recordedBlob)).then(r => r.blob());
-    
-    setClips(prevClips => [...prevClips, blob]);
-    toast({
-      title: "Clip added",
-      description: "Video clip has been added to the timeline.",
-    });
-  };
-
   const applyTransition = (ctx: CanvasRenderingContext2D, progress: number) => {
     switch (transitionType) {
       case 'fade':
@@ -67,22 +53,6 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
         break;
       default:
         ctx.globalAlpha = 1;
-    }
-  };
-
-  const handleCloudUpload = async (provider: string) => {
-    setIsUploading(true);
-    try {
-      // Simulated upload delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setIsUploading(false);
-    } catch (error) {
-      setIsUploading(false);
-      toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: "There was an error uploading to cloud storage.",
-      });
     }
   };
 
@@ -127,12 +97,11 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
         
         outputCtx.drawImage(videoRef.current, 0, 0);
         
-        // Apply blur effect to selected regions
+        // Apply effects
         blurRegions.forEach(region => {
           const imageData = outputCtx.getImageData(region.x, region.y, region.width, region.height);
           for (let i = 0; i < imageData.data.length; i += 4) {
-            const avg = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
-            imageData.data[i] = 0; // Set to black
+            imageData.data[i] = 0;
             imageData.data[i + 1] = 0;
             imageData.data[i + 2] = 0;
           }
@@ -213,10 +182,6 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
         </Select>
       </div>
 
-      <Button onClick={splitClip} variant="secondary" className="w-full">
-        Split Clip
-      </Button>
-
       <TrimControls
         duration={duration}
         trimRange={trimRange}
@@ -230,14 +195,16 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
       />
 
       <CloudStorageSelector
-        onUpload={handleCloudUpload}
+        onUpload={(provider) => {
+          setIsUploading(true);
+          setTimeout(() => setIsUploading(false), 1500);
+        }}
         isUploading={isUploading}
       />
 
-      <Button onClick={handleProcess} className="w-full">
-        <Scissors className="w-4 h-4 mr-2" />
-        Process Video
-      </Button>
+      <ShareControls recordedBlob={recordedBlob} />
+
+      <ProcessControls onProcess={handleProcess} />
     </div>
   );
 };
