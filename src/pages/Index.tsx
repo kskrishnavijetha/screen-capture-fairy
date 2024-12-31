@@ -87,6 +87,26 @@ const Index = () => {
 
         <div className="space-y-4">
           <div className="flex flex-col space-y-2">
+            <label htmlFor="countdown" className="text-sm font-medium">
+              Countdown Timer (seconds)
+            </label>
+            <Select
+              value={recordingManager.countdownSeconds.toString()}
+              onValueChange={(value) => recordingManager.setCountdownSeconds(Number(value))}
+              disabled={isRecording}
+            >
+              <SelectTrigger id="countdown">
+                <SelectValue placeholder="Select countdown duration" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">3 seconds</SelectItem>
+                <SelectItem value="5">5 seconds</SelectItem>
+                <SelectItem value="10">10 seconds</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col space-y-2">
             <label htmlFor="frameRate" className="text-sm font-medium">
               Frame Rate
             </label>
@@ -133,6 +153,8 @@ const Index = () => {
         </div>
 
         {isRecording && <Timer duration={duration} />}
+
+        {recordingManager.showCountdown}
 
         <CameraPreview 
           isRecording={isRecording} 

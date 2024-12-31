@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from "@/hooks/use-toast";
 import { CaptureMode } from './CaptureModeSelector';
 import { getMediaStream, stopMediaStream } from '@/utils/mediaUtils';
 import { useRecordingState } from '@/hooks/useRecordingState';
+import { CountdownTimer } from './CountdownTimer';
 
 interface Resolution {
   label: string;
@@ -34,12 +35,18 @@ export const RecordingManager = ({
   isPaused
 }: RecordingManagerProps) => {
   const { mediaRecorderRef, chunksRef, streamRef } = useRecordingState();
+  const [showCountdown, setShowCountdown] = useState(false);
+  const [countdownSeconds, setCountdownSeconds] = useState(3);
 
   useEffect(() => {
     return () => {
       stopMediaStream(streamRef.current);
     };
   }, []);
+
+  const initiateRecording = () => {
+    setShowCountdown(true);
+  };
 
   const startRecording = async () => {
     try {
@@ -146,9 +153,27 @@ export const RecordingManager = ({
   };
 
   return {
-    startRecording,
+    startRecording: initiateRecording,
     stopRecording,
     pauseRecording,
-    resumeRecording
+    resumeRecording,
+    countdownSeconds,
+    setCountdownSeconds,
+    showCountdown: showCountdown && (
+      <CountdownTimer
+        seconds={countdownSeconds}
+        onComplete={() => {
+          setShowCountdown(false);
+          startRecording();
+        }}
+        onCancel={() => {
+          setShowCountdown(false);
+          toast({
+            title: "Cancelled",
+            description: "Recording countdown was cancelled"
+          });
+        }}
+      />
+    )
   };
 };
