@@ -6,8 +6,10 @@ import { CaptionControls, type Caption } from './video/CaptionControls';
 import { CloudStorageSelector } from './cloud/CloudStorageSelector';
 import { ShareControls } from './video/ShareControls';
 import { EmbedControls } from './video/EmbedControls';
+import { ExportControls } from './video/ExportControls';
 import { ProcessControls } from './video/ProcessControls';
 import { AnnotationControls, type Annotation } from './video/AnnotationControls';
+import { processVideoFrame } from './video/VideoProcessing';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface VideoEditorProps {
@@ -48,19 +50,6 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
     }
   };
 
-  const applyTransition = (ctx: CanvasRenderingContext2D, progress: number) => {
-    switch (transitionType) {
-      case 'fade':
-        ctx.globalAlpha = progress;
-        break;
-      case 'crossfade':
-        ctx.globalAlpha = Math.sin(progress * Math.PI / 2);
-        break;
-      default:
-        ctx.globalAlpha = 1;
-    }
-  };
-
   const handleProcess = async () => {
     if (!recordedBlob || !videoRef.current) return;
 
@@ -98,61 +87,14 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
         if (!videoRef.current || !outputCtx) return;
         
         const progress = (videoRef.current.currentTime - startTime) / (endTime - startTime);
-        applyTransition(outputCtx, progress);
         
-        outputCtx.drawImage(videoRef.current, 0, 0);
-        
-        // Apply effects
-        blurRegions.forEach(region => {
-          const imageData = outputCtx.getImageData(region.x, region.y, region.width, region.height);
-          for (let i = 0; i < imageData.data.length; i += 4) {
-            imageData.data[i] = 0;
-            imageData.data[i + 1] = 0;
-            imageData.data[i + 2] = 0;
-          }
-          outputCtx.putImageData(imageData, region.x, region.y);
-        });
-
-        // Add captions and annotations
-        const currentTime = videoRef.current.currentTime;
-        
-        // Draw captions
-        const activeCaption = captions.find(
-          caption => currentTime >= caption.startTime && currentTime <= caption.endTime
-        );
-
-        if (activeCaption) {
-          outputCtx.font = '24px Arial';
-          outputCtx.fillStyle = 'white';
-          outputCtx.strokeStyle = 'black';
-          outputCtx.lineWidth = 2;
-          const text = activeCaption.text;
-          const textMetrics = outputCtx.measureText(text);
-          const x = (outputCanvas.width - textMetrics.width) / 2;
-          const y = outputCanvas.height - 50;
-          
-          outputCtx.strokeText(text, x, y);
-          outputCtx.fillText(text, x, y);
-        }
-
-        // Draw annotations
-        const activeAnnotation = annotations.find(
-          annotation => Math.abs(currentTime - annotation.timestamp) < 0.5
-        );
-
-        if (activeAnnotation) {
-          outputCtx.font = '18px Arial';
-          outputCtx.fillStyle = 'yellow';
-          outputCtx.strokeStyle = 'black';
-          outputCtx.lineWidth = 1;
-          const text = `${activeAnnotation.author}: ${activeAnnotation.text}`;
-          const textMetrics = outputCtx.measureText(text);
-          const x = (outputCanvas.width - textMetrics.width) / 2;
-          const y = 30;
-          
-          outputCtx.strokeText(text, x, y);
-          outputCtx.fillText(text, x, y);
-        }
+        processVideoFrame({
+          videoRef,
+          transitionType,
+          blurRegions,
+          captions,
+          annotations
+        }, outputCtx, progress);
 
         if (videoRef.current.currentTime < endTime) {
           requestAnimationFrame(processFrame);
@@ -236,6 +178,7 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
 
       <ShareControls recordedBlob={recordedBlob} />
       <EmbedControls recordedBlob={recordedBlob} />
+      <ExportControls recordedBlob={recordedBlob} />
 
       <ProcessControls onProcess={handleProcess} />
     </div>
