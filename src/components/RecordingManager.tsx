@@ -5,16 +5,14 @@ import { getMediaStream, stopMediaStream } from '@/utils/mediaUtils';
 import { useRecordingState } from '@/hooks/useRecordingState';
 import { CountdownTimer } from './CountdownTimer';
 
-interface Resolution {
-  label: string;
-  width: number;
-  height: number;
-}
-
 interface RecordingManagerProps {
   captureMode: CaptureMode;
   frameRate: number;
-  resolution: Resolution;
+  resolution: {
+    label: string;
+    width: number;
+    height: number;
+  };
   onRecordingStart: () => void;
   onRecordingStop: (blob: Blob) => void;
   isRecording: boolean;
@@ -23,7 +21,7 @@ interface RecordingManagerProps {
   isPaused: boolean;
 }
 
-export const RecordingManager = ({
+export const RecordingManager: React.FC<RecordingManagerProps> = ({
   captureMode,
   frameRate,
   resolution,
@@ -33,7 +31,7 @@ export const RecordingManager = ({
   setIsRecording,
   setIsPaused,
   isPaused
-}: RecordingManagerProps) => {
+}) => {
   const { mediaRecorderRef, chunksRef, streamRef } = useRecordingState();
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdownSeconds, setCountdownSeconds] = useState(3);

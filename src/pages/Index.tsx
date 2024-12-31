@@ -60,7 +60,15 @@ const Index = () => {
     setRecordedBlob(blob);
   };
 
-  const recordingManager = RecordingManager({
+  const {
+    startRecording,
+    stopRecording,
+    pauseRecording,
+    resumeRecording,
+    showCountdown,
+    countdownSeconds,
+    setCountdownSeconds
+  } = RecordingManager({
     captureMode,
     frameRate,
     resolution: selectedResolution,
@@ -91,8 +99,8 @@ const Index = () => {
               Countdown Timer (seconds)
             </label>
             <Select
-              value={recordingManager.countdownSeconds.toString()}
-              onValueChange={(value) => recordingManager.setCountdownSeconds(Number(value))}
+              value={countdownSeconds.toString()}
+              onValueChange={(value) => setCountdownSeconds(Number(value))}
               disabled={isRecording}
             >
               <SelectTrigger id="countdown">
@@ -154,7 +162,7 @@ const Index = () => {
 
         {isRecording && <Timer duration={duration} />}
 
-        {recordingManager.showCountdown}
+        {showCountdown}
 
         <CameraPreview 
           isRecording={isRecording} 
@@ -164,7 +172,7 @@ const Index = () => {
         <div className="space-y-4">
           {!isRecording ? (
             <Button 
-              onClick={recordingManager.startRecording}
+              onClick={startRecording}
               className="w-full bg-primary hover:bg-primary/90"
             >
               <MonitorPlay className="mr-2 h-5 w-5" />
@@ -173,9 +181,9 @@ const Index = () => {
           ) : (
             <RecordingControls
               isPaused={isPaused}
-              onPause={recordingManager.pauseRecording}
-              onResume={recordingManager.resumeRecording}
-              onStop={recordingManager.stopRecording}
+              onPause={pauseRecording}
+              onResume={resumeRecording}
+              onStop={stopRecording}
             />
           )}
         </div>
