@@ -5,6 +5,7 @@ import { TrimControls } from './video/TrimControls';
 import { CaptionControls, type Caption } from './video/CaptionControls';
 import { CloudStorageSelector } from './cloud/CloudStorageSelector';
 import { ShareControls } from './video/ShareControls';
+import { EmbedControls } from './video/EmbedControls';
 import { ProcessControls } from './video/ProcessControls';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -23,6 +24,8 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
   const [captions, setCaptions] = useState<Caption[]>([]);
   const [transitionType, setTransitionType] = useState<TransitionType>('none');
   const [isUploading, setIsUploading] = useState(false);
+  const [editedBlob, setEditedBlob] = useState<Blob | null>(null);
+  const currentBlob = editedBlob || recordedBlob;
 
   useEffect(() => {
     if (videoRef.current && recordedBlob) {
@@ -203,6 +206,7 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
       />
 
       <ShareControls recordedBlob={recordedBlob} />
+      <EmbedControls recordedBlob={recordedBlob} />
 
       <ProcessControls onProcess={handleProcess} />
     </div>
