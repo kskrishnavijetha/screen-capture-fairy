@@ -32,17 +32,16 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
       const destination = audioContext.createMediaStreamDestination();
       source.connect(destination);
 
-      // Convert MediaStream to audio buffer
-      const audioStream = await audioContext.createMediaStreamSource(destination.stream)
-        .mediaStream.getAudioTracks()[0]
-        .clone()
-        .getSettings();
+      // Get audio data as ArrayBuffer
+      const audioData = await fetch(URL.createObjectURL(
+        new Blob([destination.stream], { type: 'audio/wav' })
+      )).then(res => res.arrayBuffer());
 
       // Transcribe the audio
-      const transcription = await transcriber(audioStream);
+      const transcription = await transcriber(audioData);
       const transcriptionText = Array.isArray(transcription) 
         ? transcription[0].text 
-        : transcription.text;
+        : (transcription as AutomaticSpeechRecognitionOutput).text;
 
       // Create a summarization pipeline
       const summarizer = await pipeline(
@@ -52,14 +51,21 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
 
       // Generate summary with proper types
       const result = await summarizer(transcriptionText, {
-        max_new_tokens: 130,
-        min_new_tokens: 30,
-        early_stopping: true
+        max_length: 130,
+        min_length: 30,
+        do_sample: false,
+        num_beams: 4,
+        temperature: 1.0,
+        top_k: 50,
+        top_p: 0.95,
+        repetition_penalty: 1.0,
+        length_penalty: 1.0,
+        no_repeat_ngram_size: 3
       });
 
       const summaryText = Array.isArray(result) 
-        ? result[0].summary_text 
-        : result.summary_text;
+        ? (result[0] as { summary_text: string }).summary_text 
+        : (result as { summary_text: string }).summary_text;
       
       setSummary(summaryText);
       toast({
