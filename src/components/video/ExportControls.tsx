@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { FileDown, Loader2 } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
@@ -15,30 +16,32 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('webm');
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [quality, setQuality] = useState(80); // Default 80% quality
+  const [compressionLevel, setCompressionLevel] = useState(6); // Default medium compression (1-9 scale)
 
   const handleExport = async () => {
     setIsExporting(true);
     setProgress(0);
     
     try {
-      // For now, we'll simulate the conversion process
-      // In a real implementation, you would use ffmpeg-wasm to convert the video
+      // For now, we'll simulate the conversion and compression process
+      // In a real implementation, you would use ffmpeg-wasm or similar to handle compression
       await simulateConversion();
       
-      // Create download link
+      // Create download link with quality settings in filename
       const url = URL.createObjectURL(recordedBlob);
       const a = document.createElement('a');
       document.body.appendChild(a);
       a.style.display = 'none';
       a.href = url;
-      a.download = `recording.${selectedFormat}`;
+      a.download = `recording_q${quality}_c${compressionLevel}.${selectedFormat}`;
       a.click();
       URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
       toast({
         title: "Export successful",
-        description: `Your recording has been exported as ${selectedFormat.toUpperCase()}`,
+        description: `Your recording has been exported as ${selectedFormat.toUpperCase()} with ${quality}% quality`,
       });
     } catch (error) {
       toast({
@@ -79,6 +82,33 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
             <SelectItem value="avi">AVI</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Quality ({quality}%)</label>
+        <Slider
+          value={[quality]}
+          onValueChange={(value) => setQuality(value[0])}
+          min={1}
+          max={100}
+          step={1}
+          disabled={isExporting}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Compression Level ({compressionLevel})</label>
+        <Slider
+          value={[compressionLevel]}
+          onValueChange={(value) => setCompressionLevel(value[0])}
+          min={1}
+          max={9}
+          step={1}
+          disabled={isExporting}
+        />
+        <p className="text-sm text-muted-foreground">
+          1 = Fastest/Largest file, 9 = Slowest/Smallest file
+        </p>
       </div>
 
       {isExporting && (
