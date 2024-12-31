@@ -85,9 +85,9 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
   const drawBlurRegions = (ctx: CanvasRenderingContext2D) => {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     blurRegions.forEach(region => {
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
       ctx.fillRect(region.x, region.y, region.width, region.height);
-      ctx.strokeStyle = '#ff0000';
+      ctx.strokeStyle = '#000000';
       ctx.lineWidth = 2;
       ctx.strokeRect(region.x, region.y, region.width, region.height);
     });
