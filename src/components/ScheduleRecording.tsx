@@ -25,6 +25,12 @@ interface ScheduledRecording {
   duration: string;
 }
 
+declare global {
+  interface Window {
+    chrome: typeof chrome;
+  }
+}
+
 export const ScheduleRecording = () => {
   const [date, setDate] = useState<Date>();
   const [time, setTime] = useState<string>();
@@ -54,9 +60,11 @@ export const ScheduleRecording = () => {
     const [hours, minutes] = time.split(':');
     scheduledTime.setHours(parseInt(hours), parseInt(minutes), 0);
     
-    chrome.alarms.create(`recording-${scheduledTime.getTime()}`, {
-      when: scheduledTime.getTime()
-    });
+    if (typeof window !== 'undefined' && window.chrome && window.chrome.alarms) {
+      chrome.alarms.create(`recording-${scheduledTime.getTime()}`, {
+        when: scheduledTime.getTime()
+      });
+    }
 
     toast({
       title: "Recording Scheduled",
