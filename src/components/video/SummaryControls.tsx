@@ -58,7 +58,7 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
         'facebook/bart-large-cnn'
       );
 
-      // Generate summary with proper types
+      // Generate summary with complete GenerationConfig
       const result = await summarizer(transcriptionText, {
         max_length: 130,
         min_length: 30,
@@ -71,11 +71,27 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
         temperature: 1.0,
         top_k: 50,
         top_p: 0.95,
+        typical_p: 1.0,
+        epsilon_cutoff: 0.0,
+        eta_cutoff: 0.0,
+        diversity_penalty: 0.0,
         repetition_penalty: 1.0,
+        encoder_repetition_penalty: 1.0,
         length_penalty: 1.0,
         no_repeat_ngram_size: 3,
         num_beam_groups: 1,
         penalty_alpha: 0,
+        use_cache: true,
+        forced_bos_token_id: null,
+        forced_eos_token_id: null,
+        remove_invalid_values: false,
+        exponential_decay_length_penalty: null,
+        suppress_tokens: null,
+        begin_suppress_tokens: null,
+        forced_decoder_ids: null,
+        sequence_bias: null,
+        guidance_scale: 1.0,
+        low_memory: false,
         pad_token_id: 0,
         bos_token_id: 0,
         eos_token_id: 2,
