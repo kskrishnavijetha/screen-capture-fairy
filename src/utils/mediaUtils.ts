@@ -1,3 +1,5 @@
+import { NoiseReducer } from './noiseReduction';
+
 export const getMediaStream = async (
   captureMode: 'screen' | 'camera' | 'both',
   frameRate: number
@@ -9,17 +11,24 @@ export const getMediaStream = async (
   };
 
   try {
+    let stream: MediaStream;
+    const noiseReducer = new NoiseReducer();
+
     switch (captureMode) {
       case 'screen':
-        return await navigator.mediaDevices.getDisplayMedia({
+        stream = await navigator.mediaDevices.getDisplayMedia({
           video: videoConstraints,
           audio: audioConstraints
         });
+        return await noiseReducer.setupNoiseCancellation(stream);
+      
       case 'camera':
-        return await navigator.mediaDevices.getUserMedia({
+        stream = await navigator.mediaDevices.getUserMedia({
           video: videoConstraints,
           audio: audioConstraints
         });
+        return await noiseReducer.setupNoiseCancellation(stream);
+      
       case 'both':
         const screenStream = await navigator.mediaDevices.getDisplayMedia({
           video: videoConstraints,
@@ -29,7 +38,15 @@ export const getMediaStream = async (
           video: videoConstraints,
           audio: audioConstraints
         });
-        return new MediaStream([...screenStream.getTracks(), ...cameraStream.getTracks()]);
+        
+        // Combine streams
+        const combinedStream = new MediaStream([
+          ...screenStream.getTracks(),
+          ...cameraStream.getTracks()
+        ]);
+        
+        return await noiseReducer.setupNoiseCancellation(combinedStream);
+      
       default:
         throw new Error('Invalid capture mode');
     }
