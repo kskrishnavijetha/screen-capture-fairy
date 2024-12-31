@@ -31,17 +31,26 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
       const destination = audioContext.createMediaStreamDestination();
       source.connect(destination);
 
-      // Convert audio stream to audio data
-      const audioBlob = new Blob([destination.stream], { type: 'audio/wav' });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const response = await fetch(audioUrl);
-      const audioData = await response.blob();
+      // Convert MediaStream to audio data
+      const mediaRecorder = new MediaRecorder(destination.stream);
+      const chunks: BlobPart[] = [];
+      
+      await new Promise<void>((resolve) => {
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = () => resolve();
+        mediaRecorder.start();
+        setTimeout(() => mediaRecorder.stop(), 100); // Record a small chunk
+      });
+
+      const audioBlob = new Blob(chunks, { type: 'audio/wav' });
+      const audioBuffer = await audioBlob.arrayBuffer();
+      const audioArray = new Float32Array(audioBuffer);
 
       // Transcribe the audio
-      const transcription = await transcriber(audioData);
+      const transcription = await transcriber(audioArray);
       const transcriptionText = Array.isArray(transcription) 
         ? transcription[0].text 
-        : (transcription as AutomaticSpeechRecognitionOutput).text;
+        : transcription.text;
 
       // Create a summarization pipeline
       const summarizer = await pipeline(
@@ -51,6 +60,8 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
 
       // Generate summary with proper types
       const result = await summarizer(transcriptionText, {
+        max_length: 130,
+        min_length: 30,
         max_new_tokens: 130,
         min_new_tokens: 30,
         early_stopping: true,
@@ -63,6 +74,8 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
         repetition_penalty: 1.0,
         length_penalty: 1.0,
         no_repeat_ngram_size: 3,
+        num_beam_groups: 1,
+        penalty_alpha: 0,
         pad_token_id: 0,
         bos_token_id: 0,
         eos_token_id: 2,
