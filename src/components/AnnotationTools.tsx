@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Circle, IText } from 'fabric';
 import { Button } from "@/components/ui/button";
-import { Pencil, Type, Highlighter, Eraser, Undo } from 'lucide-react';
+import { Pencil, Type, Highlighter, Eraser, Undo, GripHorizontal } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 
 interface AnnotationToolsProps {
@@ -10,9 +10,13 @@ interface AnnotationToolsProps {
 
 export const AnnotationTools = ({ isRecording }: AnnotationToolsProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [activeTool, setActiveTool] = useState<'draw' | 'text' | 'highlight' | 'eraser' | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  const [position, setPosition] = useState({ x: window.innerWidth / 2 - 150, y: window.innerHeight - 100 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (!canvasRef.current || fabricCanvas) return;
@@ -58,6 +62,48 @@ export const AnnotationTools = ({ isRecording }: AnnotationToolsProps) => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [fabricCanvas]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.target instanceof Element && e.target.closest('.drag-handle')) {
+      setIsDragging(true);
+      const toolbar = toolbarRef.current?.getBoundingClientRect();
+      if (toolbar) {
+        setDragOffset({
+          x: e.clientX - toolbar.left,
+          y: e.clientY - toolbar.top
+        });
+      }
+    }
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (isDragging && toolbarRef.current) {
+      const newX = Math.min(
+        Math.max(0, e.clientX - dragOffset.x),
+        window.innerWidth - toolbarRef.current.offsetWidth
+      );
+      const newY = Math.min(
+        Math.max(0, e.clientY - dragOffset.y),
+        window.innerHeight - toolbarRef.current.offsetHeight
+      );
+      
+      setPosition({ x: newX, y: newY });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
 
   const handleToolClick = (tool: typeof activeTool) => {
     if (!fabricCanvas) return;
@@ -121,7 +167,20 @@ export const AnnotationTools = ({ isRecording }: AnnotationToolsProps) => {
           touchAction: 'none'
         }}
       />
-      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[1001] bg-black/90 rounded-lg p-3 flex gap-3">
+      <div
+        ref={toolbarRef}
+        className="fixed flex gap-3 bg-black/90 rounded-lg p-3 cursor-move transition-all duration-200"
+        style={{
+          left: position.x,
+          top: position.y,
+          zIndex: 1001,
+          transform: 'translate(0, 0)',
+        }}
+        onMouseDown={handleMouseDown}
+      >
+        <div className="drag-handle flex items-center mr-2 cursor-grab active:cursor-grabbing">
+          <GripHorizontal className="h-5 w-5 text-gray-400" />
+        </div>
         <Button
           variant={activeTool === 'draw' ? 'default' : 'secondary'}
           size="icon"
