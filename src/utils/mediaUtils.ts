@@ -1,8 +1,14 @@
 export const getMediaStream = async (
   captureMode: 'screen' | 'camera' | 'both',
-  frameRate: number
+  frameRate: number,
+  resolution: { width: number; height: number }
 ) => {
-  const videoConstraints = { frameRate };
+  const videoConstraints = { 
+    frameRate,
+    width: { ideal: resolution.width },
+    height: { ideal: resolution.height }
+  };
+  
   const audioConstraints = {
     echoCancellation: true,
     noiseSuppression: true,

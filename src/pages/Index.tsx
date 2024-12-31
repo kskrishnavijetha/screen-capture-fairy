@@ -11,6 +11,19 @@ import { RecordingManager } from '@/components/RecordingManager';
 import { AnnotationTools } from '@/components/AnnotationTools';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+interface Resolution {
+  label: string;
+  width: number;
+  height: number;
+}
+
+const RESOLUTIONS: Resolution[] = [
+  { label: "720p", width: 1280, height: 720 },
+  { label: "1080p", width: 1920, height: 1080 },
+  { label: "2K", width: 2560, height: 1440 },
+  { label: "4K", width: 3840, height: 2160 },
+];
+
 const Index = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -19,6 +32,7 @@ const Index = () => {
   const [duration, setDuration] = useState(0);
   const [captureMode, setCaptureMode] = useState<CaptureMode>('screen');
   const [frameRate, setFrameRate] = useState<number>(30);
+  const [selectedResolution, setSelectedResolution] = useState<Resolution>(RESOLUTIONS[0]);
 
   const handleRecordingStart = () => {
     setDuration(0);
@@ -32,6 +46,7 @@ const Index = () => {
   const recordingManager = RecordingManager({
     captureMode,
     frameRate,
+    resolution: selectedResolution,
     onRecordingStart: handleRecordingStart,
     onRecordingStop: handleRecordingStop,
     isRecording,
@@ -67,6 +82,31 @@ const Index = () => {
                 <SelectItem value="15">15 FPS</SelectItem>
                 <SelectItem value="30">30 FPS</SelectItem>
                 <SelectItem value="60">60 FPS</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col space-y-2">
+            <label htmlFor="resolution" className="text-sm font-medium">
+              Resolution
+            </label>
+            <Select
+              value={selectedResolution.label}
+              onValueChange={(value) => {
+                const resolution = RESOLUTIONS.find(r => r.label === value);
+                if (resolution) setSelectedResolution(resolution);
+              }}
+              disabled={isRecording}
+            >
+              <SelectTrigger id="resolution">
+                <SelectValue placeholder="Select resolution" />
+              </SelectTrigger>
+              <SelectContent>
+                {RESOLUTIONS.map((resolution) => (
+                  <SelectItem key={resolution.label} value={resolution.label}>
+                    {resolution.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

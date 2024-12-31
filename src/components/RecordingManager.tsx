@@ -4,9 +4,16 @@ import { CaptureMode } from './CaptureModeSelector';
 import { getMediaStream, stopMediaStream } from '@/utils/mediaUtils';
 import { useRecordingState } from '@/hooks/useRecordingState';
 
+interface Resolution {
+  label: string;
+  width: number;
+  height: number;
+}
+
 interface RecordingManagerProps {
   captureMode: CaptureMode;
   frameRate: number;
+  resolution: Resolution;
   onRecordingStart: () => void;
   onRecordingStop: (blob: Blob) => void;
   isRecording: boolean;
@@ -18,6 +25,7 @@ interface RecordingManagerProps {
 export const RecordingManager = ({
   captureMode,
   frameRate,
+  resolution,
   onRecordingStart,
   onRecordingStop,
   isRecording,
@@ -35,7 +43,7 @@ export const RecordingManager = ({
 
   const startRecording = async () => {
     try {
-      const stream = await getMediaStream(captureMode, frameRate);
+      const stream = await getMediaStream(captureMode, frameRate, resolution);
       streamRef.current = stream;
       
       const options = { mimeType: 'video/webm;codecs=vp8,opus' };
