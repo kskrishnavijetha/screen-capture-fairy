@@ -10,6 +10,7 @@ import { MediaPlayer } from '@/components/MediaPlayer';
 import { RecordingManager } from '@/components/RecordingManager';
 import { AnnotationTools } from '@/components/AnnotationTools';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ThemeSelector } from '@/components/ThemeSelector';
 
 interface Resolution {
   label: string;
@@ -24,6 +25,21 @@ const RESOLUTIONS: Resolution[] = [
   { label: "4K", width: 3840, height: 2160 },
 ];
 
+const getThemeClasses = (themeName: string) => {
+  switch (themeName) {
+    case 'Ocean':
+      return 'bg-[#222222] accent-[#0EA5E9]';
+    case 'Forest':
+      return 'bg-[#221F26] accent-[#22C55E]';
+    case 'Sunset':
+      return 'bg-[#403E43] accent-[#F97316]';
+    case 'Berry':
+      return 'bg-[#1A1F2C] accent-[#D946EF]';
+    default:
+      return 'bg-[#1A1F2C] accent-[#9b87f5]';
+  }
+};
+
 const Index = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -33,6 +49,7 @@ const Index = () => {
   const [captureMode, setCaptureMode] = useState<CaptureMode>('screen');
   const [frameRate, setFrameRate] = useState<number>(30);
   const [selectedResolution, setSelectedResolution] = useState<Resolution>(RESOLUTIONS[0]);
+  const [currentTheme, setCurrentTheme] = useState('Default Dark');
 
   const handleRecordingStart = () => {
     setDuration(0);
@@ -56,9 +73,12 @@ const Index = () => {
   });
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
+    <div className={`flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
       <div className="text-center space-y-6 w-full max-w-md">
-        <h1 className="text-4xl font-bold mb-8">Screen Recorder</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold">Screen Recorder</h1>
+          <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
+        </div>
         
         <CaptureModeSelector 
           mode={captureMode} 
