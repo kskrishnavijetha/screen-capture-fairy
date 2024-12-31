@@ -89,7 +89,6 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
         suppress_tokens: null,
         begin_suppress_tokens: null,
         forced_decoder_ids: null,
-        sequence_bias: null,
         guidance_scale: 1.0,
         low_memory: false,
         pad_token_id: 0,
