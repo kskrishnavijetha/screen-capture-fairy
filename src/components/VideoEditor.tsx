@@ -5,11 +5,14 @@ import { toast } from "@/components/ui/use-toast";
 import { BlurControls } from './video/BlurControls';
 import { TrimControls } from './video/TrimControls';
 import { CaptionControls, type Caption } from './video/CaptionControls';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface VideoEditorProps {
   recordedBlob: Blob | null;
   onSave: (newBlob: Blob) => void;
 }
+
+type TransitionType = 'none' | 'fade' | 'crossfade';
 
 export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -17,6 +20,8 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
   const [trimRange, setTrimRange] = useState([0, 100]);
   const [blurRegions, setBlurRegions] = useState<Array<{ x: number, y: number, width: number, height: number }>>([]);
   const [captions, setCaptions] = useState<Caption[]>([]);
+  const [transitionType, setTransitionType] = useState<TransitionType>('none');
+  const [clips, setClips] = useState<Blob[]>([]);
 
   useEffect(() => {
     if (videoRef.current && recordedBlob) {
@@ -34,6 +39,32 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
       if (isFinite(newTime)) {
         videoRef.current.currentTime = newTime;
       }
+    }
+  };
+
+  const splitClip = async () => {
+    if (!videoRef.current || !recordedBlob) return;
+    
+    const currentTime = videoRef.current.currentTime;
+    const blob = await fetch(URL.createObjectURL(recordedBlob)).then(r => r.blob());
+    
+    setClips(prevClips => [...prevClips, blob]);
+    toast({
+      title: "Clip added",
+      description: "Video clip has been added to the timeline.",
+    });
+  };
+
+  const applyTransition = (ctx: CanvasRenderingContext2D, progress: number) => {
+    switch (transitionType) {
+      case 'fade':
+        ctx.globalAlpha = progress;
+        break;
+      case 'crossfade':
+        ctx.globalAlpha = Math.sin(progress * Math.PI / 2);
+        break;
+      default:
+        ctx.globalAlpha = 1;
     }
   };
 
@@ -63,7 +94,7 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
         onSave(newBlob);
         toast({
           title: "Video processed successfully",
-          description: "Your video has been trimmed, blurred, and captioned according to your selections.",
+          description: "Your video has been processed with the selected effects and transitions.",
         });
       };
 
@@ -73,6 +104,9 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
       const processFrame = () => {
         if (!videoRef.current || !outputCtx) return;
         
+        const progress = (videoRef.current.currentTime - startTime) / (endTime - startTime);
+        applyTransition(outputCtx, progress);
+        
         outputCtx.drawImage(videoRef.current, 0, 0);
         
         // Apply blur effect to selected regions
@@ -80,9 +114,9 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
           const imageData = outputCtx.getImageData(region.x, region.y, region.width, region.height);
           for (let i = 0; i < imageData.data.length; i += 4) {
             const avg = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
-            imageData.data[i] = avg;
-            imageData.data[i + 1] = avg;
-            imageData.data[i + 2] = avg;
+            imageData.data[i] = 0; // Set to black
+            imageData.data[i + 1] = 0;
+            imageData.data[i + 2] = 0;
           }
           outputCtx.putImageData(imageData, region.x, region.y);
         });
@@ -143,6 +177,27 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
           setBlurRegions={setBlurRegions}
         />
       </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Transition Effect</label>
+        <Select
+          value={transitionType}
+          onValueChange={(value: TransitionType) => setTransitionType(value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select transition type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            <SelectItem value="fade">Fade</SelectItem>
+            <SelectItem value="crossfade">Cross Fade</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button onClick={splitClip} variant="secondary" className="w-full">
+        Split Clip
+      </Button>
 
       <TrimControls
         duration={duration}
