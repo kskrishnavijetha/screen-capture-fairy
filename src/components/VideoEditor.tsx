@@ -7,6 +7,7 @@ import { CloudStorageSelector } from './cloud/CloudStorageSelector';
 import { ShareControls } from './video/ShareControls';
 import { EmbedControls } from './video/EmbedControls';
 import { ProcessControls } from './video/ProcessControls';
+import { AnnotationControls, type Annotation } from './video/AnnotationControls';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface VideoEditorProps {
@@ -22,6 +23,7 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
   const [trimRange, setTrimRange] = useState([0, 100]);
   const [blurRegions, setBlurRegions] = useState<Array<{ x: number, y: number, width: number, height: number }>>([]);
   const [captions, setCaptions] = useState<Caption[]>([]);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [transitionType, setTransitionType] = useState<TransitionType>('none');
   const [isUploading, setIsUploading] = useState(false);
   const [editedBlob, setEditedBlob] = useState<Blob | null>(null);
@@ -111,8 +113,10 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
           outputCtx.putImageData(imageData, region.x, region.y);
         });
 
-        // Add captions
+        // Add captions and annotations
         const currentTime = videoRef.current.currentTime;
+        
+        // Draw captions
         const activeCaption = captions.find(
           caption => currentTime >= caption.startTime && currentTime <= caption.endTime
         );
@@ -126,6 +130,25 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
           const textMetrics = outputCtx.measureText(text);
           const x = (outputCanvas.width - textMetrics.width) / 2;
           const y = outputCanvas.height - 50;
+          
+          outputCtx.strokeText(text, x, y);
+          outputCtx.fillText(text, x, y);
+        }
+
+        // Draw annotations
+        const activeAnnotation = annotations.find(
+          annotation => Math.abs(currentTime - annotation.timestamp) < 0.5
+        );
+
+        if (activeAnnotation) {
+          outputCtx.font = '18px Arial';
+          outputCtx.fillStyle = 'yellow';
+          outputCtx.strokeStyle = 'black';
+          outputCtx.lineWidth = 1;
+          const text = `${activeAnnotation.author}: ${activeAnnotation.text}`;
+          const textMetrics = outputCtx.measureText(text);
+          const x = (outputCanvas.width - textMetrics.width) / 2;
+          const y = 30;
           
           outputCtx.strokeText(text, x, y);
           outputCtx.fillText(text, x, y);
@@ -195,6 +218,12 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
         duration={duration}
         captions={captions}
         onCaptionsChange={setCaptions}
+      />
+
+      <AnnotationControls
+        duration={duration}
+        annotations={annotations}
+        onAnnotationsChange={setAnnotations}
       />
 
       <CloudStorageSelector
