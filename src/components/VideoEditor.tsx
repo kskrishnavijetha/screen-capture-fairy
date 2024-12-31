@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
+import { Scissors } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
-import { Scissors, Eye, EyeOff } from 'lucide-react';
+import { BlurControls } from './video/BlurControls';
+import { TrimControls } from './video/TrimControls';
 
 interface VideoEditorProps {
   recordedBlob: Blob | null;
@@ -11,14 +12,9 @@ interface VideoEditorProps {
 
 export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [duration, setDuration] = useState(0);
   const [trimRange, setTrimRange] = useState([0, 100]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isBlurMode, setIsBlurMode] = useState(false);
   const [blurRegions, setBlurRegions] = useState<Array<{ x: number, y: number, width: number, height: number }>>([]);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (videoRef.current && recordedBlob) {
@@ -31,90 +27,15 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
 
   const handleTrimRangeChange = (newRange: number[]) => {
     setTrimRange(newRange);
-    if (videoRef.current) {
-      videoRef.current.currentTime = (newRange[0] / 100) * duration;
+    if (videoRef.current && duration > 0) {
+      const newTime = (newRange[0] / 100) * duration;
+      if (isFinite(newTime)) {
+        videoRef.current.currentTime = newTime;
+      }
     }
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isBlurMode) return;
-    
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    setIsDrawing(true);
-    setStartPos({ x, y });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !isBlurMode) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawBlurRegions(ctx);
-
-    // Draw current selection
-    ctx.strokeStyle = '#ff0000';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(
-      startPos.x,
-      startPos.y,
-      x - startPos.x,
-      y - startPos.y
-    );
-  };
-
-  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !isBlurMode) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const newRegion = {
-      x: Math.min(startPos.x, x),
-      y: Math.min(startPos.y, y),
-      width: Math.abs(x - startPos.x),
-      height: Math.abs(y - startPos.y)
-    };
-
-    setBlurRegions([...blurRegions, newRegion]);
-    setIsDrawing(false);
-
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      drawBlurRegions(ctx);
-    }
-  };
-
-  const drawBlurRegions = (ctx: CanvasRenderingContext2D) => {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    blurRegions.forEach(region => {
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-      ctx.fillRect(region.x, region.y, region.width, region.height);
-      ctx.strokeStyle = '#ff0000';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(region.x, region.y, region.width, region.height);
-    });
-  };
-
-  const handleTrim = async () => {
+  const handleProcess = async () => {
     if (!recordedBlob || !videoRef.current) return;
 
     try {
@@ -194,63 +115,24 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
           ref={videoRef}
           className="w-full"
           controls
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
         />
-        <canvas
-          ref={canvasRef}
-          className={`absolute top-0 left-0 w-full h-full ${isBlurMode ? 'cursor-crosshair' : 'pointer-events-none'}`}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
+        <BlurControls
+          videoRef={videoRef}
+          blurRegions={blurRegions}
+          setBlurRegions={setBlurRegions}
         />
       </div>
 
-      <div className="flex gap-2">
-        <Button
-          variant={isBlurMode ? "default" : "secondary"}
-          onClick={() => setIsBlurMode(!isBlurMode)}
-          className="flex-1"
-        >
-          {isBlurMode ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-          {isBlurMode ? "Exit Blur Mode" : "Enter Blur Mode"}
-        </Button>
-        {blurRegions.length > 0 && (
-          <Button
-            variant="destructive"
-            onClick={() => setBlurRegions([])}
-            className="flex-1"
-          >
-            Clear Blur Regions
-          </Button>
-        )}
-      </div>
+      <TrimControls
+        duration={duration}
+        trimRange={trimRange}
+        onTrimRangeChange={handleTrimRangeChange}
+      />
 
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium">Trim Video</h3>
-        <Slider
-          value={trimRange}
-          onValueChange={handleTrimRangeChange}
-          max={100}
-          step={1}
-          className="w-full"
-        />
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>{formatTime((trimRange[0] / 100) * duration)}</span>
-          <span>{formatTime((trimRange[1] / 100) * duration)}</span>
-        </div>
-      </div>
-
-      <Button onClick={handleTrim} className="w-full">
+      <Button onClick={handleProcess} className="w-full">
         <Scissors className="w-4 h-4 mr-2" />
         Process Video
       </Button>
     </div>
   );
-};
-
-const formatTime = (seconds: number): string => {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
