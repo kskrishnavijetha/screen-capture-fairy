@@ -4,6 +4,7 @@ import { Scissors } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { BlurControls } from './video/BlurControls';
 import { TrimControls } from './video/TrimControls';
+import { CaptionControls, type Caption } from './video/CaptionControls';
 
 interface VideoEditorProps {
   recordedBlob: Blob | null;
@@ -15,6 +16,7 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
   const [duration, setDuration] = useState(0);
   const [trimRange, setTrimRange] = useState([0, 100]);
   const [blurRegions, setBlurRegions] = useState<Array<{ x: number, y: number, width: number, height: number }>>([]);
+  const [captions, setCaptions] = useState<Caption[]>([]);
 
   useEffect(() => {
     if (videoRef.current && recordedBlob) {
@@ -61,7 +63,7 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
         onSave(newBlob);
         toast({
           title: "Video processed successfully",
-          description: "Your video has been trimmed and blurred according to your selections.",
+          description: "Your video has been trimmed, blurred, and captioned according to your selections.",
         });
       };
 
@@ -76,7 +78,6 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
         // Apply blur effect to selected regions
         blurRegions.forEach(region => {
           const imageData = outputCtx.getImageData(region.x, region.y, region.width, region.height);
-          // Simple box blur implementation
           for (let i = 0; i < imageData.data.length; i += 4) {
             const avg = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
             imageData.data[i] = avg;
@@ -85,6 +86,26 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
           }
           outputCtx.putImageData(imageData, region.x, region.y);
         });
+
+        // Add captions
+        const currentTime = videoRef.current.currentTime;
+        const activeCaption = captions.find(
+          caption => currentTime >= caption.startTime && currentTime <= caption.endTime
+        );
+
+        if (activeCaption) {
+          outputCtx.font = '24px Arial';
+          outputCtx.fillStyle = 'white';
+          outputCtx.strokeStyle = 'black';
+          outputCtx.lineWidth = 2;
+          const text = activeCaption.text;
+          const textMetrics = outputCtx.measureText(text);
+          const x = (outputCanvas.width - textMetrics.width) / 2;
+          const y = outputCanvas.height - 50;
+          
+          outputCtx.strokeText(text, x, y);
+          outputCtx.fillText(text, x, y);
+        }
 
         if (videoRef.current.currentTime < endTime) {
           requestAnimationFrame(processFrame);
@@ -127,6 +148,12 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
         duration={duration}
         trimRange={trimRange}
         onTrimRangeChange={handleTrimRangeChange}
+      />
+
+      <CaptionControls
+        duration={duration}
+        captions={captions}
+        onCaptionsChange={setCaptions}
       />
 
       <Button onClick={handleProcess} className="w-full">
