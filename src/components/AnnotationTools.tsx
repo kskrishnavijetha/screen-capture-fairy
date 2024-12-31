@@ -15,7 +15,6 @@ export const AnnotationTools = ({ isRecording }: AnnotationToolsProps) => {
   useEffect(() => {
     if (!canvasRef.current || fabricCanvas) return;
 
-    // Create canvas with full screen dimensions
     const canvas = new FabricCanvas(canvasRef.current, {
       width: window.innerWidth,
       height: window.innerHeight,
@@ -24,13 +23,11 @@ export const AnnotationTools = ({ isRecording }: AnnotationToolsProps) => {
       renderOnAddRemove: true,
     });
 
-    // Make canvas background transparent and enable interaction
     canvas.backgroundColor = 'rgba(0,0,0,0)';
     canvas.preserveObjectStacking = true;
     
     setFabricCanvas(canvas);
 
-    // Cleanup
     return () => {
       canvas.dispose();
     };
@@ -39,7 +36,6 @@ export const AnnotationTools = ({ isRecording }: AnnotationToolsProps) => {
   useEffect(() => {
     if (!fabricCanvas) return;
 
-    // Update canvas size on window resize
     const handleResize = () => {
       fabricCanvas.setDimensions({
         width: window.innerWidth,
@@ -59,17 +55,17 @@ export const AnnotationTools = ({ isRecording }: AnnotationToolsProps) => {
     fabricCanvas.isDrawingMode = tool === 'draw' || tool === 'highlight' || tool === 'eraser';
 
     if (tool === 'draw') {
-      fabricCanvas.freeDrawingBrush.width = 2;
-      fabricCanvas.freeDrawingBrush.color = '#ff0000';
+      fabricCanvas.freeDrawingBrush.width = 3; // Increased width for better visibility
+      fabricCanvas.freeDrawingBrush.color = '#ff3333'; // Brighter red color
     } else if (tool === 'highlight') {
-      fabricCanvas.freeDrawingBrush.width = 20;
-      fabricCanvas.freeDrawingBrush.color = 'rgba(255, 255, 0, 0.4)';
+      fabricCanvas.freeDrawingBrush.width = 25; // Increased width for better highlighting
+      fabricCanvas.freeDrawingBrush.color = 'rgba(255, 255, 0, 0.5)'; // More visible yellow
     } else if (tool === 'text') {
       const text = new IText('Click to edit', {
         left: fabricCanvas.width! / 2,
         top: fabricCanvas.height! / 2,
-        fontSize: 20,
-        fill: '#ff0000',
+        fontSize: 24, // Increased font size
+        fill: '#ff3333', // Matching red color
         originX: 'center',
         originY: 'center',
       });
@@ -78,7 +74,7 @@ export const AnnotationTools = ({ isRecording }: AnnotationToolsProps) => {
       text.enterEditing();
       text.selectAll();
     } else if (tool === 'eraser') {
-      fabricCanvas.freeDrawingBrush.width = 20;
+      fabricCanvas.freeDrawingBrush.width = 25; // Increased eraser size
       fabricCanvas.freeDrawingBrush.color = 'rgba(0,0,0,0)';
     }
 
@@ -97,34 +93,38 @@ export const AnnotationTools = ({ isRecording }: AnnotationToolsProps) => {
           touchAction: 'none'
         }}
       />
-      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[1001] bg-black/80 rounded-lg p-2 flex gap-2">
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[1001] bg-black/90 rounded-lg p-3 flex gap-3">
         <Button
           variant={activeTool === 'draw' ? 'default' : 'secondary'}
           size="icon"
           onClick={() => handleToolClick('draw')}
+          className="hover:bg-primary/90"
         >
-          <Pencil className="h-4 w-4" />
+          <Pencil className="h-5 w-5" />
         </Button>
         <Button
           variant={activeTool === 'highlight' ? 'default' : 'secondary'}
           size="icon"
           onClick={() => handleToolClick('highlight')}
+          className="hover:bg-primary/90"
         >
-          <Highlighter className="h-4 w-4" />
+          <Highlighter className="h-5 w-5" />
         </Button>
         <Button
           variant={activeTool === 'text' ? 'default' : 'secondary'}
           size="icon"
           onClick={() => handleToolClick('text')}
+          className="hover:bg-primary/90"
         >
-          <Type className="h-4 w-4" />
+          <Type className="h-5 w-5" />
         </Button>
         <Button
           variant={activeTool === 'eraser' ? 'default' : 'secondary'}
           size="icon"
           onClick={() => handleToolClick('eraser')}
+          className="hover:bg-primary/90"
         >
-          <Eraser className="h-4 w-4" />
+          <Eraser className="h-5 w-5" />
         </Button>
       </div>
     </>
