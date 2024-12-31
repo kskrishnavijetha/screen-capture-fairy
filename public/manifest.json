@@ -7,7 +7,8 @@
     "tabCapture",
     "storage",
     "desktopCapture",
-    "downloads"
+    "downloads",
+    "alarms"
   ],
   "host_permissions": ["*://*/*"],
   "action": {

@@ -24,7 +24,7 @@ function stopTimer() {
   document.querySelector('.timer').classList.add('hidden');
 }
 
-document.getElementById('startRecording').addEventListener('click', async () => {
+async function startRecording(scheduled = false) {
   try {
     const audioEnabled = document.getElementById('audioToggle').checked;
     const quality = document.getElementById('quality').value;
@@ -60,12 +60,14 @@ document.getElementById('startRecording').addEventListener('click', async () => 
     startTimer();
     document.getElementById('startRecording').disabled = true;
     document.getElementById('stopRecording').disabled = false;
-    document.getElementById('status').textContent = 'Recording...';
+    document.getElementById('status').textContent = scheduled ? 'Scheduled Recording in Progress...' : 'Recording...';
   } catch (error) {
     console.error('Error:', error);
     document.getElementById('status').textContent = 'Error starting recording';
   }
-});
+}
+
+document.getElementById('startRecording').addEventListener('click', () => startRecording(false));
 
 document.getElementById('stopRecording').addEventListener('click', () => {
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
@@ -75,5 +77,12 @@ document.getElementById('stopRecording').addEventListener('click', () => {
     document.getElementById('startRecording').disabled = false;
     document.getElementById('stopRecording').disabled = true;
     document.getElementById('status').textContent = 'Recording saved';
+  }
+});
+
+// Listen for messages from the background script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'startScheduledRecording') {
+    startRecording(true);
   }
 });
