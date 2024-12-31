@@ -5,6 +5,7 @@ import { toast } from "@/components/ui/use-toast";
 import { BlurControls } from './video/BlurControls';
 import { TrimControls } from './video/TrimControls';
 import { CaptionControls, type Caption } from './video/CaptionControls';
+import { CloudStorageSelector } from './cloud/CloudStorageSelector';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface VideoEditorProps {
@@ -22,6 +23,7 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
   const [captions, setCaptions] = useState<Caption[]>([]);
   const [transitionType, setTransitionType] = useState<TransitionType>('none');
   const [clips, setClips] = useState<Blob[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (videoRef.current && recordedBlob) {
@@ -65,6 +67,22 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
         break;
       default:
         ctx.globalAlpha = 1;
+    }
+  };
+
+  const handleCloudUpload = async (provider: string) => {
+    setIsUploading(true);
+    try {
+      // Simulated upload delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setIsUploading(false);
+    } catch (error) {
+      setIsUploading(false);
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: "There was an error uploading to cloud storage.",
+      });
     }
   };
 
@@ -209,6 +227,11 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
         duration={duration}
         captions={captions}
         onCaptionsChange={setCaptions}
+      />
+
+      <CloudStorageSelector
+        onUpload={handleCloudUpload}
+        isUploading={isUploading}
       />
 
       <Button onClick={handleProcess} className="w-full">
