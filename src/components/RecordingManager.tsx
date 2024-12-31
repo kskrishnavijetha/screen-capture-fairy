@@ -23,7 +23,7 @@ interface RecordingManagerProps {
   isPaused: boolean;
 }
 
-export const RecordingManager = ({
+export const RecordingManager: React.FC<RecordingManagerProps> = ({
   captureMode,
   frameRate,
   resolution,
@@ -33,7 +33,7 @@ export const RecordingManager = ({
   setIsRecording,
   setIsPaused,
   isPaused
-}: RecordingManagerProps) => {
+}) => {
   const { mediaRecorderRef, chunksRef, streamRef } = useRecordingState();
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdownSeconds, setCountdownSeconds] = useState(3);
@@ -43,10 +43,6 @@ export const RecordingManager = ({
       stopMediaStream(streamRef.current);
     };
   }, []);
-
-  const initiateRecording = () => {
-    setShowCountdown(true);
-  };
 
   const startRecording = async () => {
     try {
@@ -152,28 +148,34 @@ export const RecordingManager = ({
     }
   };
 
-  return {
-    startRecording: initiateRecording,
-    stopRecording,
-    pauseRecording,
-    resumeRecording,
-    countdownSeconds,
-    setCountdownSeconds,
-    showCountdown: showCountdown && (
-      <CountdownTimer
-        seconds={countdownSeconds}
-        onComplete={() => {
-          setShowCountdown(false);
-          startRecording();
-        }}
-        onCancel={() => {
-          setShowCountdown(false);
-          toast({
-            title: "Cancelled",
-            description: "Recording countdown was cancelled"
-          });
-        }}
-      />
-    )
+  const initiateRecording = () => {
+    setShowCountdown(true);
   };
+
+  return (
+    <>
+      {showCountdown && (
+        <CountdownTimer
+          seconds={countdownSeconds}
+          onComplete={() => {
+            setShowCountdown(false);
+            startRecording();
+          }}
+          onCancel={() => {
+            setShowCountdown(false);
+            toast({
+              title: "Cancelled",
+              description: "Recording countdown was cancelled"
+            });
+          }}
+        />
+      )}
+      <div className="hidden">
+        <button onClick={initiateRecording}>Start</button>
+        <button onClick={stopRecording}>Stop</button>
+        <button onClick={pauseRecording}>Pause</button>
+        <button onClick={resumeRecording}>Resume</button>
+      </div>
+    </>
+  );
 };
