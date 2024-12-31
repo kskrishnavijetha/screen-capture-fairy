@@ -22,8 +22,7 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
       // Create a transcriber pipeline
       const transcriber = await pipeline(
         'automatic-speech-recognition',
-        'openai/whisper-tiny.en',
-        { device: 'cpu' }
+        'openai/whisper-tiny.en'
       );
 
       // Get audio from video element
@@ -32,10 +31,11 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
       const destination = audioContext.createMediaStreamDestination();
       source.connect(destination);
 
-      // Get audio data as ArrayBuffer
-      const audioData = await fetch(URL.createObjectURL(
-        new Blob([destination.stream], { type: 'audio/wav' })
-      )).then(res => res.arrayBuffer());
+      // Convert audio stream to audio data
+      const audioBlob = new Blob([destination.stream], { type: 'audio/wav' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const response = await fetch(audioUrl);
+      const audioData = await response.blob();
 
       // Transcribe the audio
       const transcription = await transcriber(audioData);
@@ -51,8 +51,10 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
 
       // Generate summary with proper types
       const result = await summarizer(transcriptionText, {
-        max_length: 130,
-        min_length: 30,
+        max_new_tokens: 130,
+        min_new_tokens: 30,
+        early_stopping: true,
+        max_time: 60,
         do_sample: false,
         num_beams: 4,
         temperature: 1.0,
@@ -60,12 +62,15 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
         top_p: 0.95,
         repetition_penalty: 1.0,
         length_penalty: 1.0,
-        no_repeat_ngram_size: 3
+        no_repeat_ngram_size: 3,
+        pad_token_id: 0,
+        bos_token_id: 0,
+        eos_token_id: 2,
       });
 
       const summaryText = Array.isArray(result) 
-        ? (result[0] as { summary_text: string }).summary_text 
-        : (result as { summary_text: string }).summary_text;
+        ? (result[0] as SummarizationOutput & { summary_text: string }).summary_text 
+        : (result as SummarizationOutput & { summary_text: string }).summary_text;
       
       setSummary(summaryText);
       toast({
