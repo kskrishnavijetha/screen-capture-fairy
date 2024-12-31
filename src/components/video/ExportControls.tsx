@@ -4,9 +4,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { FileDown, Loader2, Lock } from 'lucide-react';
+import { FileDown, Loader2, Lock, Save } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { generateEncryptionKey, encryptBlob, saveEncryptedRecording } from '@/utils/encryption';
 
 type ExportFormat = 'webm' | 'mp4' | 'gif' | 'avi';
 
@@ -22,6 +23,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
   const [compressionLevel, setCompressionLevel] = useState(6);
   const [isPasswordProtected, setIsPasswordProtected] = useState(false);
   const [password, setPassword] = useState('');
+  const [filename, setFilename] = useState(`recording-${Date.now()}`);
 
   const handleExport = async () => {
     if (isPasswordProtected && !password) {
@@ -39,23 +41,34 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
     try {
       await simulateConversion();
       
-      // In a real implementation, you would encrypt the blob with the password here
-      const encryptedBlob = isPasswordProtected ? recordedBlob : recordedBlob;
-      const url = URL.createObjectURL(encryptedBlob);
-      const a = document.createElement('a');
-      document.body.appendChild(a);
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `recording_q${quality}_c${compressionLevel}${isPasswordProtected ? '_protected' : ''}.${selectedFormat}`;
-      a.click();
-      URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      if (isPasswordProtected) {
+        const key = await generateEncryptionKey(password);
+        const { encryptedData, iv } = await encryptBlob(recordedBlob, key);
+        saveEncryptedRecording(encryptedData, iv, filename);
+        
+        toast({
+          title: "Recording encrypted and saved",
+          description: "Your recording has been securely stored with password protection",
+        });
+      } else {
+        // Regular export without encryption
+        const url = URL.createObjectURL(recordedBlob);
+        const a = document.createElement('a');
+        document.body.appendChild(a);
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `${filename}_q${quality}_c${compressionLevel}.${selectedFormat}`;
+        a.click();
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
 
-      toast({
-        title: "Export successful",
-        description: `Your recording has been exported as ${selectedFormat.toUpperCase()}${isPasswordProtected ? ' with password protection' : ''}`,
-      });
+        toast({
+          title: "Export successful",
+          description: `Your recording has been exported as ${selectedFormat.toUpperCase()}`,
+        });
+      }
     } catch (error) {
+      console.error('Export error:', error);
       toast({
         variant: "destructive",
         title: "Export failed",
@@ -76,6 +89,17 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
 
   return (
     <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Filename</label>
+        <Input
+          type="text"
+          value={filename}
+          onChange={(e) => setFilename(e.target.value)}
+          disabled={isExporting}
+          placeholder="Enter filename"
+        />
+      </div>
+
       <div className="space-y-2">
         <label className="text-sm font-medium">Export Format</label>
         <Select
@@ -123,7 +147,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
       </div>
 
       <div className="flex items-center justify-between space-x-2">
-        <label className="text-sm font-medium">Password Protection</label>
+        <label className="text-sm font-medium">Password Protection & Encrypted Storage</label>
         <Switch
           checked={isPasswordProtected}
           onCheckedChange={setIsPasswordProtected}
@@ -148,7 +172,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
         <div className="space-y-2">
           <Progress value={progress} className="w-full" />
           <p className="text-sm text-center text-muted-foreground">
-            Converting... {progress}%
+            {isPasswordProtected ? 'Encrypting...' : 'Converting...'} {progress}%
           </p>
         </div>
       )}
@@ -162,12 +186,12 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
         {isExporting ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Exporting...
+            {isPasswordProtected ? 'Encrypting...' : 'Exporting...'}
           </>
         ) : (
           <>
-            {isPasswordProtected ? <Lock className="w-4 h-4 mr-2" /> : <FileDown className="w-4 h-4 mr-2" />}
-            Export Recording
+            {isPasswordProtected ? <Save className="w-4 h-4 mr-2" /> : <FileDown className="w-4 h-4 mr-2" />}
+            {isPasswordProtected ? 'Save Encrypted Recording' : 'Export Recording'}
           </>
         )}
       </Button>
