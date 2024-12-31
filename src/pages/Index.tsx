@@ -50,7 +50,6 @@ const Index = () => {
   const [frameRate, setFrameRate] = useState<number>(30);
   const [selectedResolution, setSelectedResolution] = useState<Resolution>(RESOLUTIONS[0]);
   const [currentTheme, setCurrentTheme] = useState('Default Dark');
-  const [countdownSeconds, setCountdownSeconds] = useState(3);
 
   const handleRecordingStart = () => {
     setDuration(0);
@@ -60,6 +59,18 @@ const Index = () => {
   const handleRecordingStop = (blob: Blob) => {
     setRecordedBlob(blob);
   };
+
+  const recordingManager = RecordingManager({
+    captureMode,
+    frameRate,
+    resolution: selectedResolution,
+    onRecordingStart: handleRecordingStart,
+    onRecordingStop: handleRecordingStop,
+    isRecording,
+    setIsRecording,
+    setIsPaused,
+    isPaused
+  });
 
   return (
     <div className={`flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
@@ -80,8 +91,8 @@ const Index = () => {
               Countdown Timer (seconds)
             </label>
             <Select
-              value={countdownSeconds.toString()}
-              onValueChange={(value) => setCountdownSeconds(Number(value))}
+              value={recordingManager.countdownSeconds.toString()}
+              onValueChange={(value) => recordingManager.setCountdownSeconds(Number(value))}
               disabled={isRecording}
             >
               <SelectTrigger id="countdown">
@@ -143,17 +154,7 @@ const Index = () => {
 
         {isRecording && <Timer duration={duration} />}
 
-        <RecordingManager
-          captureMode={captureMode}
-          frameRate={frameRate}
-          resolution={selectedResolution}
-          onRecordingStart={handleRecordingStart}
-          onRecordingStop={handleRecordingStop}
-          isRecording={isRecording}
-          setIsRecording={setIsRecording}
-          setIsPaused={setIsPaused}
-          isPaused={isPaused}
-        />
+        {recordingManager.showCountdown}
 
         <CameraPreview 
           isRecording={isRecording} 
@@ -163,10 +164,7 @@ const Index = () => {
         <div className="space-y-4">
           {!isRecording ? (
             <Button 
-              onClick={() => {
-                const startButton = document.querySelector('button[onClick*="initiateRecording"]') as HTMLButtonElement;
-                if (startButton) startButton.click();
-              }}
+              onClick={recordingManager.startRecording}
               className="w-full bg-primary hover:bg-primary/90"
             >
               <MonitorPlay className="mr-2 h-5 w-5" />
@@ -175,18 +173,9 @@ const Index = () => {
           ) : (
             <RecordingControls
               isPaused={isPaused}
-              onPause={() => {
-                const pauseButton = document.querySelector('button[onClick*="pauseRecording"]') as HTMLButtonElement;
-                if (pauseButton) pauseButton.click();
-              }}
-              onResume={() => {
-                const resumeButton = document.querySelector('button[onClick*="resumeRecording"]') as HTMLButtonElement;
-                if (resumeButton) resumeButton.click();
-              }}
-              onStop={() => {
-                const stopButton = document.querySelector('button[onClick*="stopRecording"]') as HTMLButtonElement;
-                if (stopButton) stopButton.click();
-              }}
+              onPause={recordingManager.pauseRecording}
+              onResume={recordingManager.resumeRecording}
+              onStop={recordingManager.stopRecording}
             />
           )}
         </div>
