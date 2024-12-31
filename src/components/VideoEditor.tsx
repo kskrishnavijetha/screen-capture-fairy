@@ -9,6 +9,7 @@ import { EmbedControls } from './video/EmbedControls';
 import { ExportControls } from './video/ExportControls';
 import { ProcessControls } from './video/ProcessControls';
 import { AnnotationControls, type Annotation } from './video/AnnotationControls';
+import { WatermarkControls, type Watermark } from './video/WatermarkControls';
 import { processVideoFrame } from './video/VideoProcessing';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -39,6 +40,8 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
       };
     }
   }, [recordedBlob]);
+
+  const [watermark, setWatermark] = useState<Watermark | null>(null);
 
   const handleTrimRangeChange = (newRange: number[]) => {
     setTrimRange(newRange);
@@ -83,6 +86,16 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
       videoRef.current.currentTime = startTime;
       mediaRecorder.start();
       
+      // Create watermark image if needed
+      let watermarkImg: HTMLImageElement | null = null;
+      if (watermark) {
+        watermarkImg = new Image();
+        watermarkImg.src = watermark.image;
+        await new Promise((resolve) => {
+          watermarkImg!.onload = resolve;
+        });
+      }
+      
       const processFrame = () => {
         if (!videoRef.current || !outputCtx) return;
         
@@ -93,7 +106,8 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
           transitionType,
           blurRegions,
           captions,
-          annotations
+          annotations,
+          watermark: watermark ? { ...watermark, image: watermarkImg! } : null
         }, outputCtx, progress);
 
         if (videoRef.current.currentTime < endTime) {
@@ -166,6 +180,11 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
         duration={duration}
         annotations={annotations}
         onAnnotationsChange={setAnnotations}
+      />
+
+      <WatermarkControls
+        watermark={watermark}
+        onWatermarkChange={setWatermark}
       />
 
       <CloudStorageSelector

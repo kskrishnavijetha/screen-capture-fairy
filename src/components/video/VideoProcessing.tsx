@@ -6,6 +6,12 @@ interface VideoProcessingProps {
   blurRegions: Array<{ x: number; y: number; width: number; height: number }>;
   captions: Array<{ text: string; startTime: number; endTime: number }>;
   annotations: Array<{ text: string; timestamp: number; author: string }>;
+  watermark: {
+    image: HTMLImageElement;
+    position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    opacity: number;
+    size: number;
+  } | null;
 }
 
 export const processVideoFrame = ({
@@ -14,6 +20,7 @@ export const processVideoFrame = ({
   blurRegions,
   captions,
   annotations,
+  watermark
 }: VideoProcessingProps, outputCtx: CanvasRenderingContext2D, progress: number) => {
   if (!videoRef.current || !outputCtx) return;
 
@@ -80,5 +87,38 @@ export const processVideoFrame = ({
     
     outputCtx.strokeText(text, x, y);
     outputCtx.fillText(text, x, y);
+  }
+
+  // Draw watermark
+  if (watermark) {
+    outputCtx.globalAlpha = watermark.opacity;
+    
+    const watermarkWidth = (outputCtx.canvas.width * watermark.size) / 100;
+    const watermarkHeight = (watermarkWidth / watermark.image.width) * watermark.image.height;
+    
+    let x = 0;
+    let y = 0;
+    
+    switch (watermark.position) {
+      case 'top-left':
+        x = 20;
+        y = 20;
+        break;
+      case 'top-right':
+        x = outputCtx.canvas.width - watermarkWidth - 20;
+        y = 20;
+        break;
+      case 'bottom-left':
+        x = 20;
+        y = outputCtx.canvas.height - watermarkHeight - 20;
+        break;
+      case 'bottom-right':
+        x = outputCtx.canvas.width - watermarkWidth - 20;
+        y = outputCtx.canvas.height - watermarkHeight - 20;
+        break;
+    }
+    
+    outputCtx.drawImage(watermark.image, x, y, watermarkWidth, watermarkHeight);
+    outputCtx.globalAlpha = 1;
   }
 };
