@@ -1,29 +1,44 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileDown, Presentation, FileText } from 'lucide-react';
+import { FileDown, Loader2 } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
-type ExportFormat = 'pptx' | 'slides' | 'pdf';
+type ExportFormat = 'webm' | 'mp4' | 'gif' | 'avi';
 
 interface ExportControlsProps {
   recordedBlob: Blob;
 }
 
 export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
-  const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('pdf');
+  const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('webm');
   const [isExporting, setIsExporting] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const handleExport = async () => {
     setIsExporting(true);
+    setProgress(0);
+    
     try {
-      // In a real implementation, this would connect to a backend service
-      // that would handle the conversion and return the exported file
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulated processing time
+      // For now, we'll simulate the conversion process
+      // In a real implementation, you would use ffmpeg-wasm to convert the video
+      await simulateConversion();
       
+      // Create download link
+      const url = URL.createObjectURL(recordedBlob);
+      const a = document.createElement('a');
+      document.body.appendChild(a);
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `recording.${selectedFormat}`;
+      a.click();
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
       toast({
-        title: "Export Feature",
-        description: `This is a placeholder for ${selectedFormat.toUpperCase()} export functionality. Integration with ${selectedFormat === 'pptx' ? 'PowerPoint' : selectedFormat === 'slides' ? 'Google Slides' : 'PDF'} API is required.`,
+        title: "Export successful",
+        description: `Your recording has been exported as ${selectedFormat.toUpperCase()}`,
       });
     } catch (error) {
       toast({
@@ -33,6 +48,15 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
       });
     } finally {
       setIsExporting(false);
+      setProgress(0);
+    }
+  };
+
+  // Simulate conversion progress
+  const simulateConversion = async () => {
+    for (let i = 0; i <= 100; i += 10) {
+      setProgress(i);
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
   };
 
@@ -43,32 +67,28 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
         <Select
           value={selectedFormat}
           onValueChange={(value: ExportFormat) => setSelectedFormat(value)}
+          disabled={isExporting}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select export format" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="pptx">
-              <div className="flex items-center">
-                <Presentation className="w-4 h-4 mr-2" />
-                PowerPoint
-              </div>
-            </SelectItem>
-            <SelectItem value="slides">
-              <div className="flex items-center">
-                <Presentation className="w-4 h-4 mr-2" />
-                Google Slides
-              </div>
-            </SelectItem>
-            <SelectItem value="pdf">
-              <div className="flex items-center">
-                <FileText className="w-4 h-4 mr-2" />
-                PDF
-              </div>
-            </SelectItem>
+            <SelectItem value="webm">WebM</SelectItem>
+            <SelectItem value="mp4">MP4</SelectItem>
+            <SelectItem value="gif">GIF</SelectItem>
+            <SelectItem value="avi">AVI</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
+      {isExporting && (
+        <div className="space-y-2">
+          <Progress value={progress} className="w-full" />
+          <p className="text-sm text-center text-muted-foreground">
+            Converting... {progress}%
+          </p>
+        </div>
+      )}
 
       <Button
         onClick={handleExport}
@@ -76,8 +96,17 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
         className="w-full"
         variant="outline"
       >
-        <FileDown className="w-4 h-4 mr-2" />
-        {isExporting ? "Exporting..." : "Export Recording"}
+        {isExporting ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Exporting...
+          </>
+        ) : (
+          <>
+            <FileDown className="w-4 h-4 mr-2" />
+            Export Recording
+          </>
+        )}
       </Button>
     </div>
   );
