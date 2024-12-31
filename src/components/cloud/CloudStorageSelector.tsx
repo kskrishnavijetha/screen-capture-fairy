@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GoogleDrive, Dropbox, Cloud } from 'lucide-react';
+import { Cloud, CloudUpload, HardDrive } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 
 type CloudProvider = 'google-drive' | 'dropbox' | 'onedrive';
@@ -45,13 +45,13 @@ export const CloudStorageSelector = ({ onUpload, isUploading }: CloudStorageSele
           <SelectContent>
             <SelectItem value="google-drive">
               <div className="flex items-center">
-                <GoogleDrive className="w-4 h-4 mr-2" />
+                <CloudUpload className="w-4 h-4 mr-2" />
                 Google Drive
               </div>
             </SelectItem>
             <SelectItem value="dropbox">
               <div className="flex items-center">
-                <Dropbox className="w-4 h-4 mr-2" />
+                <HardDrive className="w-4 h-4 mr-2" />
                 Dropbox
               </div>
             </SelectItem>
