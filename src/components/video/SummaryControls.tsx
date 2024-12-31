@@ -3,7 +3,7 @@ import { Button } from '../ui/button';
 import { ScrollArea } from '../ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { pipeline } from '@huggingface/transformers';
+import { pipeline, type AutomaticSpeechRecognitionOutput, type SummarizationOutput } from '@huggingface/transformers';
 
 interface SummaryControlsProps {
   videoRef: React.RefObject<HTMLVideoElement>;
@@ -32,8 +32,17 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
       const destination = audioContext.createMediaStreamDestination();
       source.connect(destination);
 
+      // Convert MediaStream to audio buffer
+      const audioStream = await audioContext.createMediaStreamSource(destination.stream)
+        .mediaStream.getAudioTracks()[0]
+        .clone()
+        .getSettings();
+
       // Transcribe the audio
-      const transcription = await transcriber(destination.stream);
+      const transcription = await transcriber(audioStream);
+      const transcriptionText = Array.isArray(transcription) 
+        ? transcription[0].text 
+        : transcription.text;
 
       // Create a summarization pipeline
       const summarizer = await pipeline(
@@ -41,13 +50,18 @@ export const SummaryControls = ({ videoRef }: SummaryControlsProps) => {
         'facebook/bart-large-cnn'
       );
 
-      // Generate summary
-      const result = await summarizer(transcription.text, {
-        max_length: 130,
-        min_length: 30,
+      // Generate summary with proper types
+      const result = await summarizer(transcriptionText, {
+        max_new_tokens: 130,
+        min_new_tokens: 30,
+        early_stopping: true
       });
 
-      setSummary(result[0].summary_text);
+      const summaryText = Array.isArray(result) 
+        ? result[0].summary_text 
+        : result.summary_text;
+      
+      setSummary(summaryText);
       toast({
         title: 'Summary Generated',
         description: 'Video content has been successfully summarized.',
