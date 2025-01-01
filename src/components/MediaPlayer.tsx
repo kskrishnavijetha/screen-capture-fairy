@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { VideoEditor } from './VideoEditor';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
 import { TimestampSection } from './media/TimestampSection';
 import { TranscriptionSection } from './media/TranscriptionSection';
 import { formatTime } from '@/utils/timeUtils';
@@ -26,6 +26,7 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
   const [timestamps, setTimestamps] = useState<Timestamp[]>([]);
   const [transcriptions, setTranscriptions] = useState<Transcription[]>([]);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const currentBlob = editedBlob || recordedBlob;
@@ -180,18 +181,39 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
             onSeek={seekToTimestamp}
           />
         </div>
-      </div>
 
-      <VideoEditor 
-        recordedBlob={currentBlob} 
-        onSave={(newBlob) => {
-          setEditedBlob(newBlob);
-          toast({
-            title: "Video processed",
-            description: "Your video has been processed successfully. You can continue editing or download it.",
-          });
-        }}
-      />
+        <VideoEditor 
+          recordedBlob={currentBlob}
+          timestamps={timestamps}
+          onSave={(newBlob) => {
+            setEditedBlob(newBlob);
+            setShowPreview(true);
+            toast({
+              title: "Video processed",
+              description: "Your video has been processed successfully. You can preview and download it.",
+            });
+          }}
+        />
+
+        {showPreview && editedBlob && (
+          <div className="space-y-4">
+            <h4 className="text-lg font-semibold">Final Preview</h4>
+            <video 
+              src={URL.createObjectURL(editedBlob)}
+              controls
+              className="w-full rounded-lg bg-black"
+            />
+            <Button
+              onClick={downloadVideo}
+              className="w-full flex items-center justify-center gap-2"
+              variant="default"
+            >
+              <Download className="h-4 w-4" />
+              Download Edited Video
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

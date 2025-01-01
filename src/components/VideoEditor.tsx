@@ -14,12 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface VideoEditorProps {
   recordedBlob: Blob | null;
+  timestamps: Array<{ time: number; label: string }>;
   onSave: (newBlob: Blob) => void;
 }
 
 type TransitionType = 'none' | 'fade' | 'crossfade';
 
-export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
+export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
   const [trimRange, setTrimRange] = useState([0, 100]);
@@ -74,16 +75,11 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
       mediaRecorder.onstop = () => {
         const newBlob = new Blob(chunks, { type: recordedBlob.type });
         onSave(newBlob);
-        toast({
-          title: "Video processed successfully",
-          description: "Your video has been processed with all selected effects and tools.",
-        });
       };
 
       videoRef.current.currentTime = startTime;
       mediaRecorder.start();
       
-      // Create watermark image if needed
       let watermarkImg: HTMLImageElement | null = null;
       if (watermark) {
         watermarkImg = new Image();
@@ -105,7 +101,7 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
           captions,
           annotations,
           watermark: watermark ? { ...watermark, image: watermarkImg! } : null,
-          timestamps: [],  // Add this from MediaPlayer component
+          timestamps,
           trimRange
         }, outputCtx, progress);
 
