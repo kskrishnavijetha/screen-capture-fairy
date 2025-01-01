@@ -39,15 +39,10 @@ export const processVideoFrame = ({
   // Draw video frame
   outputCtx.drawImage(videoRef.current, 0, 0);
 
-  // Apply blur regions
+  // Apply blur regions with solid black color
   blurRegions.forEach(region => {
-    const imageData = outputCtx.getImageData(region.x, region.y, region.width, region.height);
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      imageData.data[i] = 0;
-      imageData.data[i + 1] = 0;
-      imageData.data[i + 2] = 0;
-    }
-    outputCtx.putImageData(imageData, region.x, region.y);
+    outputCtx.fillStyle = '#000000'; // Solid black color
+    outputCtx.fillRect(region.x, region.y, region.width, region.height);
   });
 
   // Draw captions
