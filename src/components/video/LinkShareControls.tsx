@@ -21,7 +21,11 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
       return;
     }
 
-    const simulatedLink = `https://example.com/share/${Math.random().toString(36).substring(7)}`;
+    // Generate a link using the current window location as base
+    const baseUrl = window.location.origin;
+    const uniqueId = Math.random().toString(36).substring(7);
+    const simulatedLink = `${baseUrl}/share/${uniqueId}`;
+    
     setShareableLink(simulatedLink);
     toast({
       title: "Link Generated",
@@ -72,7 +76,6 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
         shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableLink)}`;
         break;
       case 'instagram':
-        // Instagram doesn't have a direct share URL, so we'll show a guide
         toast({
           title: "Instagram Sharing",
           description: "Copy the link and share it in your Instagram bio or story.",
