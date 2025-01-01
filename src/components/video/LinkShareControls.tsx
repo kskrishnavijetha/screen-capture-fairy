@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Link2, Copy, Check } from 'lucide-react';
+import { Link2, Copy, Check, Facebook, Instagram } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 
 interface LinkShareControlsProps {
@@ -56,6 +56,35 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
     }
   };
 
+  const shareToSocialMedia = (platform: 'facebook' | 'instagram') => {
+    if (!shareableLink) {
+      toast({
+        variant: "destructive",
+        title: "No link to share",
+        description: "Please generate a shareable link first.",
+      });
+      return;
+    }
+
+    let shareUrl = '';
+    switch (platform) {
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableLink)}`;
+        break;
+      case 'instagram':
+        // Instagram doesn't have a direct share URL, so we'll show a guide
+        toast({
+          title: "Instagram Sharing",
+          description: "Copy the link and share it in your Instagram bio or story.",
+        });
+        return;
+    }
+
+    if (shareUrl) {
+      window.open(shareUrl, '_blank', 'width=600,height=600');
+    }
+  };
+
   return (
     <div className="flex flex-col space-y-2">
       <Button
@@ -69,25 +98,46 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
       </Button>
 
       {shareableLink && (
-        <div className="flex items-center space-x-2">
-          <input
-            type="text"
-            value={shareableLink}
-            readOnly
-            className="flex-1 px-3 py-2 border rounded-md text-sm"
-          />
-          <Button
-            onClick={copyToClipboard}
-            variant="outline"
-            size="icon"
-          >
-            {isCopied ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
+        <>
+          <div className="flex items-center space-x-2">
+            <input
+              type="text"
+              value={shareableLink}
+              readOnly
+              className="flex-1 px-3 py-2 border rounded-md text-sm"
+            />
+            <Button
+              onClick={copyToClipboard}
+              variant="outline"
+              size="icon"
+            >
+              {isCopied ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          
+          <div className="flex space-x-2">
+            <Button
+              onClick={() => shareToSocialMedia('facebook')}
+              variant="outline"
+              className="flex-1"
+            >
+              <Facebook className="w-4 h-4 mr-2" />
+              Share to Facebook
+            </Button>
+            <Button
+              onClick={() => shareToSocialMedia('instagram')}
+              variant="outline"
+              className="flex-1"
+            >
+              <Instagram className="w-4 h-4 mr-2" />
+              Share to Instagram
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );
