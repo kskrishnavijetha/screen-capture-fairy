@@ -42,10 +42,6 @@ export const RecordingManager = ({
     };
   }, []);
 
-  const initiateRecording = () => {
-    setShowCountdown(true);
-  };
-
   const startRecording = async () => {
     try {
       const stream = await getMediaStream(captureMode, frameRate, resolution);
@@ -150,6 +146,10 @@ export const RecordingManager = ({
     }
   };
 
+  const initiateRecording = () => {
+    setShowCountdown(true);
+  };
+
   return (
     <div>
       {showCountdown && (
@@ -168,14 +168,11 @@ export const RecordingManager = ({
           }}
         />
       )}
-      <div style={{ display: 'none' }}>
-        {/* These values are accessed by the parent component */}
-        <span data-start-recording={initiateRecording} />
-        <span data-stop-recording={stopRecording} />
-        <span data-pause-recording={pauseRecording} />
-        <span data-resume-recording={resumeRecording} />
-        <span data-countdown-seconds={countdownSeconds} />
-        <span data-set-countdown-seconds={setCountdownSeconds} />
+      <div className="hidden">
+        <button onClick={initiateRecording} id="start-recording" />
+        <button onClick={stopRecording} id="stop-recording" />
+        <button onClick={pauseRecording} id="pause-recording" />
+        <button onClick={resumeRecording} id="resume-recording" />
       </div>
     </div>
   );

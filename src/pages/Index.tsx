@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { MonitorPlay } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
@@ -55,6 +55,11 @@ const Index = () => {
     setRecordedBlob(blob);
   };
 
+  const startRecordingRef = useRef<HTMLButtonElement>(null);
+  const stopRecordingRef = useRef<HTMLButtonElement>(null);
+  const pauseRecordingRef = useRef<HTMLButtonElement>(null);
+  const resumeRecordingRef = useRef<HTMLButtonElement>(null);
+
   return (
     <div className={`flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
       <div className="text-center space-y-6 w-full max-w-md">
@@ -102,11 +107,8 @@ const Index = () => {
           {!isRecording ? (
             <Button 
               onClick={() => {
-                const recordingManagerElement = document.querySelector('[data-start-recording]');
-                const startRecordingFn = recordingManagerElement?.getAttribute('data-start-recording');
-                if (startRecordingFn) {
-                  (window as any)[startRecordingFn]();
-                }
+                const startButton = document.getElementById('start-recording') as HTMLButtonElement;
+                if (startButton) startButton.click();
               }}
               className="w-full bg-primary hover:bg-primary/90"
             >
@@ -117,25 +119,16 @@ const Index = () => {
             <RecordingControls
               isPaused={isPaused}
               onPause={() => {
-                const recordingManagerElement = document.querySelector('[data-pause-recording]');
-                const pauseRecordingFn = recordingManagerElement?.getAttribute('data-pause-recording');
-                if (pauseRecordingFn) {
-                  (window as any)[pauseRecordingFn]();
-                }
+                const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
+                if (pauseButton) pauseButton.click();
               }}
               onResume={() => {
-                const recordingManagerElement = document.querySelector('[data-resume-recording]');
-                const resumeRecordingFn = recordingManagerElement?.getAttribute('data-resume-recording');
-                if (resumeRecordingFn) {
-                  (window as any)[resumeRecordingFn]();
-                }
+                const resumeButton = document.getElementById('resume-recording') as HTMLButtonElement;
+                if (resumeButton) resumeButton.click();
               }}
               onStop={() => {
-                const recordingManagerElement = document.querySelector('[data-stop-recording]');
-                const stopRecordingFn = recordingManagerElement?.getAttribute('data-stop-recording');
-                if (stopRecordingFn) {
-                  (window as any)[stopRecordingFn]();
-                }
+                const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
+                if (stopButton) stopButton.click();
               }}
             />
           )}
