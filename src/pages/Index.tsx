@@ -150,6 +150,8 @@ const Index = () => {
                 const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
                 if (stopButton) stopButton.click();
               }}
+              duration={duration}
+              onMaxDurationReached={handleMaxDurationReached}
             />
           )}
         </div>
