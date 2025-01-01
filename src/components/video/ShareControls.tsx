@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Youtube, Video, Share2, Twitter } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { LinkShareControls } from './LinkShareControls';
 import {
@@ -10,61 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-
-type Platform = 'youtube' | 'vimeo' | 'twitter';
+import { Platform, platformConfigs } from './sharing/platformConfigs';
+import { AuthDialog } from './sharing/AuthDialog';
 
 interface ShareControlsProps {
   recordedBlob: Blob | null;
 }
-
-interface PlatformConfig {
-  name: string;
-  icon: React.ReactNode;
-  description: string;
-  authUrl: string;
-  clientId: string;
-  scope: string;
-  redirectUri: string;
-}
-
-const platformConfigs: Record<Platform, PlatformConfig> = {
-  youtube: {
-    name: 'YouTube',
-    icon: <Youtube className="w-4 h-4 mr-2" />,
-    description: 'Share your video directly to YouTube',
-    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-    clientId: process.env.YOUTUBE_CLIENT_ID || '',
-    scope: 'https://www.googleapis.com/auth/youtube.upload',
-    redirectUri: `${window.location.origin}/auth/youtube/callback`
-  },
-  vimeo: {
-    name: 'Vimeo',
-    icon: <Video className="w-4 h-4 mr-2" />,
-    description: 'Upload your video to Vimeo',
-    authUrl: 'https://api.vimeo.com/oauth/authorize',
-    clientId: process.env.VIMEO_CLIENT_ID || '',
-    scope: 'upload',
-    redirectUri: `${window.location.origin}/auth/vimeo/callback`
-  },
-  twitter: {
-    name: 'Twitter',
-    icon: <Twitter className="w-4 h-4 mr-2" />,
-    description: 'Share your video on Twitter',
-    authUrl: 'https://twitter.com/i/oauth2/authorize',
-    clientId: process.env.TWITTER_CLIENT_ID || '',
-    scope: 'tweet.write tweet.read users.read',
-    redirectUri: `${window.location.origin}/auth/twitter/callback`
-  }
-};
 
 export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>('youtube');
@@ -73,42 +24,17 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
-  const handleAuthenticate = (platform: Platform) => {
-    const config = platformConfigs[platform];
-    const params = new URLSearchParams({
-      client_id: config.clientId,
-      redirect_uri: config.redirectUri,
-      response_type: 'code',
-      scope: config.scope,
-      state: Math.random().toString(36).substring(7)
-    });
-
-    const authWindow = window.open(
-      `${config.authUrl}?${params.toString()}`,
-      'Auth Window',
-      'width=600,height=600'
-    );
-
-    if (authWindow) {
-      const checkAuth = setInterval(() => {
-        try {
-          if (authWindow.closed) {
-            clearInterval(checkAuth);
-            handleAuthCallback();
-          }
-        } catch (e) {
-          clearInterval(checkAuth);
-        }
-      }, 500);
-    }
-  };
-
-  const handleAuthCallback = async () => {
-    // This would be handled by your backend
+  const handleAuthenticate = async () => {
+    const platform = platformConfigs[selectedPlatform];
+    
+    // Show API key setup instructions
     toast({
       title: "Authentication Required",
-      description: `Please set up your ${platformConfigs[selectedPlatform].name} API credentials to enable sharing.`,
+      description: `Please set up your ${platform.name} API credentials in the project settings to enable sharing.`,
     });
+
+    // Here you would typically trigger the API key setup flow
+    setShowAuthDialog(false);
   };
 
   const handleShare = async () => {
@@ -150,7 +76,7 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
             {Object.entries(platformConfigs).map(([key, config]) => (
               <SelectItem key={key} value={key}>
                 <div className="flex items-center">
-                  {config.icon}
+                  {React.createElement(config.icon, { className: "w-4 h-4 mr-2" })}
                   {config.name}
                 </div>
               </SelectItem>
@@ -161,42 +87,16 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
 
       <LinkShareControls recordedBlob={recordedBlob} />
 
-      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Share to {platformConfigs[selectedPlatform].name}</DialogTitle>
-            <DialogDescription>
-              {platformConfigs[selectedPlatform].description}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter video title"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter video description"
-              />
-            </div>
-            <Button 
-              onClick={() => handleAuthenticate(selectedPlatform)} 
-              className="w-full"
-            >
-              Authenticate with {platformConfigs[selectedPlatform].name}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AuthDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        selectedPlatform={selectedPlatform}
+        title={title}
+        description={description}
+        onTitleChange={setTitle}
+        onDescriptionChange={setDescription}
+        onAuthenticate={handleAuthenticate}
+      />
 
       <Button
         onClick={handleShare}
