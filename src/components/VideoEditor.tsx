@@ -59,11 +59,10 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
       const endTime = (trimRange[1] / 100) * duration;
 
       const outputCanvas = document.createElement('canvas');
-      const outputCtx = outputCanvas.getContext('2d');
-      if (!outputCtx) return;
-
       outputCanvas.width = videoRef.current.videoWidth;
       outputCanvas.height = videoRef.current.videoHeight;
+      const outputCtx = outputCanvas.getContext('2d');
+      if (!outputCtx) return;
 
       const mediaStream = outputCanvas.captureStream();
       const mediaRecorder = new MediaRecorder(mediaStream, {
@@ -77,7 +76,7 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
         onSave(newBlob);
         toast({
           title: "Video processed successfully",
-          description: "Your video has been processed with the selected effects and transitions.",
+          description: "Your video has been processed with all selected effects and tools.",
         });
       };
 
@@ -105,7 +104,9 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
           blurRegions,
           captions,
           annotations,
-          watermark: watermark ? { ...watermark, image: watermarkImg! } : null
+          watermark: watermark ? { ...watermark, image: watermarkImg! } : null,
+          timestamps: [],  // Add this from MediaPlayer component
+          trimRange
         }, outputCtx, progress);
 
         if (videoRef.current.currentTime < endTime) {

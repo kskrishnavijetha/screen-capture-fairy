@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatTime } from '@/utils/timeUtils';
 
 interface VideoProcessingProps {
   videoRef: React.RefObject<HTMLVideoElement>;
@@ -12,6 +13,8 @@ interface VideoProcessingProps {
     opacity: number;
     size: number;
   } | null;
+  timestamps: Array<{ time: number; label: string }>;
+  trimRange: number[];
 }
 
 export const processVideoFrame = ({
@@ -20,9 +23,16 @@ export const processVideoFrame = ({
   blurRegions,
   captions,
   annotations,
-  watermark
+  watermark,
+  timestamps,
+  trimRange
 }: VideoProcessingProps, outputCtx: CanvasRenderingContext2D, progress: number) => {
   if (!videoRef.current || !outputCtx) return;
+
+  const currentTime = videoRef.current.currentTime;
+  
+  // Clear canvas
+  outputCtx.clearRect(0, 0, outputCtx.canvas.width, outputCtx.canvas.height);
 
   // Apply transition
   switch (transitionType) {
@@ -37,16 +47,22 @@ export const processVideoFrame = ({
   }
 
   // Draw video frame
-  outputCtx.drawImage(videoRef.current, 0, 0);
+  outputCtx.drawImage(videoRef.current, 0, 0, outputCtx.canvas.width, outputCtx.canvas.height);
 
-  // Apply blur regions with solid black color
+  // Apply blur regions
   blurRegions.forEach(region => {
-    outputCtx.fillStyle = '#000000'; // Solid black color
-    outputCtx.fillRect(region.x, region.y, region.width, region.height);
+    const scaledRegion = {
+      x: (region.x / videoRef.current!.offsetWidth) * outputCtx.canvas.width,
+      y: (region.y / videoRef.current!.offsetHeight) * outputCtx.canvas.height,
+      width: (region.width / videoRef.current!.offsetWidth) * outputCtx.canvas.width,
+      height: (region.height / videoRef.current!.offsetHeight) * outputCtx.canvas.height
+    };
+
+    outputCtx.fillStyle = 'rgba(0, 0, 0, 1)';
+    outputCtx.fillRect(scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height);
   });
 
   // Draw captions
-  const currentTime = videoRef.current.currentTime;
   const activeCaption = captions.find(
     caption => currentTime >= caption.startTime && currentTime <= caption.endTime
   );
@@ -79,6 +95,25 @@ export const processVideoFrame = ({
     const textMetrics = outputCtx.measureText(text);
     const x = (outputCtx.canvas.width - textMetrics.width) / 2;
     const y = 30;
+    
+    outputCtx.strokeText(text, x, y);
+    outputCtx.fillText(text, x, y);
+  }
+
+  // Draw timestamps
+  const activeTimestamp = timestamps.find(
+    timestamp => Math.abs(currentTime - timestamp.time) < 0.5
+  );
+
+  if (activeTimestamp) {
+    outputCtx.font = '16px Arial';
+    outputCtx.fillStyle = 'white';
+    outputCtx.strokeStyle = 'black';
+    outputCtx.lineWidth = 1;
+    const text = `${activeTimestamp.label} (${formatTime(activeTimestamp.time)})`;
+    const textMetrics = outputCtx.measureText(text);
+    const x = 10;
+    const y = outputCtx.canvas.height - 10;
     
     outputCtx.strokeText(text, x, y);
     outputCtx.fillText(text, x, y);
