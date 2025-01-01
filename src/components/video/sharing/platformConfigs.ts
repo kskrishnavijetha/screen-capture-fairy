@@ -11,6 +11,7 @@ export interface PlatformConfig {
   scope: string;
   secretKeyName: string;
   redirectUri: string;
+  developerConsoleUrl: string;
 }
 
 export const platformConfigs: Record<Platform, PlatformConfig> = {
@@ -21,7 +22,8 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
     authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
     scope: 'https://www.googleapis.com/auth/youtube.upload',
     secretKeyName: 'YOUTUBE_API_KEY',
-    redirectUri: `${window.location.origin}/auth/youtube/callback`
+    redirectUri: `${window.location.origin}/auth/youtube/callback`,
+    developerConsoleUrl: 'https://console.developers.google.com/'
   },
   facebook: {
     name: 'Facebook',
@@ -30,7 +32,8 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
     authUrl: 'https://www.facebook.com/v12.0/dialog/oauth',
     scope: 'publish_video',
     secretKeyName: 'FACEBOOK_API_KEY',
-    redirectUri: `${window.location.origin}/auth/facebook/callback`
+    redirectUri: `${window.location.origin}/auth/facebook/callback`,
+    developerConsoleUrl: 'https://developers.facebook.com/'
   },
   instagram: {
     name: 'Instagram',
@@ -39,7 +42,8 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
     authUrl: 'https://api.instagram.com/oauth/authorize',
     scope: 'basic',
     secretKeyName: 'INSTAGRAM_API_KEY',
-    redirectUri: `${window.location.origin}/auth/instagram/callback`
+    redirectUri: `${window.location.origin}/auth/instagram/callback`,
+    developerConsoleUrl: 'https://developers.facebook.com/'
   },
   vimeo: {
     name: 'Vimeo',
@@ -48,7 +52,8 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
     authUrl: 'https://api.vimeo.com/oauth/authorize',
     scope: 'upload',
     secretKeyName: 'VIMEO_API_KEY',
-    redirectUri: `${window.location.origin}/auth/vimeo/callback`
+    redirectUri: `${window.location.origin}/auth/vimeo/callback`,
+    developerConsoleUrl: 'https://developer.vimeo.com/'
   },
   twitter: {
     name: 'Twitter',
@@ -57,6 +62,7 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
     authUrl: 'https://twitter.com/i/oauth2/authorize',
     scope: 'tweet.write tweet.read users.read',
     secretKeyName: 'TWITTER_API_KEY',
-    redirectUri: `${window.location.origin}/auth/twitter/callback`
+    redirectUri: `${window.location.origin}/auth/twitter/callback`,
+    developerConsoleUrl: 'https://developer.twitter.com/en/portal/dashboard'
   }
 };
