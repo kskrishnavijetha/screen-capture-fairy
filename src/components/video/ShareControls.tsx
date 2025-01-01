@@ -16,7 +16,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +31,9 @@ interface PlatformConfig {
   icon: React.ReactNode;
   description: string;
   authUrl: string;
+  clientId: string;
+  scope: string;
+  redirectUri: string;
 }
 
 const platformConfigs: Record<Platform, PlatformConfig> = {
@@ -39,19 +41,28 @@ const platformConfigs: Record<Platform, PlatformConfig> = {
     name: 'YouTube',
     icon: <Youtube className="w-4 h-4 mr-2" />,
     description: 'Share your video directly to YouTube',
-    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth'
+    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+    clientId: process.env.YOUTUBE_CLIENT_ID || '',
+    scope: 'https://www.googleapis.com/auth/youtube.upload',
+    redirectUri: `${window.location.origin}/auth/youtube/callback`
   },
   vimeo: {
     name: 'Vimeo',
     icon: <Video className="w-4 h-4 mr-2" />,
     description: 'Upload your video to Vimeo',
-    authUrl: 'https://api.vimeo.com/oauth/authorize'
+    authUrl: 'https://api.vimeo.com/oauth/authorize',
+    clientId: process.env.VIMEO_CLIENT_ID || '',
+    scope: 'upload',
+    redirectUri: `${window.location.origin}/auth/vimeo/callback`
   },
   twitter: {
     name: 'Twitter',
     icon: <Twitter className="w-4 h-4 mr-2" />,
     description: 'Share your video on Twitter',
-    authUrl: 'https://twitter.com/i/oauth2/authorize'
+    authUrl: 'https://twitter.com/i/oauth2/authorize',
+    clientId: process.env.TWITTER_CLIENT_ID || '',
+    scope: 'tweet.write tweet.read users.read',
+    redirectUri: `${window.location.origin}/auth/twitter/callback`
   }
 };
 
@@ -61,6 +72,44 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+
+  const handleAuthenticate = (platform: Platform) => {
+    const config = platformConfigs[platform];
+    const params = new URLSearchParams({
+      client_id: config.clientId,
+      redirect_uri: config.redirectUri,
+      response_type: 'code',
+      scope: config.scope,
+      state: Math.random().toString(36).substring(7)
+    });
+
+    const authWindow = window.open(
+      `${config.authUrl}?${params.toString()}`,
+      'Auth Window',
+      'width=600,height=600'
+    );
+
+    if (authWindow) {
+      const checkAuth = setInterval(() => {
+        try {
+          if (authWindow.closed) {
+            clearInterval(checkAuth);
+            handleAuthCallback();
+          }
+        } catch (e) {
+          clearInterval(checkAuth);
+        }
+      }, 500);
+    }
+  };
+
+  const handleAuthCallback = async () => {
+    // This would be handled by your backend
+    toast({
+      title: "Authentication Required",
+      description: `Please set up your ${platformConfigs[selectedPlatform].name} API credentials to enable sharing.`,
+    });
+  };
 
   const handleShare = async () => {
     if (!recordedBlob) {
@@ -74,13 +123,7 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
 
     setIsSharing(true);
     try {
-      // Show authentication dialog
       setShowAuthDialog(true);
-      
-      toast({
-        title: "API Integration Required",
-        description: `To enable sharing to ${platformConfigs[selectedPlatform].name}, please authenticate with your account.`,
-      });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -90,22 +133,6 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
     } finally {
       setIsSharing(false);
     }
-  };
-
-  const handleAuthenticate = () => {
-    // Open OAuth window
-    const width = 600;
-    const height = 600;
-    const left = window.innerWidth / 2 - width / 2;
-    const top = window.innerHeight / 2 - height / 2;
-    
-    window.open(
-      platformConfigs[selectedPlatform].authUrl,
-      'Auth Window',
-      `width=${width},height=${height},left=${left},top=${top}`
-    );
-    
-    setShowAuthDialog(false);
   };
 
   return (
@@ -161,7 +188,10 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
                 placeholder="Enter video description"
               />
             </div>
-            <Button onClick={handleAuthenticate} className="w-full">
+            <Button 
+              onClick={() => handleAuthenticate(selectedPlatform)} 
+              className="w-full"
+            >
               Authenticate with {platformConfigs[selectedPlatform].name}
             </Button>
           </div>
