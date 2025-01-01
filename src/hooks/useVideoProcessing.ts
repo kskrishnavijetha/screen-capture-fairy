@@ -42,14 +42,19 @@ export const useVideoProcessing = () => {
     }
 
     setIsProcessing(true);
-    console.log('Starting video processing...');
-    
+    console.log('Starting video processing with options:', {
+      transitionType,
+      hasBlurRegions: blurRegions.length,
+      hasCaptions: captions.length,
+      hasAnnotations: annotations.length,
+      hasWatermark: !!watermark,
+      trimRange
+    });
+
     try {
-      // Calculate start and end times, ensuring they are finite numbers
+      // Ensure valid time values
       const startTime = Math.max(0, (trimRange[0] / 100) * duration);
       const endTime = Math.min(duration, (trimRange[1] / 100) * duration);
-
-      console.log('Processing time range:', { startTime, endTime, duration });
 
       if (!isFinite(startTime) || !isFinite(endTime)) {
         throw new Error('Invalid time range calculated');
@@ -59,42 +64,57 @@ export const useVideoProcessing = () => {
       outputCanvas.width = videoRef.current.videoWidth || 1280;
       outputCanvas.height = videoRef.current.videoHeight || 720;
       const outputCtx = outputCanvas.getContext('2d');
-      
+
       if (!outputCtx) {
         throw new Error('Could not get canvas context');
       }
 
-      const mediaStream = outputCanvas.captureStream();
+      const mediaStream = outputCanvas.captureStream(30); // Set explicit framerate
       const mediaRecorder = new MediaRecorder(mediaStream, {
-        mimeType: recordedBlob.type,
+        mimeType: 'video/webm;codecs=vp8,opus',
+        videoBitsPerSecond: 2500000 // 2.5 Mbps for better quality
       });
 
       const chunks: Blob[] = [];
-      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
 
+      // Load watermark image if present
       let watermarkImg: HTMLImageElement | null = null;
       if (watermark) {
         watermarkImg = new Image();
+        watermarkImg.crossOrigin = "anonymous";
         watermarkImg.src = watermark.image;
-        await new Promise((resolve) => {
+        await new Promise((resolve, reject) => {
           watermarkImg!.onload = resolve;
+          watermarkImg!.onerror = reject;
         });
       }
 
       return new Promise((resolve, reject) => {
         mediaRecorder.onstop = () => {
-          const newBlob = new Blob(chunks, { type: recordedBlob.type });
-          setIsProcessing(false);
-          resolve(newBlob);
+          try {
+            const finalBlob = new Blob(chunks, { type: 'video/webm' });
+            setIsProcessing(false);
+            resolve(finalBlob);
+          } catch (error) {
+            reject(error);
+          }
         };
 
         const processFrame = async () => {
           if (!videoRef.current || !outputCtx) return;
 
           const currentTime = videoRef.current.currentTime;
-          const progress = (currentTime - startTime) / (endTime - startTime);
+          if (!isFinite(currentTime)) {
+            console.error('Invalid currentTime:', currentTime);
+            return;
+          }
 
-          console.log('Processing frame at time:', currentTime);
+          const progress = (currentTime - startTime) / (endTime - startTime);
 
           processVideoFrame({
             videoRef,
@@ -108,30 +128,33 @@ export const useVideoProcessing = () => {
           }, outputCtx, progress);
 
           if (currentTime < endTime) {
-            const nextTime = currentTime + (1/30); // Process at 30fps
+            const nextTime = currentTime + (1/30);
             if (isFinite(nextTime) && nextTime <= endTime) {
               videoRef.current.currentTime = nextTime;
               requestAnimationFrame(processFrame);
             } else {
               mediaRecorder.stop();
-              videoRef.current.pause();
             }
           } else {
             mediaRecorder.stop();
-            videoRef.current.pause();
           }
         };
 
-        // Start processing from the beginning
+        mediaRecorder.start();
         videoRef.current.currentTime = startTime;
         videoRef.current.onseeked = () => {
-          mediaRecorder.start();
           processFrame().catch(reject);
         };
       });
+
     } catch (error) {
       console.error('Video processing error:', error);
       setIsProcessing(false);
+      toast({
+        variant: "destructive",
+        title: "Processing failed",
+        description: "There was an error processing your video. Please try again."
+      });
       throw error;
     }
   };

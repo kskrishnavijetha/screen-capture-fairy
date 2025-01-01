@@ -32,14 +32,6 @@ export const processVideoFrame = ({
   const currentTime = videoRef.current.currentTime;
   const canvas = outputCtx.canvas;
   
-  console.log('Processing frame:', {
-    currentTime,
-    hasBlurRegions: blurRegions.length > 0,
-    hasCaptions: captions.length > 0,
-    hasAnnotations: annotations.length > 0,
-    hasWatermark: !!watermark
-  });
-  
   // Clear canvas and draw video frame
   outputCtx.clearRect(0, 0, canvas.width, canvas.height);
   outputCtx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
@@ -52,7 +44,7 @@ export const processVideoFrame = ({
     const tempCtx = tempCanvas.getContext('2d');
     
     if (tempCtx) {
-      tempCtx.drawImage(videoRef.current!, 0, 0, canvas.width, canvas.height);
+      tempCtx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
       
       blurRegions.forEach(region => {
         const scaledRegion = {

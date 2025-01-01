@@ -41,27 +41,15 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
   const seekToTimestamp = (time: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime = time;
-      videoRef.current.play();
+      videoRef.current.play().catch(error => {
+        console.error('Error playing video:', error);
+        toast({
+          variant: "destructive",
+          title: "Playback Error",
+          description: "Could not play the video at the selected timestamp.",
+        });
+      });
     }
-  };
-
-  const downloadVideo = () => {
-    if (!currentBlob) return;
-    
-    const url = URL.createObjectURL(currentBlob);
-    const a = document.createElement('a');
-    document.body.appendChild(a);
-    a.style.display = 'none';
-    a.href = url;
-    a.download = `edited_recording_${Date.now()}.webm`;
-    a.click();
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    
-    toast({
-      title: "Download started",
-      description: "Your edited video is being downloaded"
-    });
   };
 
   const startTranscription = async () => {
@@ -92,6 +80,7 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
 
       recognition.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
+        setIsTranscribing(false);
         toast({
           variant: "destructive",
           title: "Transcription Error",
@@ -132,7 +121,22 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
           onAddTimestamp={addTimestamp}
           onStartTranscription={startTranscription}
           isTranscribing={isTranscribing}
-          onDownload={editedBlob ? downloadVideo : undefined}
+          onDownload={editedBlob ? () => {
+            const url = URL.createObjectURL(editedBlob);
+            const a = document.createElement('a');
+            document.body.appendChild(a);
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `edited_recording_${Date.now()}.webm`;
+            a.click();
+            URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            toast({
+              title: "Download started",
+              description: "Your edited video is being downloaded"
+            });
+          } : undefined}
         />
 
         <div className="grid grid-cols-2 gap-4">
