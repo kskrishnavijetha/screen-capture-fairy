@@ -29,14 +29,17 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [transitionType, setTransitionType] = useState<TransitionType>('none');
   const [editedBlob, setEditedBlob] = useState<Blob | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const currentBlob = editedBlob || recordedBlob;
 
   useEffect(() => {
     if (videoRef.current && recordedBlob) {
-      videoRef.current.src = URL.createObjectURL(recordedBlob);
+      const url = URL.createObjectURL(recordedBlob);
+      videoRef.current.src = url;
       videoRef.current.onloadedmetadata = () => {
         setDuration(videoRef.current?.duration || 0);
       };
+      return () => URL.revokeObjectURL(url);
     }
   }, [recordedBlob]);
 
@@ -53,8 +56,16 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   };
 
   const handleProcess = async () => {
-    if (!recordedBlob || !videoRef.current) return;
+    if (!recordedBlob || !videoRef.current) {
+      toast({
+        title: "Error",
+        description: "No video to process",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    setIsProcessing(true);
     try {
       const startTime = (trimRange[0] / 100) * duration;
       const endTime = (trimRange[1] / 100) * duration;
@@ -63,7 +74,9 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       outputCanvas.width = videoRef.current.videoWidth;
       outputCanvas.height = videoRef.current.videoHeight;
       const outputCtx = outputCanvas.getContext('2d');
-      if (!outputCtx) return;
+      if (!outputCtx) {
+        throw new Error('Could not get canvas context');
+      }
 
       const mediaStream = outputCanvas.captureStream();
       const mediaRecorder = new MediaRecorder(mediaStream, {
@@ -75,6 +88,11 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       mediaRecorder.onstop = () => {
         const newBlob = new Blob(chunks, { type: recordedBlob.type });
         onSave(newBlob);
+        setIsProcessing(false);
+        toast({
+          title: "Success",
+          description: "Video processing completed",
+        });
       };
 
       videoRef.current.currentTime = startTime;
@@ -89,7 +107,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         });
       }
       
-      const processFrame = () => {
+      const processFrame = async () => {
         if (!videoRef.current || !outputCtx) return;
         
         const progress = (videoRef.current.currentTime - startTime) / (endTime - startTime);
@@ -106,6 +124,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         }, outputCtx, progress);
 
         if (videoRef.current.currentTime < endTime) {
+          videoRef.current.currentTime += 1/30; // Process at 30fps
           requestAnimationFrame(processFrame);
         } else {
           mediaRecorder.stop();
@@ -113,10 +132,16 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         }
       };
 
-      videoRef.current.play();
-      processFrame();
+      await new Promise((resolve) => {
+        videoRef.current!.onseeked = () => {
+          processFrame();
+          resolve(null);
+        };
+      });
 
     } catch (error) {
+      console.error('Processing error:', error);
+      setIsProcessing(false);
       toast({
         title: "Error processing video",
         description: "There was an error while processing your video. Please try again.",
@@ -186,7 +211,10 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       <EmbedControls recordedBlob={recordedBlob} />
       <ExportControls recordedBlob={recordedBlob} />
 
-      <ProcessControls onProcess={handleProcess} />
+      <ProcessControls 
+        onProcess={handleProcess} 
+        isProcessing={isProcessing}
+      />
     </div>
   );
 };

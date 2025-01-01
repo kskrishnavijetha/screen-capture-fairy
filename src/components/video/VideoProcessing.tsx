@@ -34,20 +34,19 @@ export const processVideoFrame = ({
   // Clear canvas
   outputCtx.clearRect(0, 0, outputCtx.canvas.width, outputCtx.canvas.height);
 
+  // Draw video frame
+  outputCtx.drawImage(videoRef.current, 0, 0, outputCtx.canvas.width, outputCtx.canvas.height);
+
   // Apply transition
   switch (transitionType) {
     case 'fade':
-      outputCtx.globalAlpha = progress;
+      outputCtx.fillStyle = `rgba(0, 0, 0, ${1 - progress})`;
+      outputCtx.fillRect(0, 0, outputCtx.canvas.width, outputCtx.canvas.height);
       break;
     case 'crossfade':
       outputCtx.globalAlpha = Math.sin(progress * Math.PI / 2);
       break;
-    default:
-      outputCtx.globalAlpha = 1;
   }
-
-  // Draw video frame
-  outputCtx.drawImage(videoRef.current, 0, 0, outputCtx.canvas.width, outputCtx.canvas.height);
 
   // Apply blur regions
   blurRegions.forEach(region => {
@@ -58,8 +57,20 @@ export const processVideoFrame = ({
       height: (region.height / videoRef.current!.offsetHeight) * outputCtx.canvas.height
     };
 
-    outputCtx.fillStyle = 'rgba(0, 0, 0, 1)';
-    outputCtx.fillRect(scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height);
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = scaledRegion.width;
+    tempCanvas.height = scaledRegion.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    if (tempCtx) {
+      tempCtx.filter = 'blur(10px)';
+      tempCtx.drawImage(
+        videoRef.current!,
+        scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height,
+        0, 0, scaledRegion.width, scaledRegion.height
+      );
+      outputCtx.drawImage(tempCanvas, scaledRegion.x, scaledRegion.y);
+    }
   });
 
   // Draw captions
@@ -95,25 +106,6 @@ export const processVideoFrame = ({
     const textMetrics = outputCtx.measureText(text);
     const x = (outputCtx.canvas.width - textMetrics.width) / 2;
     const y = 30;
-    
-    outputCtx.strokeText(text, x, y);
-    outputCtx.fillText(text, x, y);
-  }
-
-  // Draw timestamps
-  const activeTimestamp = timestamps.find(
-    timestamp => Math.abs(currentTime - timestamp.time) < 0.5
-  );
-
-  if (activeTimestamp) {
-    outputCtx.font = '16px Arial';
-    outputCtx.fillStyle = 'white';
-    outputCtx.strokeStyle = 'black';
-    outputCtx.lineWidth = 1;
-    const text = `${activeTimestamp.label} (${formatTime(activeTimestamp.time)})`;
-    const textMetrics = outputCtx.measureText(text);
-    const x = 10;
-    const y = outputCtx.canvas.height - 10;
     
     outputCtx.strokeText(text, x, y);
     outputCtx.fillText(text, x, y);
