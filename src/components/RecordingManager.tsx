@@ -4,6 +4,7 @@ import { CaptureMode } from './CaptureModeSelector';
 import { getMediaStream, stopMediaStream } from '@/utils/mediaUtils';
 import { useRecordingState } from '@/hooks/useRecordingState';
 import { CountdownTimer } from './CountdownTimer';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface RecordingManagerProps {
   captureMode: CaptureMode;
@@ -35,10 +36,15 @@ export const RecordingManager = ({
   const { mediaRecorderRef, chunksRef, streamRef } = useRecordingState();
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdownSeconds, setCountdownSeconds] = useState(3);
+  const [recordingDuration, setRecordingDuration] = useState<string>('0'); // in minutes
+  const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     return () => {
       stopMediaStream(streamRef.current);
+      if (recordingTimer) {
+        clearTimeout(recordingTimer);
+      }
     };
   }, []);
 
@@ -68,10 +74,27 @@ export const RecordingManager = ({
       setIsRecording(true);
       setIsPaused(false);
       onRecordingStart();
+
+      // Set up recording timer if duration is specified
+      if (recordingDuration !== '0') {
+        const durationMs = parseInt(recordingDuration) * 60 * 1000;
+        const timer = setTimeout(() => {
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            stopRecording();
+            toast({
+              title: "Recording completed",
+              description: `Recording stopped after ${recordingDuration} minute(s)`
+            });
+          }
+        }, durationMs);
+        setRecordingTimer(timer);
+      }
       
       toast({
         title: "Recording started",
-        description: "Your recording has begun"
+        description: recordingDuration !== '0' 
+          ? `Recording will stop after ${recordingDuration} minute(s)`
+          : "Your recording has begun"
       });
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -91,6 +114,10 @@ export const RecordingManager = ({
         stopMediaStream(streamRef.current);
         streamRef.current = null;
         setIsRecording(false);
+        if (recordingTimer) {
+          clearTimeout(recordingTimer);
+          setRecordingTimer(null);
+        }
         toast({
           title: "Recording stopped",
           description: "Your recording has been saved"
@@ -152,6 +179,30 @@ export const RecordingManager = ({
 
   return (
     <div>
+      {!isRecording && (
+        <div className="mb-4">
+          <label className="text-sm font-medium block mb-2">
+            Recording Duration (minutes)
+          </label>
+          <Select
+            value={recordingDuration}
+            onValueChange={setRecordingDuration}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select duration" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">No limit</SelectItem>
+              <SelectItem value="1">1 minute</SelectItem>
+              <SelectItem value="5">5 minutes</SelectItem>
+              <SelectItem value="10">10 minutes</SelectItem>
+              <SelectItem value="15">15 minutes</SelectItem>
+              <SelectItem value="30">30 minutes</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {showCountdown && (
         <CountdownTimer
           seconds={countdownSeconds}
