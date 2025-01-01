@@ -23,19 +23,33 @@ export const DownloadRecording = ({
   };
 
   const downloadRecording = () => {
-    const url = URL.createObjectURL(recordedBlob);
-    const a = document.createElement('a');
-    document.body.appendChild(a);
-    a.style.display = 'none';
-    a.href = url;
-    a.download = `${localFilename}.webm`;
-    a.click();
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    toast({
-      title: "Download started",
-      description: "Your recording is being downloaded"
-    });
+    try {
+      const url = URL.createObjectURL(recordedBlob);
+      const a = document.createElement('a');
+      document.body.appendChild(a);
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${localFilename}.webm`;
+      a.click();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+
+      toast({
+        title: "Download started",
+        description: "Your recording is being downloaded"
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        variant: "destructive",
+        title: "Download failed",
+        description: "There was an error downloading your recording"
+      });
+    }
   };
 
   return (

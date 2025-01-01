@@ -47,7 +47,11 @@ export const RecordingManager = ({
       const stream = await getMediaStream(captureMode, frameRate, resolution);
       streamRef.current = stream;
       
-      const options = { mimeType: 'video/webm;codecs=vp8,opus' };
+      const options = { 
+        mimeType: 'video/webm;codecs=vp8,opus',
+        videoBitsPerSecond: 2500000 // 2.5 Mbps for better quality
+      };
+      
       mediaRecorderRef.current = new MediaRecorder(stream, options);
       chunksRef.current = [];
 
@@ -59,19 +63,25 @@ export const RecordingManager = ({
 
       mediaRecorderRef.current.onstop = () => {
         if (chunksRef.current.length > 0) {
-          const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+          const blob = new Blob(chunksRef.current, { 
+            type: 'video/webm;codecs=vp8,opus' 
+          });
           onRecordingStop(blob);
+          toast({
+            title: "Recording completed",
+            description: "Your recording has been processed and is ready for download"
+          });
         }
       };
 
-      mediaRecorderRef.current.start();
+      mediaRecorderRef.current.start(1000); // Capture data every second
       setIsRecording(true);
       setIsPaused(false);
       onRecordingStart();
       
       toast({
         title: "Recording started",
-        description: "Your recording has begun"
+        description: "Your screen is now being recorded"
       });
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -93,7 +103,7 @@ export const RecordingManager = ({
         setIsRecording(false);
         toast({
           title: "Recording stopped",
-          description: "Your recording has been saved"
+          description: "Processing your recording..."
         });
       } catch (error) {
         console.error('Error stopping recording:', error);
