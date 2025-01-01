@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -21,6 +21,28 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
 
+  // Update canvas dimensions when video loads
+  useEffect(() => {
+    const updateCanvasSize = () => {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      if (canvas && video) {
+        canvas.width = video.offsetWidth;
+        canvas.height = video.offsetHeight;
+        drawBlurRegions();
+      }
+    };
+
+    updateCanvasSize();
+    window.addEventListener('resize', updateCanvasSize);
+    return () => window.removeEventListener('resize', updateCanvasSize);
+  }, [videoRef]);
+
+  // Redraw blur regions when they change
+  useEffect(() => {
+    drawBlurRegions();
+  }, [blurRegions]);
+
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isBlurMode) return;
     
@@ -28,8 +50,8 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
     setIsDrawing(true);
     setStartPos({ x, y });
@@ -42,14 +64,14 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawBlurRegions(ctx);
+    drawBlurRegions();
 
     ctx.strokeStyle = '#ff0000';
     ctx.lineWidth = 2;
@@ -63,8 +85,8 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
     const newRegion = {
       x: Math.min(startPos.x, x),
@@ -75,22 +97,36 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
 
     setBlurRegions([...blurRegions, newRegion]);
     setIsDrawing(false);
-
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      drawBlurRegions(ctx);
-    }
   };
 
-  const drawBlurRegions = (ctx: CanvasRenderingContext2D) => {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  const drawBlurRegions = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!ctx || !canvas) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     blurRegions.forEach(region => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.fillStyle = '#000000';
       ctx.fillRect(region.x, region.y, region.width, region.height);
-      ctx.strokeStyle = '#000000';
+      ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 2;
       ctx.strokeRect(region.x, region.y, region.width, region.height);
     });
+  };
+
+  const handleExitBlurMode = () => {
+    setIsBlurMode(false);
+    setIsDrawing(false);
+    drawBlurRegions();
+  };
+
+  const handleClearBlurRegions = () => {
+    setBlurRegions([]);
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (ctx && canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
   };
 
   return (
@@ -105,7 +141,7 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
       <div className="flex gap-2 mt-4">
         <Button
           variant={isBlurMode ? "default" : "secondary"}
-          onClick={() => setIsBlurMode(!isBlurMode)}
+          onClick={() => isBlurMode ? handleExitBlurMode() : setIsBlurMode(true)}
           className="flex-1"
         >
           {isBlurMode ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
@@ -114,7 +150,7 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
         {blurRegions.length > 0 && (
           <Button
             variant="destructive"
-            onClick={() => setBlurRegions([])}
+            onClick={handleClearBlurRegions}
             className="flex-1"
           >
             Clear Blur Regions
