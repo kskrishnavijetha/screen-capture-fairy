@@ -54,10 +54,10 @@ const Index = () => {
     setRecordedBlob(blob);
   };
 
-  const startRecordingRef = useRef<HTMLButtonElement>(null);
-  const stopRecordingRef = useRef<HTMLButtonElement>(null);
-  const pauseRecordingRef = useRef<HTMLButtonElement>(null);
-  const resumeRecordingRef = useRef<HTMLButtonElement>(null);
+  const handleMaxDurationReached = () => {
+    const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
+    if (stopButton) stopButton.click();
+  };
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -68,11 +68,6 @@ const Index = () => {
     }
     return () => clearInterval(interval);
   }, [isRecording, isPaused]);
-
-  const handleMaxDurationReached = () => {
-    const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
-    if (stopButton) stopButton.click();
-  };
 
   return (
     <div className={`flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
@@ -96,6 +91,18 @@ const Index = () => {
           setSelectedResolution={setSelectedResolution}
           resolutions={RESOLUTIONS}
           isRecording={isRecording}
+        />
+
+        <RecordingManager
+          captureMode={captureMode}
+          frameRate={frameRate}
+          resolution={selectedResolution}
+          onRecordingStart={handleRecordingStart}
+          onRecordingStop={handleRecordingStop}
+          isRecording={isRecording}
+          setIsRecording={setIsRecording}
+          setIsPaused={setIsPaused}
+          isPaused={isPaused}
         />
 
         {isRecording && (
