@@ -1,9 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { VideoEditor } from './VideoEditor';
 import { Button } from './ui/button';
-import { ScrollArea } from './ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
+import { TimestampSection } from './media/TimestampSection';
+import { TranscriptionSection } from './media/TranscriptionSection';
+import { formatTime } from '@/utils/timeUtils';
 
 interface MediaPlayerProps {
   recordedBlob: Blob | null;
@@ -20,7 +22,7 @@ interface Transcription {
 }
 
 export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
-  const [editedBlob, setEditedBlob] = React.useState<Blob | null>(null);
+  const [editedBlob, setEditedBlob] = useState<Blob | null>(null);
   const [timestamps, setTimestamps] = useState<Timestamp[]>([]);
   const [transcriptions, setTranscriptions] = useState<Transcription[]>([]);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -47,17 +49,30 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const seekToTimestamp = (time: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime = time;
       videoRef.current.play();
     }
+  };
+
+  const downloadVideo = () => {
+    if (!currentBlob) return;
+    
+    const url = URL.createObjectURL(currentBlob);
+    const a = document.createElement('a');
+    document.body.appendChild(a);
+    a.style.display = 'none';
+    a.href = url;
+    a.download = `edited_recording_${Date.now()}.webm`;
+    a.click();
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    toast({
+      title: "Download started",
+      description: "Your edited video is being downloaded"
+    });
   };
 
   const startTranscription = async () => {
@@ -158,51 +173,23 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {timestamps.length > 0 && (
-            <ScrollArea className="h-32 rounded-md border p-4">
-              <h4 className="font-medium mb-2">Timestamps</h4>
-              <div className="space-y-2">
-                {timestamps.map((timestamp, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-center justify-between p-2 hover:bg-accent rounded-lg cursor-pointer"
-                    onClick={() => seekToTimestamp(timestamp.time)}
-                  >
-                    <span className="font-medium">{timestamp.label}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {formatTime(timestamp.time)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          )}
-
-          {transcriptions.length > 0 && (
-            <ScrollArea className="h-32 rounded-md border p-4">
-              <h4 className="font-medium mb-2">Transcriptions</h4>
-              <div className="space-y-2">
-                {transcriptions.map((transcription, index) => (
-                  <div 
-                    key={index}
-                    className="flex flex-col p-2 hover:bg-accent rounded-lg cursor-pointer"
-                    onClick={() => seekToTimestamp(transcription.timestamp)}
-                  >
-                    <span className="text-sm">{transcription.text}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatTime(transcription.timestamp)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          )}
+          <TimestampSection 
+            timestamps={timestamps}
+            onSeek={seekToTimestamp}
+          />
+          <TranscriptionSection 
+            transcriptions={transcriptions}
+            onSeek={seekToTimestamp}
+          />
         </div>
       </div>
 
       <VideoEditor 
         recordedBlob={currentBlob} 
-        onSave={setEditedBlob}
+        onSave={(newBlob) => {
+          setEditedBlob(newBlob);
+          downloadVideo();
+        }}
       />
     </div>
   );
