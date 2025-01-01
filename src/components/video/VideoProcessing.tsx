@@ -30,117 +30,127 @@ export const processVideoFrame = ({
   if (!videoRef.current || !outputCtx) return;
 
   const currentTime = videoRef.current.currentTime;
+  const canvas = outputCtx.canvas;
   
-  // Clear canvas
-  outputCtx.clearRect(0, 0, outputCtx.canvas.width, outputCtx.canvas.height);
+  // Clear canvas and draw video frame
+  outputCtx.clearRect(0, 0, canvas.width, canvas.height);
+  outputCtx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
-  // Draw video frame
-  outputCtx.drawImage(videoRef.current, 0, 0, outputCtx.canvas.width, outputCtx.canvas.height);
-
-  // Apply transition
-  switch (transitionType) {
-    case 'fade':
-      outputCtx.fillStyle = `rgba(0, 0, 0, ${1 - progress})`;
-      outputCtx.fillRect(0, 0, outputCtx.canvas.width, outputCtx.canvas.height);
-      break;
-    case 'crossfade':
-      outputCtx.globalAlpha = Math.sin(progress * Math.PI / 2);
-      break;
-  }
-
-  // Apply blur regions
-  blurRegions.forEach(region => {
-    const scaledRegion = {
-      x: (region.x / videoRef.current!.offsetWidth) * outputCtx.canvas.width,
-      y: (region.y / videoRef.current!.offsetHeight) * outputCtx.canvas.height,
-      width: (region.width / videoRef.current!.offsetWidth) * outputCtx.canvas.width,
-      height: (region.height / videoRef.current!.offsetHeight) * outputCtx.canvas.height
-    };
-
+  // Apply blur regions using a temporary canvas
+  if (blurRegions.length > 0) {
     const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = scaledRegion.width;
-    tempCanvas.height = scaledRegion.height;
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
     const tempCtx = tempCanvas.getContext('2d');
     
     if (tempCtx) {
-      tempCtx.filter = 'blur(10px)';
-      tempCtx.drawImage(
-        videoRef.current!,
-        scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height,
-        0, 0, scaledRegion.width, scaledRegion.height
-      );
-      outputCtx.drawImage(tempCanvas, scaledRegion.x, scaledRegion.y);
-    }
-  });
+      tempCtx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      
+      blurRegions.forEach(region => {
+        const scaledRegion = {
+          x: (region.x / videoRef.current!.offsetWidth) * canvas.width,
+          y: (region.y / videoRef.current!.offsetHeight) * canvas.height,
+          width: (region.width / videoRef.current!.offsetWidth) * canvas.width,
+          height: (region.height / videoRef.current!.offsetHeight) * canvas.height
+        };
 
-  // Draw captions
+        tempCtx.filter = 'blur(15px)';
+        tempCtx.drawImage(
+          canvas,
+          scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height,
+          scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height
+        );
+      });
+      
+      outputCtx.drawImage(tempCanvas, 0, 0);
+    }
+  }
+
+  // Apply captions
   const activeCaption = captions.find(
     caption => currentTime >= caption.startTime && currentTime <= caption.endTime
   );
 
   if (activeCaption) {
-    outputCtx.font = '24px Arial';
+    outputCtx.save();
+    outputCtx.font = `${Math.floor(canvas.height * 0.05)}px Arial`;
     outputCtx.fillStyle = 'white';
     outputCtx.strokeStyle = 'black';
-    outputCtx.lineWidth = 2;
+    outputCtx.lineWidth = Math.floor(canvas.height * 0.002);
+    outputCtx.textAlign = 'center';
+    
     const text = activeCaption.text;
-    const textMetrics = outputCtx.measureText(text);
-    const x = (outputCtx.canvas.width - textMetrics.width) / 2;
-    const y = outputCtx.canvas.height - 50;
+    const x = canvas.width / 2;
+    const y = canvas.height * 0.9;
     
     outputCtx.strokeText(text, x, y);
     outputCtx.fillText(text, x, y);
+    outputCtx.restore();
   }
 
-  // Draw annotations
+  // Apply annotations
   const activeAnnotation = annotations.find(
     annotation => Math.abs(currentTime - annotation.timestamp) < 0.5
   );
 
   if (activeAnnotation) {
-    outputCtx.font = '18px Arial';
+    outputCtx.save();
+    outputCtx.font = `${Math.floor(canvas.height * 0.04)}px Arial`;
     outputCtx.fillStyle = 'yellow';
     outputCtx.strokeStyle = 'black';
-    outputCtx.lineWidth = 1;
+    outputCtx.lineWidth = Math.floor(canvas.height * 0.002);
+    outputCtx.textAlign = 'center';
+    
     const text = `${activeAnnotation.author}: ${activeAnnotation.text}`;
-    const textMetrics = outputCtx.measureText(text);
-    const x = (outputCtx.canvas.width - textMetrics.width) / 2;
-    const y = 30;
+    const x = canvas.width / 2;
+    const y = canvas.height * 0.1;
     
     outputCtx.strokeText(text, x, y);
     outputCtx.fillText(text, x, y);
+    outputCtx.restore();
   }
 
-  // Draw watermark
-  if (watermark) {
+  // Apply watermark
+  if (watermark && watermark.image) {
+    outputCtx.save();
     outputCtx.globalAlpha = watermark.opacity;
     
-    const watermarkWidth = (outputCtx.canvas.width * watermark.size) / 100;
+    const watermarkWidth = (canvas.width * watermark.size) / 100;
     const watermarkHeight = (watermarkWidth / watermark.image.width) * watermark.image.height;
+    const padding = Math.floor(canvas.width * 0.02); // 2% padding
     
-    let x = 0;
-    let y = 0;
+    let x = padding;
+    let y = padding;
     
     switch (watermark.position) {
-      case 'top-left':
-        x = 20;
-        y = 20;
-        break;
       case 'top-right':
-        x = outputCtx.canvas.width - watermarkWidth - 20;
-        y = 20;
+        x = canvas.width - watermarkWidth - padding;
         break;
       case 'bottom-left':
-        x = 20;
-        y = outputCtx.canvas.height - watermarkHeight - 20;
+        y = canvas.height - watermarkHeight - padding;
         break;
       case 'bottom-right':
-        x = outputCtx.canvas.width - watermarkWidth - 20;
-        y = outputCtx.canvas.height - watermarkHeight - 20;
+        x = canvas.width - watermarkWidth - padding;
+        y = canvas.height - watermarkHeight - padding;
         break;
     }
     
     outputCtx.drawImage(watermark.image, x, y, watermarkWidth, watermarkHeight);
-    outputCtx.globalAlpha = 1;
+    outputCtx.restore();
+  }
+
+  // Apply transition effect
+  if (transitionType !== 'none') {
+    outputCtx.save();
+    switch (transitionType) {
+      case 'fade':
+        outputCtx.fillStyle = `rgba(0, 0, 0, ${1 - progress})`;
+        outputCtx.fillRect(0, 0, canvas.width, canvas.height);
+        break;
+      case 'crossfade':
+        outputCtx.globalAlpha = Math.sin(progress * Math.PI / 2);
+        break;
+    }
+    outputCtx.restore();
   }
 };

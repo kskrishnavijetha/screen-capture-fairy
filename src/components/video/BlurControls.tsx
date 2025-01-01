@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Trash2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface BlurRegion {
   x: number;
@@ -21,7 +22,6 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
 
-  // Update canvas dimensions when video loads
   useEffect(() => {
     const updateCanvasSize = () => {
       const canvas = canvasRef.current;
@@ -38,10 +38,9 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
     return () => window.removeEventListener('resize', updateCanvasSize);
   }, [videoRef]);
 
-  // Redraw blur regions when they change
   useEffect(() => {
     drawBlurRegions();
-  }, [blurRegions]);
+  }, [blurRegions, isBlurMode]);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isBlurMode) return;
@@ -95,7 +94,14 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
       height: Math.abs(y - startPos.y)
     };
 
-    setBlurRegions([...blurRegions, newRegion]);
+    if (newRegion.width > 5 && newRegion.height > 5) {
+      setBlurRegions([...blurRegions, newRegion]);
+      toast({
+        title: "Blur Region Added",
+        description: "A new blur region has been added to the video.",
+      });
+    }
+
     setIsDrawing(false);
   };
 
@@ -105,10 +111,17 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
     if (!ctx || !canvas) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (!isBlurMode) {
+      canvas.style.cursor = 'default';
+      return;
+    }
+
+    canvas.style.cursor = 'crosshair';
     blurRegions.forEach(region => {
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
       ctx.fillRect(region.x, region.y, region.width, region.height);
-      ctx.strokeStyle = '#ffffff';
+      ctx.strokeStyle = '#ff0000';
       ctx.lineWidth = 2;
       ctx.strokeRect(region.x, region.y, region.width, region.height);
     });
@@ -117,7 +130,10 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
   const handleExitBlurMode = () => {
     setIsBlurMode(false);
     setIsDrawing(false);
-    drawBlurRegions();
+    toast({
+      title: "Blur Mode Disabled",
+      description: "You have exited blur mode.",
+    });
   };
 
   const handleClearBlurRegions = () => {
@@ -127,6 +143,10 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
     if (ctx && canvas) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
+    toast({
+      title: "Blur Regions Cleared",
+      description: "All blur regions have been removed.",
+    });
   };
 
   return (
@@ -138,21 +158,22 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       />
-      <div className="flex gap-2 mt-4">
+      <div className="absolute bottom-4 left-4 right-4 flex gap-2">
         <Button
           variant={isBlurMode ? "default" : "secondary"}
           onClick={() => isBlurMode ? handleExitBlurMode() : setIsBlurMode(true)}
-          className="flex-1"
+          className="flex items-center gap-2"
         >
-          {isBlurMode ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+          {isBlurMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           {isBlurMode ? "Exit Blur Mode" : "Enter Blur Mode"}
         </Button>
         {blurRegions.length > 0 && (
           <Button
             variant="destructive"
             onClick={handleClearBlurRegions}
-            className="flex-1"
+            className="flex items-center gap-2"
           >
+            <Trash2 className="w-4 h-4" />
             Clear Blur Regions
           </Button>
         )}
