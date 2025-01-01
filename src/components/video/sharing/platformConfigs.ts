@@ -1,7 +1,7 @@
-import { Youtube, Video, Twitter } from 'lucide-react';
+import { Youtube, Video, Twitter, Facebook, Instagram } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
-export type Platform = 'youtube' | 'vimeo' | 'twitter';
+export type Platform = 'youtube' | 'vimeo' | 'twitter' | 'facebook' | 'instagram';
 
 export interface PlatformConfig {
   name: string;
@@ -22,6 +22,24 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
     scope: 'https://www.googleapis.com/auth/youtube.upload',
     secretKeyName: 'YOUTUBE_API_KEY',
     redirectUri: `${window.location.origin}/auth/youtube/callback`
+  },
+  facebook: {
+    name: 'Facebook',
+    icon: Facebook,
+    description: 'Share your video on Facebook',
+    authUrl: 'https://www.facebook.com/v12.0/dialog/oauth',
+    scope: 'publish_video',
+    secretKeyName: 'FACEBOOK_API_KEY',
+    redirectUri: `${window.location.origin}/auth/facebook/callback`
+  },
+  instagram: {
+    name: 'Instagram',
+    icon: Instagram,
+    description: 'Share your video on Instagram',
+    authUrl: 'https://api.instagram.com/oauth/authorize',
+    scope: 'basic',
+    secretKeyName: 'INSTAGRAM_API_KEY',
+    redirectUri: `${window.location.origin}/auth/instagram/callback`
   },
   vimeo: {
     name: 'Vimeo',

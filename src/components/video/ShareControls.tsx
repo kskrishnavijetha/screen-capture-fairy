@@ -29,7 +29,7 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
     
     toast({
       title: "Authentication Required",
-      description: `Please set up your ${platform.name} API credentials in the project settings to enable sharing.`,
+      description: `Please set up your ${platform.name} API credentials in the project settings to enable sharing. You can find your API keys in the ${platform.name} developer console.`,
     });
 
     setShowAuthDialog(false);
@@ -47,6 +47,19 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
 
     setIsSharing(true);
     try {
+      if (selectedPlatform === 'facebook') {
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank', 'width=600,height=400');
+        return;
+      }
+      
+      if (selectedPlatform === 'instagram') {
+        toast({
+          title: "Instagram Sharing",
+          description: "To share on Instagram, download the video and upload it through the Instagram app or website.",
+        });
+        return;
+      }
+
       setShowAuthDialog(true);
     } catch (error) {
       toast({
