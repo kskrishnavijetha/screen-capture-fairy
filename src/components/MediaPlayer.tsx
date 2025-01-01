@@ -186,7 +186,10 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
         recordedBlob={currentBlob} 
         onSave={(newBlob) => {
           setEditedBlob(newBlob);
-          downloadVideo();
+          toast({
+            title: "Video processed",
+            description: "Your video has been processed successfully. You can continue editing or download it.",
+          });
         }}
       />
     </div>
