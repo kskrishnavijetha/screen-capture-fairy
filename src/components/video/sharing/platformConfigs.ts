@@ -1,11 +1,11 @@
 import { Youtube, Video, Twitter } from 'lucide-react';
-import React from 'react';
+import { LucideIcon } from 'lucide-react';
 
 export type Platform = 'youtube' | 'vimeo' | 'twitter';
 
 export interface PlatformConfig {
   name: string;
-  icon: React.ReactNode;
+  icon: LucideIcon;
   description: string;
   authUrl: string;
   scope: string;

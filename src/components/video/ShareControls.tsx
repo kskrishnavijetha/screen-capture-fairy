@@ -27,13 +27,11 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
   const handleAuthenticate = async () => {
     const platform = platformConfigs[selectedPlatform];
     
-    // Show API key setup instructions
     toast({
       title: "Authentication Required",
       description: `Please set up your ${platform.name} API credentials in the project settings to enable sharing.`,
     });
 
-    // Here you would typically trigger the API key setup flow
     setShowAuthDialog(false);
   };
 
@@ -73,14 +71,17 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
             <SelectValue placeholder="Select platform" />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(platformConfigs).map(([key, config]) => (
-              <SelectItem key={key} value={key}>
-                <div className="flex items-center">
-                  {React.createElement(config.icon, { className: "w-4 h-4 mr-2" })}
-                  {config.name}
-                </div>
-              </SelectItem>
-            ))}
+            {Object.entries(platformConfigs).map(([key, config]) => {
+              const Icon = config.icon;
+              return (
+                <SelectItem key={key} value={key}>
+                  <div className="flex items-center">
+                    <Icon className="w-4 h-4 mr-2" />
+                    {config.name}
+                  </div>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>
