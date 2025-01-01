@@ -168,13 +168,6 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
               'Start Transcription'
             )}
           </Button>
-          <Button
-            onClick={downloadVideo}
-            variant="secondary"
-            className="flex items-center gap-2"
-          >
-            Download Video
-          </Button>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
