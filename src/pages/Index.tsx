@@ -9,14 +9,9 @@ import { CameraPreview } from '@/components/CameraPreview';
 import { MediaPlayer } from '@/components/MediaPlayer';
 import { RecordingManager } from '@/components/RecordingManager';
 import { AnnotationTools } from '@/components/AnnotationTools';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ThemeSelector } from '@/components/ThemeSelector';
-
-interface Resolution {
-  label: string;
-  width: number;
-  height: number;
-}
+import { RecordingSettings } from '@/components/recording/RecordingSettings';
+import { Resolution } from '@/types/recording';
 
 const RESOLUTIONS: Resolution[] = [
   { label: "720p", width: 1280, height: 720 },
@@ -44,7 +39,6 @@ const Index = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
-  const [filename, setFilename] = useState('screen-recording');
   const [duration, setDuration] = useState(0);
   const [captureMode, setCaptureMode] = useState<CaptureMode>('screen');
   const [frameRate, setFrameRate] = useState<number>(30);
@@ -93,72 +87,16 @@ const Index = () => {
           onChange={setCaptureMode}
         />
 
-        <div className="space-y-4">
-          <div className="flex flex-col space-y-2">
-            <label htmlFor="countdown" className="text-sm font-medium">
-              Countdown Timer (seconds)
-            </label>
-            <Select
-              value={countdownSeconds.toString()}
-              onValueChange={(value) => setCountdownSeconds(Number(value))}
-              disabled={isRecording}
-            >
-              <SelectTrigger id="countdown">
-                <SelectValue placeholder="Select countdown duration" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="3">3 seconds</SelectItem>
-                <SelectItem value="5">5 seconds</SelectItem>
-                <SelectItem value="10">10 seconds</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col space-y-2">
-            <label htmlFor="frameRate" className="text-sm font-medium">
-              Frame Rate
-            </label>
-            <Select
-              value={frameRate.toString()}
-              onValueChange={(value) => setFrameRate(Number(value))}
-              disabled={isRecording}
-            >
-              <SelectTrigger id="frameRate">
-                <SelectValue placeholder="Select frame rate" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="15">15 FPS</SelectItem>
-                <SelectItem value="30">30 FPS</SelectItem>
-                <SelectItem value="60">60 FPS</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col space-y-2">
-            <label htmlFor="resolution" className="text-sm font-medium">
-              Resolution
-            </label>
-            <Select
-              value={selectedResolution.label}
-              onValueChange={(value) => {
-                const resolution = RESOLUTIONS.find(r => r.label === value);
-                if (resolution) setSelectedResolution(resolution);
-              }}
-              disabled={isRecording}
-            >
-              <SelectTrigger id="resolution">
-                <SelectValue placeholder="Select resolution" />
-              </SelectTrigger>
-              <SelectContent>
-                {RESOLUTIONS.map((resolution) => (
-                  <SelectItem key={resolution.label} value={resolution.label}>
-                    {resolution.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <RecordingSettings
+          countdownSeconds={countdownSeconds}
+          setCountdownSeconds={setCountdownSeconds}
+          frameRate={frameRate}
+          setFrameRate={setFrameRate}
+          selectedResolution={selectedResolution}
+          setSelectedResolution={setSelectedResolution}
+          resolutions={RESOLUTIONS}
+          isRecording={isRecording}
+        />
 
         {isRecording && <Timer duration={duration} />}
 
@@ -193,8 +131,6 @@ const Index = () => {
             <MediaPlayer recordedBlob={recordedBlob} />
             <DownloadRecording
               recordedBlob={recordedBlob}
-              filename={filename}
-              onFilenameChange={setFilename}
             />
           </>
         )}
