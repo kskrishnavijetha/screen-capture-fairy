@@ -36,12 +36,12 @@ export const processVideoFrame = ({
   outputCtx.clearRect(0, 0, canvas.width, canvas.height);
   outputCtx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
-  // Apply blur regions
+  // Apply blur regions using a temporary canvas for better performance
   if (blurRegions.length > 0) {
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = canvas.width;
     tempCanvas.height = canvas.height;
-    const tempCtx = tempCanvas.getContext('2d');
+    const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
     
     if (tempCtx) {
       tempCtx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
@@ -54,7 +54,8 @@ export const processVideoFrame = ({
           height: (region.height / videoRef.current!.offsetHeight) * canvas.height
         };
 
-        tempCtx.filter = 'blur(15px)';
+        // Apply stronger blur effect
+        tempCtx.filter = 'blur(20px)';
         tempCtx.drawImage(
           canvas,
           scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height,
@@ -63,20 +64,22 @@ export const processVideoFrame = ({
       });
       
       outputCtx.drawImage(tempCanvas, 0, 0);
+      tempCtx.filter = 'none';
     }
   }
 
-  // Apply captions
+  // Apply captions with improved visibility
   const activeCaption = captions.find(
     caption => currentTime >= caption.startTime && currentTime <= caption.endTime
   );
 
   if (activeCaption) {
     outputCtx.save();
-    outputCtx.font = `${Math.floor(canvas.height * 0.05)}px Arial`;
+    const fontSize = Math.floor(canvas.height * 0.05);
+    outputCtx.font = `bold ${fontSize}px Arial`;
     outputCtx.fillStyle = 'white';
     outputCtx.strokeStyle = 'black';
-    outputCtx.lineWidth = Math.floor(canvas.height * 0.002);
+    outputCtx.lineWidth = Math.floor(canvas.height * 0.003);
     outputCtx.textAlign = 'center';
     outputCtx.textBaseline = 'bottom';
     
@@ -84,22 +87,29 @@ export const processVideoFrame = ({
     const x = canvas.width / 2;
     const y = canvas.height * 0.9;
     
+    // Add text shadow for better visibility
+    outputCtx.shadowColor = 'black';
+    outputCtx.shadowBlur = 4;
+    outputCtx.shadowOffsetX = 2;
+    outputCtx.shadowOffsetY = 2;
+    
     outputCtx.strokeText(text, x, y);
     outputCtx.fillText(text, x, y);
     outputCtx.restore();
   }
 
-  // Apply annotations
+  // Apply annotations with improved visibility
   const activeAnnotation = annotations.find(
     annotation => Math.abs(currentTime - annotation.timestamp) < 0.5
   );
 
   if (activeAnnotation) {
     outputCtx.save();
-    outputCtx.font = `${Math.floor(canvas.height * 0.04)}px Arial`;
-    outputCtx.fillStyle = 'yellow';
+    const fontSize = Math.floor(canvas.height * 0.04);
+    outputCtx.font = `bold ${fontSize}px Arial`;
+    outputCtx.fillStyle = '#FFD700'; // Bright gold color
     outputCtx.strokeStyle = 'black';
-    outputCtx.lineWidth = Math.floor(canvas.height * 0.002);
+    outputCtx.lineWidth = Math.floor(canvas.height * 0.003);
     outputCtx.textAlign = 'center';
     outputCtx.textBaseline = 'top';
     
@@ -107,18 +117,34 @@ export const processVideoFrame = ({
     const x = canvas.width / 2;
     const y = canvas.height * 0.1;
     
+    // Add background for better readability
+    const textMetrics = outputCtx.measureText(text);
+    const padding = fontSize * 0.5;
+    
+    outputCtx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    outputCtx.fillRect(
+      x - textMetrics.width / 2 - padding,
+      y - padding,
+      textMetrics.width + padding * 2,
+      fontSize + padding * 2
+    );
+    
+    outputCtx.fillStyle = '#FFD700';
     outputCtx.strokeText(text, x, y);
     outputCtx.fillText(text, x, y);
     outputCtx.restore();
   }
 
-  // Apply watermark
+  // Apply watermark with improved positioning and scaling
   if (watermark && watermark.image) {
     outputCtx.save();
     outputCtx.globalAlpha = watermark.opacity;
     
-    const watermarkWidth = (canvas.width * watermark.size) / 100;
-    const watermarkHeight = (watermarkWidth / watermark.image.width) * watermark.image.height;
+    const maxWidth = canvas.width * (watermark.size / 100);
+    const scaleFactor = maxWidth / watermark.image.width;
+    const watermarkWidth = watermark.image.width * scaleFactor;
+    const watermarkHeight = watermark.image.height * scaleFactor;
+    
     const padding = Math.floor(canvas.width * 0.02);
     
     let x = padding;
@@ -141,7 +167,7 @@ export const processVideoFrame = ({
     outputCtx.restore();
   }
 
-  // Apply transition effect
+  // Apply transition effects
   if (transitionType !== 'none') {
     outputCtx.save();
     switch (transitionType) {

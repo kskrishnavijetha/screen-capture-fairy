@@ -52,7 +52,6 @@ export const useVideoProcessing = () => {
     });
 
     try {
-      // Ensure valid time values
       const startTime = Math.max(0, (trimRange[0] / 100) * duration);
       const endTime = Math.min(duration, (trimRange[1] / 100) * duration);
 
@@ -63,16 +62,16 @@ export const useVideoProcessing = () => {
       const outputCanvas = document.createElement('canvas');
       outputCanvas.width = videoRef.current.videoWidth || 1280;
       outputCanvas.height = videoRef.current.videoHeight || 720;
-      const outputCtx = outputCanvas.getContext('2d');
+      const outputCtx = outputCanvas.getContext('2d', { willReadFrequently: true });
 
       if (!outputCtx) {
         throw new Error('Could not get canvas context');
       }
 
-      const mediaStream = outputCanvas.captureStream(30); // Set explicit framerate
+      const mediaStream = outputCanvas.captureStream(30);
       const mediaRecorder = new MediaRecorder(mediaStream, {
         mimeType: 'video/webm;codecs=vp8,opus',
-        videoBitsPerSecond: 2500000 // 2.5 Mbps for better quality
+        videoBitsPerSecond: 5000000 // Increased to 5 Mbps for better quality
       });
 
       const chunks: Blob[] = [];
@@ -87,10 +86,10 @@ export const useVideoProcessing = () => {
       if (watermark) {
         watermarkImg = new Image();
         watermarkImg.crossOrigin = "anonymous";
-        watermarkImg.src = watermark.image;
         await new Promise((resolve, reject) => {
           watermarkImg!.onload = resolve;
           watermarkImg!.onerror = reject;
+          watermarkImg!.src = watermark.image;
         });
       }
 
@@ -128,7 +127,7 @@ export const useVideoProcessing = () => {
           }, outputCtx, progress);
 
           if (currentTime < endTime) {
-            const nextTime = currentTime + (1/30);
+            const nextTime = currentTime + (1/30); // Process at 30fps
             if (isFinite(nextTime) && nextTime <= endTime) {
               videoRef.current.currentTime = nextTime;
               requestAnimationFrame(processFrame);
