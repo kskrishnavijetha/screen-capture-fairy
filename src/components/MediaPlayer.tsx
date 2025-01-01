@@ -26,7 +26,6 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
   const [timestamps, setTimestamps] = useState<Timestamp[]>([]);
   const [transcriptions, setTranscriptions] = useState<Transcription[]>([]);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const currentBlob = editedBlob || recordedBlob;
@@ -187,7 +186,6 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
           timestamps={timestamps}
           onSave={(newBlob) => {
             setEditedBlob(newBlob);
-            setShowPreview(true);
             toast({
               title: "Video processed",
               description: "Your video has been processed successfully. You can preview and download it.",
@@ -195,23 +193,15 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
           }}
         />
 
-        {showPreview && editedBlob && (
-          <div className="space-y-4">
-            <h4 className="text-lg font-semibold">Final Preview</h4>
-            <video 
-              src={URL.createObjectURL(editedBlob)}
-              controls
-              className="w-full rounded-lg bg-black"
-            />
-            <Button
-              onClick={downloadVideo}
-              className="w-full flex items-center justify-center gap-2"
-              variant="default"
-            >
-              <Download className="h-4 w-4" />
-              Download Edited Video
-            </Button>
-          </div>
+        {editedBlob && (
+          <Button
+            onClick={downloadVideo}
+            className="w-full flex items-center justify-center gap-2"
+            variant="default"
+          >
+            <Download className="h-4 w-4" />
+            Download Edited Video
+          </Button>
         )}
       </div>
     </div>
