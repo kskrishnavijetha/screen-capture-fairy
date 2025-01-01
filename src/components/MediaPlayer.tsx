@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { VideoEditor } from './VideoEditor';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { TimestampSection } from './media/TimestampSection';
 import { TranscriptionSection } from './media/TranscriptionSection';
 import { formatTime } from '@/utils/timeUtils';
@@ -80,12 +80,10 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
 
     setIsTranscribing(true);
     try {
-      // Create a new SpeechRecognition instance
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.continuous = true;
       recognition.interimResults = true;
 
-      // Play the video while transcribing
       if (videoRef.current) {
         videoRef.current.currentTime = 0;
         await videoRef.current.play();
