@@ -36,35 +36,33 @@ export const processVideoFrame = ({
   outputCtx.clearRect(0, 0, canvas.width, canvas.height);
   outputCtx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
-  // Apply blur regions using a temporary canvas
-  if (blurRegions.length > 0) {
+  // Apply blur regions
+  blurRegions.forEach(region => {
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = canvas.width;
     tempCanvas.height = canvas.height;
     const tempCtx = tempCanvas.getContext('2d');
     
     if (tempCtx) {
-      tempCtx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      tempCtx.drawImage(videoRef.current!, 0, 0, canvas.width, canvas.height);
       
-      blurRegions.forEach(region => {
-        const scaledRegion = {
-          x: (region.x / videoRef.current!.offsetWidth) * canvas.width,
-          y: (region.y / videoRef.current!.offsetHeight) * canvas.height,
-          width: (region.width / videoRef.current!.offsetWidth) * canvas.width,
-          height: (region.height / videoRef.current!.offsetHeight) * canvas.height
-        };
+      const scaledRegion = {
+        x: (region.x / videoRef.current!.offsetWidth) * canvas.width,
+        y: (region.y / videoRef.current!.offsetHeight) * canvas.height,
+        width: (region.width / videoRef.current!.offsetWidth) * canvas.width,
+        height: (region.height / videoRef.current!.offsetHeight) * canvas.height
+      };
 
-        tempCtx.filter = 'blur(15px)';
-        tempCtx.drawImage(
-          canvas,
-          scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height,
-          scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height
-        );
-      });
+      tempCtx.filter = 'blur(15px)';
+      tempCtx.drawImage(
+        canvas,
+        scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height,
+        scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height
+      );
       
       outputCtx.drawImage(tempCanvas, 0, 0);
     }
-  }
+  });
 
   // Apply captions
   const activeCaption = captions.find(
@@ -78,6 +76,7 @@ export const processVideoFrame = ({
     outputCtx.strokeStyle = 'black';
     outputCtx.lineWidth = Math.floor(canvas.height * 0.002);
     outputCtx.textAlign = 'center';
+    outputCtx.textBaseline = 'bottom';
     
     const text = activeCaption.text;
     const x = canvas.width / 2;
@@ -100,6 +99,7 @@ export const processVideoFrame = ({
     outputCtx.strokeStyle = 'black';
     outputCtx.lineWidth = Math.floor(canvas.height * 0.002);
     outputCtx.textAlign = 'center';
+    outputCtx.textBaseline = 'top';
     
     const text = `${activeAnnotation.author}: ${activeAnnotation.text}`;
     const x = canvas.width / 2;
@@ -117,7 +117,7 @@ export const processVideoFrame = ({
     
     const watermarkWidth = (canvas.width * watermark.size) / 100;
     const watermarkHeight = (watermarkWidth / watermark.image.width) * watermark.image.height;
-    const padding = Math.floor(canvas.width * 0.02); // 2% padding
+    const padding = Math.floor(canvas.width * 0.02);
     
     let x = padding;
     let y = padding;

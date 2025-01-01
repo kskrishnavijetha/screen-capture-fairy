@@ -2,15 +2,15 @@ import React, { useRef, useState, useEffect } from 'react';
 import { toast } from "@/components/ui/use-toast";
 import { BlurControls } from './video/BlurControls';
 import { TrimControls } from './video/TrimControls';
-import { CaptionControls, type Caption } from './video/CaptionControls';
+import { CaptionControls } from './video/CaptionControls';
 import { ShareControls } from './video/ShareControls';
 import { EmbedControls } from './video/EmbedControls';
 import { ExportControls } from './video/ExportControls';
 import { ProcessControls } from './video/ProcessControls';
-import { AnnotationControls, type Annotation } from './video/AnnotationControls';
-import { WatermarkControls, type Watermark } from './video/WatermarkControls';
-import { processVideoFrame } from './video/VideoProcessing';
+import { AnnotationControls } from './video/AnnotationControls';
+import { WatermarkControls } from './video/WatermarkControls';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
 interface VideoEditorProps {
   recordedBlob: Blob | null;
@@ -25,12 +25,11 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [duration, setDuration] = useState(0);
   const [trimRange, setTrimRange] = useState([0, 100]);
   const [blurRegions, setBlurRegions] = useState<Array<{ x: number, y: number, width: number, height: number }>>([]);
-  const [captions, setCaptions] = useState<Caption[]>([]);
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [captions, setCaptions] = useState<Array<{ startTime: number; endTime: number; text: string }>>([]);
+  const [annotations, setAnnotations] = useState<Array<{ id: string; timestamp: number; text: string; author: string }>>([]);
   const [transitionType, setTransitionType] = useState<TransitionType>('none');
-  const [editedBlob, setEditedBlob] = useState<Blob | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const currentBlob = editedBlob || recordedBlob;
+  const [watermark, setWatermark] = useState<any>(null);
+  const { isProcessing, processVideo } = useVideoProcessing();
 
   useEffect(() => {
     if (videoRef.current && recordedBlob) {
@@ -43,8 +42,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     }
   }, [recordedBlob]);
 
-  const [watermark, setWatermark] = useState<Watermark | null>(null);
-
   const handleTrimRangeChange = (newRange: number[]) => {
     setTrimRange(newRange);
     if (videoRef.current && duration > 0) {
@@ -56,7 +53,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   };
 
   const handleProcess = async () => {
-    if (!recordedBlob || !videoRef.current) {
+    if (!recordedBlob) {
       toast({
         title: "Error",
         description: "No video to process",
@@ -65,83 +62,27 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       return;
     }
 
-    setIsProcessing(true);
     try {
-      const startTime = (trimRange[0] / 100) * duration;
-      const endTime = (trimRange[1] / 100) * duration;
-
-      const outputCanvas = document.createElement('canvas');
-      outputCanvas.width = videoRef.current.videoWidth;
-      outputCanvas.height = videoRef.current.videoHeight;
-      const outputCtx = outputCanvas.getContext('2d');
-      if (!outputCtx) {
-        throw new Error('Could not get canvas context');
-      }
-
-      const mediaStream = outputCanvas.captureStream();
-      const mediaRecorder = new MediaRecorder(mediaStream, {
-        mimeType: recordedBlob.type,
+      const processedBlob = await processVideo({
+        recordedBlob,
+        videoRef,
+        transitionType,
+        blurRegions,
+        captions,
+        annotations,
+        watermark,
+        timestamps,
+        trimRange,
+        duration
       });
 
-      const chunks: Blob[] = [];
-      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-      mediaRecorder.onstop = () => {
-        const newBlob = new Blob(chunks, { type: recordedBlob.type });
-        onSave(newBlob);
-        setIsProcessing(false);
-        toast({
-          title: "Success",
-          description: "Video processing completed",
-        });
-      };
-
-      videoRef.current.currentTime = startTime;
-      mediaRecorder.start();
-      
-      let watermarkImg: HTMLImageElement | null = null;
-      if (watermark) {
-        watermarkImg = new Image();
-        watermarkImg.src = watermark.image;
-        await new Promise((resolve) => {
-          watermarkImg!.onload = resolve;
-        });
-      }
-      
-      const processFrame = async () => {
-        if (!videoRef.current || !outputCtx) return;
-        
-        const progress = (videoRef.current.currentTime - startTime) / (endTime - startTime);
-        
-        processVideoFrame({
-          videoRef,
-          transitionType,
-          blurRegions,
-          captions,
-          annotations,
-          watermark: watermark ? { ...watermark, image: watermarkImg! } : null,
-          timestamps,
-          trimRange
-        }, outputCtx, progress);
-
-        if (videoRef.current.currentTime < endTime) {
-          videoRef.current.currentTime += 1/30; // Process at 30fps
-          requestAnimationFrame(processFrame);
-        } else {
-          mediaRecorder.stop();
-          videoRef.current.pause();
-        }
-      };
-
-      await new Promise((resolve) => {
-        videoRef.current!.onseeked = () => {
-          processFrame();
-          resolve(null);
-        };
+      onSave(processedBlob);
+      toast({
+        title: "Success",
+        description: "Video processing completed",
       });
-
     } catch (error) {
       console.error('Processing error:', error);
-      setIsProcessing(false);
       toast({
         title: "Error processing video",
         description: "There was an error while processing your video. Please try again.",
