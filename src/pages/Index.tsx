@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { MonitorPlay } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
@@ -59,6 +59,21 @@ const Index = () => {
   const pauseRecordingRef = useRef<HTMLButtonElement>(null);
   const resumeRecordingRef = useRef<HTMLButtonElement>(null);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRecording && !isPaused) {
+      interval = setInterval(() => {
+        setDuration(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording, isPaused]);
+
+  const handleMaxDurationReached = () => {
+    const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
+    if (stopButton) stopButton.click();
+  };
+
   return (
     <div className={`flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
       <div className="text-center space-y-6 w-full max-w-md">
@@ -83,19 +98,25 @@ const Index = () => {
           isRecording={isRecording}
         />
 
-        {isRecording && <Timer duration={duration} />}
-
-        <RecordingManager
-          captureMode={captureMode}
-          frameRate={frameRate}
-          resolution={selectedResolution}
-          onRecordingStart={handleRecordingStart}
-          onRecordingStop={handleRecordingStop}
-          isRecording={isRecording}
-          setIsRecording={setIsRecording}
-          setIsPaused={setIsPaused}
-          isPaused={isPaused}
-        />
+        {isRecording && (
+          <RecordingControls
+            isPaused={isPaused}
+            onPause={() => {
+              const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
+              if (pauseButton) pauseButton.click();
+            }}
+            onResume={() => {
+              const resumeButton = document.getElementById('resume-recording') as HTMLButtonElement;
+              if (resumeButton) resumeButton.click();
+            }}
+            onStop={() => {
+              const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
+              if (stopButton) stopButton.click();
+            }}
+            duration={duration}
+            onMaxDurationReached={handleMaxDurationReached}
+          />
+        )}
 
         <CameraPreview 
           isRecording={isRecording} 

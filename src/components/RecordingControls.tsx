@@ -1,22 +1,33 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { StopCircle, Pause, Play } from 'lucide-react';
+import { Timer } from './Timer';
 
 interface RecordingControlsProps {
   isPaused: boolean;
   onPause: () => void;
   onResume: () => void;
   onStop: () => void;
+  duration: number;
+  onMaxDurationReached?: () => void;
 }
 
 export const RecordingControls = ({
   isPaused,
   onPause,
   onResume,
-  onStop
+  onStop,
+  duration,
+  onMaxDurationReached
 }: RecordingControlsProps) => {
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
+      <div className="flex justify-center mb-4">
+        <Timer 
+          duration={duration} 
+          onMaxDurationReached={onMaxDurationReached}
+        />
+      </div>
       {!isPaused ? (
         <Button 
           onClick={onPause}
