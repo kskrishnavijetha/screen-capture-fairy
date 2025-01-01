@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { processVideoFrame } from '../components/video/VideoProcessing';
 import { Resolution } from '@/types/recording';
 import { Timestamp } from '@/types/media';
@@ -38,20 +38,13 @@ export const useVideoProcessing = () => {
     duration
   }: ProcessingOptions): Promise<Blob> => {
     if (!recordedBlob || !videoRef.current) {
-      throw new Error("No video to process");
+      throw new Error("Invalid input: Missing video or blob data");
     }
 
     setIsProcessing(true);
-    console.log('Starting video processing with options:', {
-      transitionType,
-      hasBlurRegions: blurRegions.length,
-      hasCaptions: captions.length,
-      hasAnnotations: annotations.length,
-      hasWatermark: !!watermark,
-      trimRange
-    });
-
+    
     try {
+      // Calculate time range
       const startTime = Math.max(0, (trimRange[0] / 100) * duration);
       const endTime = Math.min(duration, (trimRange[1] / 100) * duration);
 
@@ -59,19 +52,29 @@ export const useVideoProcessing = () => {
         throw new Error('Invalid time range calculated');
       }
 
+      // Create canvas for processing
       const outputCanvas = document.createElement('canvas');
-      outputCanvas.width = videoRef.current.videoWidth || 1280;
-      outputCanvas.height = videoRef.current.videoHeight || 720;
-      const outputCtx = outputCanvas.getContext('2d', { willReadFrequently: true });
-
-      if (!outputCtx) {
-        throw new Error('Could not get canvas context');
+      outputCanvas.width = videoRef.current.videoWidth;
+      outputCanvas.height = videoRef.current.videoHeight;
+      
+      if (outputCanvas.width === 0 || outputCanvas.height === 0) {
+        throw new Error('Invalid video dimensions');
       }
 
-      const mediaStream = outputCanvas.captureStream(30);
+      const outputCtx = outputCanvas.getContext('2d', { 
+        willReadFrequently: true,
+        alpha: false 
+      });
+
+      if (!outputCtx) {
+        throw new Error('Failed to get canvas context');
+      }
+
+      // Setup media recorder with high quality settings
+      const mediaStream = outputCanvas.captureStream(60); // Increased to 60fps
       const mediaRecorder = new MediaRecorder(mediaStream, {
         mimeType: 'video/webm;codecs=vp8,opus',
-        videoBitsPerSecond: 5000000 // Increased to 5 Mbps for better quality
+        videoBitsPerSecond: 8000000 // 8 Mbps for high quality
       });
 
       const chunks: Blob[] = [];
@@ -96,7 +99,9 @@ export const useVideoProcessing = () => {
       return new Promise((resolve, reject) => {
         mediaRecorder.onstop = () => {
           try {
-            const finalBlob = new Blob(chunks, { type: 'video/webm' });
+            const finalBlob = new Blob(chunks, { 
+              type: 'video/webm;codecs=vp8,opus' 
+            });
             setIsProcessing(false);
             resolve(finalBlob);
           } catch (error) {
@@ -115,32 +120,39 @@ export const useVideoProcessing = () => {
 
           const progress = (currentTime - startTime) / (endTime - startTime);
 
-          processVideoFrame({
-            videoRef,
-            transitionType,
-            blurRegions,
-            captions,
-            annotations,
-            watermark: watermark ? { ...watermark, image: watermarkImg! } : null,
-            timestamps,
-            trimRange
-          }, outputCtx, progress);
+          try {
+            processVideoFrame({
+              videoRef,
+              transitionType,
+              blurRegions,
+              captions,
+              annotations,
+              watermark: watermark ? { ...watermark, image: watermarkImg! } : null,
+              timestamps,
+              trimRange
+            }, outputCtx, progress);
 
-          if (currentTime < endTime) {
-            const nextTime = currentTime + (1/30); // Process at 30fps
-            if (isFinite(nextTime) && nextTime <= endTime) {
-              videoRef.current.currentTime = nextTime;
-              requestAnimationFrame(processFrame);
+            if (currentTime < endTime) {
+              const nextTime = currentTime + (1/60); // Process at 60fps
+              if (isFinite(nextTime) && nextTime <= endTime) {
+                videoRef.current.currentTime = nextTime;
+                requestAnimationFrame(processFrame);
+              } else {
+                mediaRecorder.stop();
+              }
             } else {
               mediaRecorder.stop();
             }
-          } else {
+          } catch (error) {
+            console.error('Frame processing error:', error);
             mediaRecorder.stop();
+            reject(error);
           }
         };
 
-        mediaRecorder.start();
+        mediaRecorder.start(1000); // Capture chunks every second
         videoRef.current.currentTime = startTime;
+        
         videoRef.current.onseeked = () => {
           processFrame().catch(reject);
         };
@@ -152,7 +164,7 @@ export const useVideoProcessing = () => {
       toast({
         variant: "destructive",
         title: "Processing failed",
-        description: "There was an error processing your video. Please try again."
+        description: error instanceof Error ? error.message : "Failed to process video"
       });
       throw error;
     }

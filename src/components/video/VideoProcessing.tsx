@@ -1,5 +1,4 @@
 import React from 'react';
-import { formatTime } from '@/utils/timeUtils';
 
 interface VideoProcessingProps {
   videoRef: React.RefObject<HTMLVideoElement>;
@@ -36,7 +35,7 @@ export const processVideoFrame = ({
   outputCtx.clearRect(0, 0, canvas.width, canvas.height);
   outputCtx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
-  // Apply blur regions using a temporary canvas for better performance
+  // Apply blur regions
   if (blurRegions.length > 0) {
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = canvas.width;
@@ -68,7 +67,7 @@ export const processVideoFrame = ({
     }
   }
 
-  // Apply captions with improved visibility
+  // Apply captions
   const activeCaption = captions.find(
     caption => currentTime >= caption.startTime && currentTime <= caption.endTime
   );
@@ -87,7 +86,7 @@ export const processVideoFrame = ({
     const x = canvas.width / 2;
     const y = canvas.height * 0.9;
     
-    // Add text shadow for better visibility
+    // Add text shadow
     outputCtx.shadowColor = 'black';
     outputCtx.shadowBlur = 4;
     outputCtx.shadowOffsetX = 2;
@@ -98,7 +97,7 @@ export const processVideoFrame = ({
     outputCtx.restore();
   }
 
-  // Apply annotations with improved visibility
+  // Apply annotations
   const activeAnnotation = annotations.find(
     annotation => Math.abs(currentTime - annotation.timestamp) < 0.5
   );
@@ -107,7 +106,7 @@ export const processVideoFrame = ({
     outputCtx.save();
     const fontSize = Math.floor(canvas.height * 0.04);
     outputCtx.font = `bold ${fontSize}px Arial`;
-    outputCtx.fillStyle = '#FFD700'; // Bright gold color
+    outputCtx.fillStyle = '#FFD700';
     outputCtx.strokeStyle = 'black';
     outputCtx.lineWidth = Math.floor(canvas.height * 0.003);
     outputCtx.textAlign = 'center';
@@ -117,7 +116,7 @@ export const processVideoFrame = ({
     const x = canvas.width / 2;
     const y = canvas.height * 0.1;
     
-    // Add background for better readability
+    // Add background
     const textMetrics = outputCtx.measureText(text);
     const padding = fontSize * 0.5;
     
@@ -135,7 +134,7 @@ export const processVideoFrame = ({
     outputCtx.restore();
   }
 
-  // Apply watermark with improved positioning and scaling
+  // Apply watermark
   if (watermark && watermark.image) {
     outputCtx.save();
     outputCtx.globalAlpha = watermark.opacity;
