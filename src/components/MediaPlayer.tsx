@@ -1,24 +1,13 @@
 import React, { useRef, useState } from 'react';
-import { VideoEditor } from './VideoEditor';
-import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Download } from 'lucide-react';
 import { TimestampSection } from './media/TimestampSection';
 import { TranscriptionSection } from './media/TranscriptionSection';
-import { formatTime } from '@/utils/timeUtils';
+import { VideoPreview } from './media/VideoPreview';
+import { EditingSection } from './media/EditingSection';
+import { Timestamp, Transcription } from '@/types/media';
 
 interface MediaPlayerProps {
   recordedBlob: Blob | null;
-}
-
-interface Timestamp {
-  time: number;
-  label: string;
-}
-
-interface Transcription {
-  text: string;
-  timestamp: number;
 }
 
 export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
@@ -44,7 +33,7 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
       setTimestamps(prev => [...prev, { time: currentTime, label }].sort((a, b) => a.time - b.time));
       toast({
         title: "Timestamp Added",
-        description: `Added timestamp "${label}" at ${formatTime(currentTime)}`,
+        description: `Added timestamp "${label}" at ${currentTime.toFixed(2)}s`,
       });
     }
   };
@@ -137,38 +126,14 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
     <div className="mt-6 w-full">
       <h3 className="text-lg font-semibold mb-2 text-white">Recording Preview</h3>
       <div className="space-y-4">
-        <video 
-          ref={videoRef}
-          src={videoUrl}
-          controls
-          className="w-full rounded-lg bg-black"
-          onEnded={() => URL.revokeObjectURL(videoUrl)}
+        <VideoPreview 
+          videoUrl={videoUrl}
+          videoRef={videoRef}
+          onAddTimestamp={addTimestamp}
+          onStartTranscription={startTranscription}
+          isTranscribing={isTranscribing}
+          onDownload={editedBlob ? downloadVideo : undefined}
         />
-        
-        <div className="flex justify-between items-center gap-2">
-          <Button 
-            onClick={addTimestamp}
-            variant="secondary"
-            className="flex items-center gap-2"
-          >
-            Add Timestamp
-          </Button>
-          <Button
-            onClick={startTranscription}
-            variant="secondary"
-            disabled={isTranscribing}
-            className="flex items-center gap-2"
-          >
-            {isTranscribing ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Transcribing...
-              </>
-            ) : (
-              'Start Transcription'
-            )}
-          </Button>
-        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <TimestampSection 
@@ -181,28 +146,11 @@ export const MediaPlayer = ({ recordedBlob }: MediaPlayerProps) => {
           />
         </div>
 
-        <VideoEditor 
-          recordedBlob={currentBlob}
+        <EditingSection 
+          currentBlob={currentBlob}
           timestamps={timestamps}
-          onSave={(newBlob) => {
-            setEditedBlob(newBlob);
-            toast({
-              title: "Video processed",
-              description: "Your video has been processed successfully. You can preview and download it.",
-            });
-          }}
+          onSave={setEditedBlob}
         />
-
-        {editedBlob && (
-          <Button
-            onClick={downloadVideo}
-            className="w-full flex items-center justify-center gap-2"
-            variant="default"
-          >
-            <Download className="h-4 w-4" />
-            Download Edited Video
-          </Button>
-        )}
       </div>
     </div>
   );
