@@ -42,14 +42,22 @@ export const useVideoProcessing = () => {
     }
 
     setIsProcessing(true);
+    console.log('Starting video processing...');
     
     try {
-      const startTime = (trimRange[0] / 100) * duration;
-      const endTime = (trimRange[1] / 100) * duration;
+      // Calculate start and end times, ensuring they are finite numbers
+      const startTime = Math.max(0, (trimRange[0] / 100) * duration);
+      const endTime = Math.min(duration, (trimRange[1] / 100) * duration);
+
+      console.log('Processing time range:', { startTime, endTime, duration });
+
+      if (!isFinite(startTime) || !isFinite(endTime)) {
+        throw new Error('Invalid time range calculated');
+      }
 
       const outputCanvas = document.createElement('canvas');
-      outputCanvas.width = videoRef.current.videoWidth;
-      outputCanvas.height = videoRef.current.videoHeight;
+      outputCanvas.width = videoRef.current.videoWidth || 1280;
+      outputCanvas.height = videoRef.current.videoHeight || 720;
       const outputCtx = outputCanvas.getContext('2d');
       
       if (!outputCtx) {
@@ -80,13 +88,13 @@ export const useVideoProcessing = () => {
           resolve(newBlob);
         };
 
-        videoRef.current!.currentTime = startTime;
-        mediaRecorder.start();
-
         const processFrame = async () => {
           if (!videoRef.current || !outputCtx) return;
 
-          const progress = (videoRef.current.currentTime - startTime) / (endTime - startTime);
+          const currentTime = videoRef.current.currentTime;
+          const progress = (currentTime - startTime) / (endTime - startTime);
+
+          console.log('Processing frame at time:', currentTime);
 
           processVideoFrame({
             videoRef,
@@ -99,20 +107,30 @@ export const useVideoProcessing = () => {
             trimRange
           }, outputCtx, progress);
 
-          if (videoRef.current.currentTime < endTime) {
-            videoRef.current.currentTime += 1/30; // Process at 30fps
-            requestAnimationFrame(processFrame);
+          if (currentTime < endTime) {
+            const nextTime = currentTime + (1/30); // Process at 30fps
+            if (isFinite(nextTime) && nextTime <= endTime) {
+              videoRef.current.currentTime = nextTime;
+              requestAnimationFrame(processFrame);
+            } else {
+              mediaRecorder.stop();
+              videoRef.current.pause();
+            }
           } else {
             mediaRecorder.stop();
             videoRef.current.pause();
           }
         };
 
-        videoRef.current!.onseeked = () => {
+        // Start processing from the beginning
+        videoRef.current.currentTime = startTime;
+        videoRef.current.onseeked = () => {
+          mediaRecorder.start();
           processFrame().catch(reject);
         };
       });
     } catch (error) {
+      console.error('Video processing error:', error);
       setIsProcessing(false);
       throw error;
     }

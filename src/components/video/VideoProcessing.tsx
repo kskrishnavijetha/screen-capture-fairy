@@ -32,12 +32,20 @@ export const processVideoFrame = ({
   const currentTime = videoRef.current.currentTime;
   const canvas = outputCtx.canvas;
   
+  console.log('Processing frame:', {
+    currentTime,
+    hasBlurRegions: blurRegions.length > 0,
+    hasCaptions: captions.length > 0,
+    hasAnnotations: annotations.length > 0,
+    hasWatermark: !!watermark
+  });
+  
   // Clear canvas and draw video frame
   outputCtx.clearRect(0, 0, canvas.width, canvas.height);
   outputCtx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
   // Apply blur regions
-  blurRegions.forEach(region => {
+  if (blurRegions.length > 0) {
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = canvas.width;
     tempCanvas.height = canvas.height;
@@ -46,23 +54,25 @@ export const processVideoFrame = ({
     if (tempCtx) {
       tempCtx.drawImage(videoRef.current!, 0, 0, canvas.width, canvas.height);
       
-      const scaledRegion = {
-        x: (region.x / videoRef.current!.offsetWidth) * canvas.width,
-        y: (region.y / videoRef.current!.offsetHeight) * canvas.height,
-        width: (region.width / videoRef.current!.offsetWidth) * canvas.width,
-        height: (region.height / videoRef.current!.offsetHeight) * canvas.height
-      };
+      blurRegions.forEach(region => {
+        const scaledRegion = {
+          x: (region.x / videoRef.current!.offsetWidth) * canvas.width,
+          y: (region.y / videoRef.current!.offsetHeight) * canvas.height,
+          width: (region.width / videoRef.current!.offsetWidth) * canvas.width,
+          height: (region.height / videoRef.current!.offsetHeight) * canvas.height
+        };
 
-      tempCtx.filter = 'blur(15px)';
-      tempCtx.drawImage(
-        canvas,
-        scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height,
-        scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height
-      );
+        tempCtx.filter = 'blur(15px)';
+        tempCtx.drawImage(
+          canvas,
+          scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height,
+          scaledRegion.x, scaledRegion.y, scaledRegion.width, scaledRegion.height
+        );
+      });
       
       outputCtx.drawImage(tempCanvas, 0, 0);
     }
-  });
+  }
 
   // Apply captions
   const activeCaption = captions.find(
