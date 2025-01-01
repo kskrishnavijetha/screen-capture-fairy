@@ -8,7 +8,6 @@ import { DownloadRecording } from '@/components/DownloadRecording';
 import { CameraPreview } from '@/components/CameraPreview';
 import { MediaPlayer } from '@/components/MediaPlayer';
 import { RecordingManager } from '@/components/RecordingManager';
-import { AnnotationTools } from '@/components/AnnotationTools';
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { RecordingSettings } from '@/components/recording/RecordingSettings';
 import { Resolution } from '@/types/recording';
@@ -145,8 +144,6 @@ const Index = () => {
           </>
         )}
       </div>
-      
-      <AnnotationTools isRecording={isRecording} />
     </div>
   );
 };
