@@ -21,7 +21,7 @@ interface RecordingManagerProps {
   isPaused: boolean;
 }
 
-export const RecordingManager: React.FC<RecordingManagerProps> = ({
+export const RecordingManager = ({
   captureMode,
   frameRate,
   resolution,
@@ -31,7 +31,7 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
   setIsRecording,
   setIsPaused,
   isPaused
-}) => {
+}: RecordingManagerProps) => {
   const { mediaRecorderRef, chunksRef, streamRef } = useRecordingState();
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdownSeconds, setCountdownSeconds] = useState(3);
@@ -150,28 +150,33 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
     }
   };
 
-  return {
-    startRecording: initiateRecording,
-    stopRecording,
-    pauseRecording,
-    resumeRecording,
-    countdownSeconds,
-    setCountdownSeconds,
-    showCountdown: showCountdown && (
-      <CountdownTimer
-        seconds={countdownSeconds}
-        onComplete={() => {
-          setShowCountdown(false);
-          startRecording();
-        }}
-        onCancel={() => {
-          setShowCountdown(false);
-          toast({
-            title: "Cancelled",
-            description: "Recording countdown was cancelled"
-          });
-        }}
-      />
-    )
-  };
+  return (
+    <div>
+      {showCountdown && (
+        <CountdownTimer
+          seconds={countdownSeconds}
+          onComplete={() => {
+            setShowCountdown(false);
+            startRecording();
+          }}
+          onCancel={() => {
+            setShowCountdown(false);
+            toast({
+              title: "Cancelled",
+              description: "Recording countdown was cancelled"
+            });
+          }}
+        />
+      )}
+      <div style={{ display: 'none' }}>
+        {/* These values are accessed by the parent component */}
+        <span data-start-recording={initiateRecording} />
+        <span data-stop-recording={stopRecording} />
+        <span data-pause-recording={pauseRecording} />
+        <span data-resume-recording={resumeRecording} />
+        <span data-countdown-seconds={countdownSeconds} />
+        <span data-set-countdown-seconds={setCountdownSeconds} />
+      </div>
+    </div>
+  );
 };

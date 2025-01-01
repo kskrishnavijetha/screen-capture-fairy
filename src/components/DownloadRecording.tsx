@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download } from 'lucide-react';
@@ -6,22 +6,29 @@ import { toast } from "@/hooks/use-toast";
 
 interface DownloadRecordingProps {
   recordedBlob: Blob;
-  filename: string;
-  onFilenameChange: (newName: string) => void;
+  filename?: string;
+  onFilenameChange?: (newName: string) => void;
 }
 
 export const DownloadRecording = ({
   recordedBlob,
-  filename,
-  onFilenameChange,
+  filename = 'recording',
+  onFilenameChange = () => {},
 }: DownloadRecordingProps) => {
+  const [localFilename, setLocalFilename] = useState(filename);
+
+  const handleFilenameChange = (newName: string) => {
+    setLocalFilename(newName);
+    onFilenameChange(newName);
+  };
+
   const downloadRecording = () => {
     const url = URL.createObjectURL(recordedBlob);
     const a = document.createElement('a');
     document.body.appendChild(a);
     a.style.display = 'none';
     a.href = url;
-    a.download = `${filename}.webm`;
+    a.download = `${localFilename}.webm`;
     a.click();
     URL.revokeObjectURL(url);
     document.body.removeChild(a);
@@ -36,8 +43,8 @@ export const DownloadRecording = ({
       <Input
         type="text"
         placeholder="Enter filename"
-        value={filename}
-        onChange={(e) => onFilenameChange(e.target.value)}
+        value={localFilename}
+        onChange={(e) => handleFilenameChange(e.target.value)}
         className="w-full"
       />
       <Button

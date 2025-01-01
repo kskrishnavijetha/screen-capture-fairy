@@ -3,7 +3,6 @@ import { toast } from "@/components/ui/use-toast";
 import { BlurControls } from './video/BlurControls';
 import { TrimControls } from './video/TrimControls';
 import { CaptionControls, type Caption } from './video/CaptionControls';
-import { CloudStorageSelector } from './cloud/CloudStorageSelector';
 import { ShareControls } from './video/ShareControls';
 import { EmbedControls } from './video/EmbedControls';
 import { ExportControls } from './video/ExportControls';
@@ -28,7 +27,6 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
   const [captions, setCaptions] = useState<Caption[]>([]);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [transitionType, setTransitionType] = useState<TransitionType>('none');
-  const [isUploading, setIsUploading] = useState(false);
   const [editedBlob, setEditedBlob] = useState<Blob | null>(null);
   const currentBlob = editedBlob || recordedBlob;
 
@@ -185,14 +183,6 @@ export const VideoEditor = ({ recordedBlob, onSave }: VideoEditorProps) => {
       <WatermarkControls
         watermark={watermark}
         onWatermarkChange={setWatermark}
-      />
-
-      <CloudStorageSelector
-        onUpload={(provider) => {
-          setIsUploading(true);
-          setTimeout(() => setIsUploading(false), 1500);
-        }}
-        isUploading={isUploading}
       />
 
       <ShareControls recordedBlob={recordedBlob} />
