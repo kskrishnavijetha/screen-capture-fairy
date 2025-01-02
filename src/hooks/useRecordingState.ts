@@ -22,30 +22,37 @@ export const useRecordingState = () => {
       // Clean up any existing streams
       if (streamRef.current) {
         stopMediaStream(streamRef.current);
+        streamRef.current = null;
       }
 
+      // Initialize new stream
       const stream = await getMediaStream(captureMode, frameRate, resolution);
       if (!stream) {
         throw new Error('Failed to initialize media stream');
       }
 
+      // Verify we have the necessary tracks
+      if (stream.getTracks().length === 0) {
+        throw new Error('No media tracks available');
+      }
+
       streamRef.current = stream;
       chunksRef.current = [];
-      
-      const options = { 
+
+      const options = {
         mimeType: 'video/webm;codecs=vp8,opus',
         videoBitsPerSecond: 2500000
       };
-      
+
       try {
         mediaRecorderRef.current = new MediaRecorder(stream, options);
       } catch (e) {
         console.error('MediaRecorder error:', e);
         throw new Error('Failed to create MediaRecorder. Please try a different browser.');
       }
-      
+
       mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
           chunksRef.current.push(event.data);
         }
       };
@@ -54,8 +61,10 @@ export const useRecordingState = () => {
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
         chunksRef.current = [];
         onRecordingStop(blob);
-        stopMediaStream(streamRef.current);
-        streamRef.current = null;
+        if (streamRef.current) {
+          stopMediaStream(streamRef.current);
+          streamRef.current = null;
+        }
       };
 
       mediaRecorderRef.current.start(1000);
