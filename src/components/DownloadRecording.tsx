@@ -16,26 +16,39 @@ export const DownloadRecording = ({
   onFilenameChange = () => {},
 }: DownloadRecordingProps) => {
   const [localFilename, setLocalFilename] = useState(filename);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const handleFilenameChange = (newName: string) => {
     setLocalFilename(newName);
     onFilenameChange(newName);
   };
 
-  const downloadRecording = () => {
+  const downloadRecording = async () => {
+    if (!recordedBlob) {
+      toast({
+        variant: "destructive",
+        title: "Download error",
+        description: "No recording available to download"
+      });
+      return;
+    }
+
     try {
+      setIsDownloading(true);
       const url = URL.createObjectURL(recordedBlob);
       const a = document.createElement('a');
-      document.body.appendChild(a);
       a.style.display = 'none';
       a.href = url;
       a.download = `${localFilename}.webm`;
+      
+      document.body.appendChild(a);
       a.click();
       
       // Clean up
       setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        setIsDownloading(false);
       }, 100);
 
       toast({
@@ -44,6 +57,7 @@ export const DownloadRecording = ({
       });
     } catch (error) {
       console.error('Download error:', error);
+      setIsDownloading(false);
       toast({
         variant: "destructive",
         title: "Download failed",
@@ -60,14 +74,16 @@ export const DownloadRecording = ({
         value={localFilename}
         onChange={(e) => handleFilenameChange(e.target.value)}
         className="w-full"
+        disabled={isDownloading}
       />
       <Button
         onClick={downloadRecording}
         variant="outline"
         className="w-full bg-green-500 text-white hover:bg-green-600"
+        disabled={isDownloading}
       >
         <Download className="mr-2 h-5 w-5" />
-        Download Recording
+        {isDownloading ? 'Downloading...' : 'Download Recording'}
       </Button>
     </div>
   );

@@ -38,18 +38,24 @@ export const RecordingManager = ({
 
   useEffect(() => {
     return () => {
-      stopMediaStream(streamRef.current);
+      if (streamRef.current) {
+        stopMediaStream(streamRef.current);
+      }
     };
   }, []);
 
   const startRecording = async () => {
     try {
       const stream = await getMediaStream(captureMode, frameRate, resolution);
+      if (!stream) {
+        throw new Error('Failed to get media stream');
+      }
+
       streamRef.current = stream;
       
       const options = { 
         mimeType: 'video/webm;codecs=vp8,opus',
-        videoBitsPerSecond: 2500000 // 2.5 Mbps for better quality
+        videoBitsPerSecond: 2500000
       };
       
       mediaRecorderRef.current = new MediaRecorder(stream, options);
@@ -74,7 +80,17 @@ export const RecordingManager = ({
         }
       };
 
-      mediaRecorderRef.current.start(1000); // Capture data every second
+      mediaRecorderRef.current.onerror = (event) => {
+        console.error('MediaRecorder error:', event);
+        toast({
+          variant: "destructive",
+          title: "Recording error",
+          description: "An error occurred during recording. Please try again."
+        });
+        stopRecording();
+      };
+
+      mediaRecorderRef.current.start(1000);
       setIsRecording(true);
       setIsPaused(false);
       onRecordingStart();
@@ -95,11 +111,13 @@ export const RecordingManager = ({
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       try {
         mediaRecorderRef.current.stop();
-        stopMediaStream(streamRef.current);
-        streamRef.current = null;
+        if (streamRef.current) {
+          stopMediaStream(streamRef.current);
+          streamRef.current = null;
+        }
         setIsRecording(false);
         toast({
           title: "Recording stopped",
@@ -117,7 +135,7 @@ export const RecordingManager = ({
   };
 
   const pauseRecording = () => {
-    if (mediaRecorderRef.current && isRecording && !isPaused) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       try {
         mediaRecorderRef.current.pause();
         setIsPaused(true);
@@ -137,7 +155,7 @@ export const RecordingManager = ({
   };
 
   const resumeRecording = () => {
-    if (mediaRecorderRef.current && isRecording && isPaused) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
       try {
         mediaRecorderRef.current.resume();
         setIsPaused(false);
