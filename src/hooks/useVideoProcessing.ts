@@ -44,23 +44,26 @@ export const useVideoProcessing = () => {
     setIsProcessing(true);
     
     try {
-      // Calculate time range
-      const startTime = Math.max(0, (trimRange[0] / 100) * duration);
-      const endTime = Math.min(duration, (trimRange[1] / 100) * duration);
+      // Ensure duration is valid
+      if (!duration || duration <= 0) {
+        duration = videoRef.current.duration;
+      }
 
-      if (!isFinite(startTime) || !isFinite(endTime)) {
-        throw new Error('Invalid time range calculated');
+      // Validate and normalize trim range
+      const normalizedTrimRange = trimRange.map(value => Math.max(0, Math.min(100, value)));
+      const startTime = (normalizedTrimRange[0] / 100) * duration;
+      const endTime = (normalizedTrimRange[1] / 100) * duration;
+
+      // Validate time range
+      if (!isFinite(startTime) || !isFinite(endTime) || startTime >= endTime) {
+        throw new Error('Invalid time range');
       }
 
       // Create canvas for processing
       const outputCanvas = document.createElement('canvas');
-      outputCanvas.width = videoRef.current.videoWidth;
-      outputCanvas.height = videoRef.current.videoHeight;
+      outputCanvas.width = videoRef.current.videoWidth || 1280; // Fallback width
+      outputCanvas.height = videoRef.current.videoHeight || 720; // Fallback height
       
-      if (outputCanvas.width === 0 || outputCanvas.height === 0) {
-        throw new Error('Invalid video dimensions');
-      }
-
       const outputCtx = outputCanvas.getContext('2d', { 
         willReadFrequently: true,
         alpha: false 
@@ -71,15 +74,15 @@ export const useVideoProcessing = () => {
       }
 
       // Setup media recorder with high quality settings
-      const mediaStream = outputCanvas.captureStream(60); // Increased to 60fps
+      const mediaStream = outputCanvas.captureStream(60);
       const mediaRecorder = new MediaRecorder(mediaStream, {
         mimeType: 'video/webm;codecs=vp8,opus',
-        videoBitsPerSecond: 8000000 // 8 Mbps for high quality
+        videoBitsPerSecond: 8000000
       });
 
       const chunks: Blob[] = [];
       mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
+        if (e.data && e.data.size > 0) {
           chunks.push(e.data);
         }
       };
@@ -109,7 +112,7 @@ export const useVideoProcessing = () => {
           }
         };
 
-        const processFrame = async () => {
+        const processFrame = () => {
           if (!videoRef.current || !outputCtx) return;
 
           const currentTime = videoRef.current.currentTime;
@@ -129,11 +132,11 @@ export const useVideoProcessing = () => {
               annotations,
               watermark: watermark ? { ...watermark, image: watermarkImg! } : null,
               timestamps,
-              trimRange
+              trimRange: normalizedTrimRange
             }, outputCtx, progress);
 
             if (currentTime < endTime) {
-              const nextTime = currentTime + (1/60); // Process at 60fps
+              const nextTime = currentTime + (1/60);
               if (isFinite(nextTime) && nextTime <= endTime) {
                 videoRef.current.currentTime = nextTime;
                 requestAnimationFrame(processFrame);
@@ -150,11 +153,11 @@ export const useVideoProcessing = () => {
           }
         };
 
-        mediaRecorder.start(1000); // Capture chunks every second
+        mediaRecorder.start(1000);
         videoRef.current.currentTime = startTime;
         
         videoRef.current.onseeked = () => {
-          processFrame().catch(reject);
+          processFrame();
         };
       });
 
