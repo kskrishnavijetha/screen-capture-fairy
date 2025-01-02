@@ -1,27 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { toast } from "@/hooks/use-toast";
-import { CaptureMode } from './CaptureModeSelector';
-import { getMediaStream, stopMediaStream } from '@/utils/mediaUtils';
-import { useRecordingState } from '@/hooks/useRecordingState';
-import { CountdownTimer } from './CountdownTimer';
+import React, { useRef, useEffect, useState } from 'react';
+import { toast } from "@/components/ui/use-toast";
+import { Resolution } from '@/types/recording';
+import { CaptureMode } from '@/components/CaptureModeSelector';
 
 interface RecordingManagerProps {
   captureMode: CaptureMode;
   frameRate: number;
-  resolution: {
-    label: string;
-    width: number;
-    height: number;
-  };
+  resolution: Resolution;
   onRecordingStart: () => void;
   onRecordingStop: (blob: Blob) => void;
   isRecording: boolean;
-  setIsRecording: (value: boolean) => void;
-  setIsPaused: (value: boolean) => void;
+  setIsRecording: (isRecording: boolean) => void;
   isPaused: boolean;
+  setIsPaused: (isPaused: boolean) => void;
 }
 
-export const RecordingManager = ({
+export const RecordingManager: React.FC<RecordingManagerProps> = ({
   captureMode,
   frameRate,
   resolution,
@@ -29,12 +23,12 @@ export const RecordingManager = ({
   onRecordingStop,
   isRecording,
   setIsRecording,
+  isPaused,
   setIsPaused,
-  isPaused
-}: RecordingManagerProps) => {
-  const { mediaRecorderRef, chunksRef, streamRef } = useRecordingState();
-  const [showCountdown, setShowCountdown] = useState(false);
-  const [countdownSeconds, setCountdownSeconds] = useState(3);
+}) => {
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     return () => {
@@ -44,6 +38,40 @@ export const RecordingManager = ({
     };
   }, []);
 
+  const getMediaStream = async (mode: CaptureMode, fps: number, res: Resolution): Promise<MediaStream | null> => {
+    try {
+      const constraints: MediaStreamConstraints = {
+        audio: mode !== 'screen',
+        video: {
+          width: { ideal: res.width },
+          height: { ideal: res.height },
+          frameRate: { ideal: fps }
+        }
+      };
+
+      if (mode === 'screen') {
+        return await navigator.mediaDevices.getDisplayMedia(constraints);
+      } else if (mode === 'camera') {
+        return await navigator.mediaDevices.getUserMedia(constraints);
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting media stream:', error);
+      toast({
+        variant: "destructive",
+        title: "Stream error",
+        description: "Failed to access media device. Please check permissions."
+      });
+      return null;
+    }
+  };
+
+  const stopMediaStream = (stream: MediaStream | null) => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
   const startRecording = async () => {
     try {
       const stream = await getMediaStream(captureMode, frameRate, resolution);
@@ -52,6 +80,7 @@ export const RecordingManager = ({
       }
 
       streamRef.current = stream;
+      chunksRef.current = [];
       
       const options = { 
         mimeType: 'video/webm;codecs=vp8,opus',
@@ -59,25 +88,17 @@ export const RecordingManager = ({
       };
       
       mediaRecorderRef.current = new MediaRecorder(stream, options);
-      chunksRef.current = [];
-
+      
       mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
+        if (event.data.size > 0) {
           chunksRef.current.push(event.data);
         }
       };
 
       mediaRecorderRef.current.onstop = () => {
-        if (chunksRef.current.length > 0) {
-          const blob = new Blob(chunksRef.current, { 
-            type: 'video/webm;codecs=vp8,opus' 
-          });
-          onRecordingStop(blob);
-          toast({
-            title: "Recording completed",
-            description: "Your recording has been processed and is ready for download"
-          });
-        }
+        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+        chunksRef.current = [];
+        onRecordingStop(blob);
       };
 
       mediaRecorderRef.current.onerror = (event) => {
@@ -94,19 +115,18 @@ export const RecordingManager = ({
       setIsRecording(true);
       setIsPaused(false);
       onRecordingStart();
-      
+
       toast({
         title: "Recording started",
-        description: "Your screen is now being recorded"
+        description: "Your recording has begun"
       });
     } catch (error) {
-      console.error('Error starting recording:', error);
+      console.error('Recording error:', error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to start recording. Please ensure you have granted the necessary permissions."
+        title: "Recording failed",
+        description: "Failed to start recording. Please try again."
       });
-      setIsRecording(false);
     }
   };
 
@@ -119,16 +139,17 @@ export const RecordingManager = ({
           streamRef.current = null;
         }
         setIsRecording(false);
+        setIsPaused(false);
         toast({
           title: "Recording stopped",
-          description: "Processing your recording..."
+          description: "Your recording has been saved"
         });
       } catch (error) {
-        console.error('Error stopping recording:', error);
+        console.error('Stop recording error:', error);
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Failed to stop recording properly."
+          title: "Stop failed",
+          description: "Failed to stop recording. Please try again."
         });
       }
     }
@@ -141,14 +162,14 @@ export const RecordingManager = ({
         setIsPaused(true);
         toast({
           title: "Recording paused",
-          description: "Click resume to continue recording"
+          description: "Your recording is paused"
         });
       } catch (error) {
-        console.error('Error pausing recording:', error);
+        console.error('Pause recording error:', error);
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Failed to pause recording."
+          title: "Pause failed",
+          description: "Failed to pause recording"
         });
       }
     }
@@ -161,47 +182,25 @@ export const RecordingManager = ({
         setIsPaused(false);
         toast({
           title: "Recording resumed",
-          description: "Your screen is being recorded again"
+          description: "Your recording has resumed"
         });
       } catch (error) {
-        console.error('Error resuming recording:', error);
+        console.error('Resume recording error:', error);
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Failed to resume recording."
+          title: "Resume failed",
+          description: "Failed to resume recording"
         });
       }
     }
   };
 
-  const initiateRecording = () => {
-    setShowCountdown(true);
-  };
-
   return (
-    <div>
-      {showCountdown && (
-        <CountdownTimer
-          seconds={countdownSeconds}
-          onComplete={() => {
-            setShowCountdown(false);
-            startRecording();
-          }}
-          onCancel={() => {
-            setShowCountdown(false);
-            toast({
-              title: "Cancelled",
-              description: "Recording countdown was cancelled"
-            });
-          }}
-        />
-      )}
-      <div className="hidden">
-        <button onClick={initiateRecording} id="start-recording" />
-        <button onClick={stopRecording} id="stop-recording" />
-        <button onClick={pauseRecording} id="pause-recording" />
-        <button onClick={resumeRecording} id="resume-recording" />
-      </div>
+    <div className="hidden">
+      <button id="start-recording" onClick={startRecording}>Start</button>
+      <button id="stop-recording" onClick={stopRecording}>Stop</button>
+      <button id="pause-recording" onClick={pauseRecording}>Pause</button>
+      <button id="resume-recording" onClick={resumeRecording}>Resume</button>
     </div>
   );
 };
