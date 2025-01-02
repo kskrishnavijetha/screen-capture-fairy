@@ -8,25 +8,24 @@ export const getMediaStream = async (
   resolution: Resolution
 ): Promise<MediaStream | null> => {
   try {
-    const constraints: MediaStreamConstraints = {
-      audio: mode !== 'screen',
-      video: {
-        width: { ideal: resolution.width },
-        height: { ideal: resolution.height },
-        frameRate: { ideal: frameRate }
-      }
+    const videoConstraints: MediaTrackConstraints = {
+      width: { ideal: resolution.width },
+      height: { ideal: resolution.height },
+      frameRate: { ideal: frameRate }
     };
 
     if (mode === 'screen') {
+      // For screen capture, we need to use getDisplayMedia with specific options
       return await navigator.mediaDevices.getDisplayMedia({
-        ...constraints,
-        video: {
-          ...constraints.video,
-          displaySurface: 'monitor',
-        }
+        video: videoConstraints,
+        audio: true
       });
     } else if (mode === 'camera') {
-      return await navigator.mediaDevices.getUserMedia(constraints);
+      // For camera capture, we use getUserMedia
+      return await navigator.mediaDevices.getUserMedia({
+        video: videoConstraints,
+        audio: true
+      });
     }
     return null;
   } catch (error) {
