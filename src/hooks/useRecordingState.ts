@@ -19,9 +19,14 @@ export const useRecordingState = () => {
     onRecordingStop: (blob: Blob) => void,
   ) => {
     try {
+      // Clean up any existing streams
+      if (streamRef.current) {
+        stopMediaStream(streamRef.current);
+      }
+
       const stream = await getMediaStream(captureMode, frameRate, resolution);
       if (!stream) {
-        throw new Error('Failed to get media stream');
+        throw new Error('Failed to initialize media stream');
       }
 
       streamRef.current = stream;
@@ -32,7 +37,12 @@ export const useRecordingState = () => {
         videoBitsPerSecond: 2500000
       };
       
-      mediaRecorderRef.current = new MediaRecorder(stream, options);
+      try {
+        mediaRecorderRef.current = new MediaRecorder(stream, options);
+      } catch (e) {
+        console.error('MediaRecorder error:', e);
+        throw new Error('Failed to create MediaRecorder. Please try a different browser.');
+      }
       
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -44,6 +54,8 @@ export const useRecordingState = () => {
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
         chunksRef.current = [];
         onRecordingStop(blob);
+        stopMediaStream(streamRef.current);
+        streamRef.current = null;
       };
 
       mediaRecorderRef.current.start(1000);
@@ -57,10 +69,16 @@ export const useRecordingState = () => {
       });
     } catch (error) {
       console.error('Recording error:', error);
+      setIsRecording(false);
+      setIsPaused(false);
+      if (streamRef.current) {
+        stopMediaStream(streamRef.current);
+        streamRef.current = null;
+      }
       toast({
         variant: "destructive",
         title: "Recording failed",
-        description: "Failed to start recording. Please check permissions and try again."
+        description: error instanceof Error ? error.message : "Failed to start recording"
       });
     }
   }, []);
