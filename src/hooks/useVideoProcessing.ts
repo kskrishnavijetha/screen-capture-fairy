@@ -25,6 +25,30 @@ interface ProcessingOptions {
 export const useVideoProcessing = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const validateTimeRange = (startPercent: number, endPercent: number, duration: number) => {
+    // Ensure percentages are valid numbers between 0-100
+    if (isNaN(startPercent) || isNaN(endPercent)) {
+      throw new Error('Invalid trim range values');
+    }
+
+    const start = (Math.max(0, Math.min(100, startPercent)) / 100) * duration;
+    const end = (Math.max(0, Math.min(100, endPercent)) / 100) * duration;
+
+    if (!isFinite(start) || !isFinite(end)) {
+      throw new Error('Invalid time calculations');
+    }
+
+    if (start >= end) {
+      throw new Error('Start time must be before end time');
+    }
+
+    if (start < 0 || end > duration) {
+      throw new Error('Time range exceeds video duration');
+    }
+
+    return { start, end };
+  };
+
   const processVideo = async ({
     recordedBlob,
     videoRef,
@@ -35,47 +59,44 @@ export const useVideoProcessing = () => {
     watermark,
     timestamps,
     trimRange,
-    duration
   }: ProcessingOptions): Promise<Blob> => {
-    if (!recordedBlob || !videoRef.current) {
-      throw new Error("Invalid input: Missing video or blob data");
+    if (!videoRef.current || !recordedBlob) {
+      throw new Error('Invalid video reference or blob data');
     }
 
     setIsProcessing(true);
+    console.log('Starting video processing...');
     
     try {
-      // Get actual video duration if not provided
-      const actualDuration = videoRef.current.duration || 0;
-      if (actualDuration <= 0) {
+      // Wait for video metadata to load
+      if (!videoRef.current.duration) {
+        await new Promise<void>((resolve) => {
+          videoRef.current!.onloadedmetadata = () => resolve();
+        });
+      }
+
+      const videoDuration = videoRef.current.duration;
+      console.log('Video duration:', videoDuration);
+
+      if (!videoDuration || videoDuration <= 0) {
         throw new Error('Invalid video duration');
       }
 
-      // Normalize trim range to be within valid bounds
-      const normalizedTrimRange = trimRange.map(value => 
-        Math.max(0, Math.min(100, Number(value) || 0))
+      // Validate and calculate time range
+      const { start: startTime, end: endTime } = validateTimeRange(
+        trimRange[0],
+        trimRange[1],
+        videoDuration
       );
 
-      // Calculate start and end times
-      const startTime = (normalizedTrimRange[0] / 100) * actualDuration;
-      const endTime = (normalizedTrimRange[1] / 100) * actualDuration;
+      console.log('Time range:', { startTime, endTime });
 
-      // Validate time range
-      if (!isFinite(startTime) || !isFinite(endTime)) {
-        throw new Error('Invalid time values calculated');
-      }
-
-      if (startTime >= endTime) {
-        throw new Error('Start time must be less than end time');
-      }
-
-      if (startTime < 0 || endTime > actualDuration) {
-        throw new Error('Time range exceeds video duration');
-      }
-
-      // Create and validate canvas
+      // Setup canvas
       const outputCanvas = document.createElement('canvas');
       const videoWidth = videoRef.current.videoWidth || 1280;
       const videoHeight = videoRef.current.videoHeight || 720;
+
+      console.log('Video dimensions:', { videoWidth, videoHeight });
       
       if (videoWidth <= 0 || videoHeight <= 0) {
         throw new Error('Invalid video dimensions');
@@ -140,6 +161,7 @@ export const useVideoProcessing = () => {
           }
 
           const progress = (currentTime - startTime) / (endTime - startTime);
+          console.log('Processing frame at time:', currentTime, 'progress:', progress);
 
           try {
             processVideoFrame({
@@ -150,7 +172,7 @@ export const useVideoProcessing = () => {
               annotations,
               watermark: watermark ? { ...watermark, image: watermarkImg! } : null,
               timestamps,
-              trimRange: normalizedTrimRange
+              trimRange: [startTime, endTime]
             }, outputCtx, progress);
 
             if (currentTime < endTime) {
@@ -159,9 +181,11 @@ export const useVideoProcessing = () => {
                 videoRef.current.currentTime = nextTime;
                 requestAnimationFrame(processFrame);
               } else {
+                console.log('Finished processing at time:', currentTime);
                 mediaRecorder.stop();
               }
             } else {
+              console.log('Reached end time:', endTime);
               mediaRecorder.stop();
             }
           } catch (error) {
@@ -172,9 +196,13 @@ export const useVideoProcessing = () => {
         };
 
         try {
-          mediaRecorder.start(1000);
+          console.log('Starting media recorder and seeking to:', startTime);
+          mediaRecorder.start();
           videoRef.current.currentTime = startTime;
-          videoRef.current.onseeked = processFrame;
+          videoRef.current.onseeked = () => {
+            console.log('Video seeked to start time, beginning processing');
+            processFrame();
+          };
         } catch (error) {
           console.error('Failed to start processing:', error);
           reject(error);
