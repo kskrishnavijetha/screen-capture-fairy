@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { toast } from "@/hooks/use-toast";
+import { validateVideoMetadata, validateTimeRange } from '../utils/videoValidation';
+import { setupCanvas, createMediaRecorder } from '../utils/frameProcessing';
 import { processVideoFrame } from '../components/video/VideoProcessing';
-import { Resolution } from '@/types/recording';
-import { Timestamp } from '@/types/media';
 
 interface ProcessingOptions {
   recordedBlob: Blob;
@@ -11,43 +11,14 @@ interface ProcessingOptions {
   blurRegions: Array<{ x: number; y: number; width: number; height: number }>;
   captions: Array<{ startTime: number; endTime: number; text: string }>;
   annotations: Array<{ id: string; timestamp: number; text: string; author: string }>;
-  watermark: {
-    image: string;
-    position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-    opacity: number;
-    size: number;
-  } | null;
-  timestamps: Timestamp[];
+  watermark: any;
+  timestamps: Array<{ time: number; label: string }>;
   trimRange: number[];
   duration: number;
 }
 
 export const useVideoProcessing = () => {
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const validateTimeRange = (startPercent: number, endPercent: number, duration: number) => {
-    // Ensure percentages are valid numbers between 0-100
-    if (isNaN(startPercent) || isNaN(endPercent)) {
-      throw new Error('Invalid trim range values');
-    }
-
-    const start = (Math.max(0, Math.min(100, startPercent)) / 100) * duration;
-    const end = (Math.max(0, Math.min(100, endPercent)) / 100) * duration;
-
-    if (!isFinite(start) || !isFinite(end)) {
-      throw new Error('Invalid time calculations');
-    }
-
-    if (start >= end) {
-      throw new Error('Start time must be before end time');
-    }
-
-    if (start < 0 || end > duration) {
-      throw new Error('Time range exceeds video duration');
-    }
-
-    return { start, end };
-  };
 
   const processVideo = async ({
     recordedBlob,
@@ -59,86 +30,45 @@ export const useVideoProcessing = () => {
     watermark,
     timestamps,
     trimRange,
+    duration
   }: ProcessingOptions): Promise<Blob> => {
-    if (!videoRef.current || !recordedBlob) {
-      throw new Error('Invalid video reference or blob data');
+    if (!recordedBlob) {
+      throw new Error('No video to process');
     }
 
     setIsProcessing(true);
     console.log('Starting video processing...');
-    
+
     try {
-      // Wait for video metadata to load
-      if (!videoRef.current.duration) {
+      // Wait for video metadata if needed
+      if (!videoRef.current?.duration) {
         await new Promise<void>((resolve) => {
-          videoRef.current!.onloadedmetadata = () => resolve();
+          if (videoRef.current) {
+            videoRef.current.onloadedmetadata = () => resolve();
+          }
         });
       }
 
-      const videoDuration = videoRef.current.duration;
-      console.log('Video duration:', videoDuration);
+      // Validate video metadata
+      const metadata = validateVideoMetadata(videoRef.current);
+      console.log('Video metadata:', metadata);
 
-      if (!videoDuration || videoDuration <= 0) {
-        throw new Error('Invalid video duration');
-      }
-
-      // Validate and calculate time range
-      const { start: startTime, end: endTime } = validateTimeRange(
-        trimRange[0],
-        trimRange[1],
-        videoDuration
+      // Calculate and validate time range
+      const timeRange = validateTimeRange(
+        (trimRange[0] / 100) * metadata.duration,
+        (trimRange[1] / 100) * metadata.duration,
+        metadata.duration
       );
+      console.log('Time range:', timeRange);
 
-      console.log('Time range:', { startTime, endTime });
-
-      // Setup canvas
-      const outputCanvas = document.createElement('canvas');
-      const videoWidth = videoRef.current.videoWidth || 1280;
-      const videoHeight = videoRef.current.videoHeight || 720;
-
-      console.log('Video dimensions:', { videoWidth, videoHeight });
-      
-      if (videoWidth <= 0 || videoHeight <= 0) {
-        throw new Error('Invalid video dimensions');
-      }
-
-      outputCanvas.width = videoWidth;
-      outputCanvas.height = videoHeight;
-      
-      const outputCtx = outputCanvas.getContext('2d', { 
-        willReadFrequently: true,
-        alpha: false 
-      });
-
-      if (!outputCtx) {
-        throw new Error('Failed to get canvas context');
-      }
-
-      // Setup media recorder
-      const mediaStream = outputCanvas.captureStream(60);
-      const mediaRecorder = new MediaRecorder(mediaStream, {
-        mimeType: 'video/webm;codecs=vp8,opus',
-        videoBitsPerSecond: 8000000
-      });
-
+      // Setup canvas and media recorder
+      const { canvas, ctx } = setupCanvas(metadata.width, metadata.height);
       const chunks: Blob[] = [];
-      mediaRecorder.ondataavailable = (e) => {
+      const mediaRecorder = createMediaRecorder(canvas, (e) => {
         if (e.data && e.data.size > 0) {
           chunks.push(e.data);
         }
-      };
-
-      // Load watermark if present
-      let watermarkImg: HTMLImageElement | null = null;
-      if (watermark) {
-        watermarkImg = new Image();
-        watermarkImg.crossOrigin = "anonymous";
-        await new Promise((resolve, reject) => {
-          watermarkImg!.onload = resolve;
-          watermarkImg!.onerror = reject;
-          watermarkImg!.src = watermark.image;
-        });
-      }
+      });
 
       return new Promise((resolve, reject) => {
         mediaRecorder.onstop = () => {
@@ -152,7 +82,7 @@ export const useVideoProcessing = () => {
         };
 
         const processFrame = () => {
-          if (!videoRef.current || !outputCtx) return;
+          if (!videoRef.current || !ctx) return;
 
           const currentTime = videoRef.current.currentTime;
           if (!isFinite(currentTime)) {
@@ -160,9 +90,8 @@ export const useVideoProcessing = () => {
             return;
           }
 
-          const progress = (currentTime - startTime) / (endTime - startTime);
-          console.log('Processing frame at time:', currentTime, 'progress:', progress);
-
+          const progress = (currentTime - timeRange.start) / (timeRange.end - timeRange.start);
+          
           try {
             processVideoFrame({
               videoRef,
@@ -170,22 +99,20 @@ export const useVideoProcessing = () => {
               blurRegions,
               captions,
               annotations,
-              watermark: watermark ? { ...watermark, image: watermarkImg! } : null,
+              watermark,
               timestamps,
-              trimRange: [startTime, endTime]
-            }, outputCtx, progress);
+              trimRange: [timeRange.start, timeRange.end]
+            }, ctx, progress);
 
-            if (currentTime < endTime) {
+            if (currentTime < timeRange.end) {
               const nextTime = currentTime + (1/60);
-              if (isFinite(nextTime) && nextTime <= endTime) {
+              if (isFinite(nextTime) && nextTime <= timeRange.end) {
                 videoRef.current.currentTime = nextTime;
                 requestAnimationFrame(processFrame);
               } else {
-                console.log('Finished processing at time:', currentTime);
                 mediaRecorder.stop();
               }
             } else {
-              console.log('Reached end time:', endTime);
               mediaRecorder.stop();
             }
           } catch (error) {
@@ -196,10 +123,9 @@ export const useVideoProcessing = () => {
         };
 
         try {
-          console.log('Starting media recorder and seeking to:', startTime);
           mediaRecorder.start();
-          videoRef.current.currentTime = startTime;
-          videoRef.current.onseeked = () => {
+          videoRef.current!.currentTime = timeRange.start;
+          videoRef.current!.onseeked = () => {
             console.log('Video seeked to start time, beginning processing');
             processFrame();
           };
@@ -212,6 +138,11 @@ export const useVideoProcessing = () => {
     } catch (error) {
       console.error('Video processing error:', error);
       setIsProcessing(false);
+      toast({
+        title: "Error processing video",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      });
       throw error;
     }
   };
