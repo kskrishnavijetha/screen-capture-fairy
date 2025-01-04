@@ -22,30 +22,35 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     let url: string | null = null;
     
     const setupVideo = async () => {
-      if (!recordedBlob) return;
+      if (!recordedBlob) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);
-        url = createVideoUrl(recordedBlob);
+        url = URL.createObjectURL(recordedBlob);
         
         if (!url) {
           throw new Error('Failed to create video URL');
         }
 
+        // Wait for next render cycle to ensure video element exists
+        await new Promise(resolve => setTimeout(resolve, 0));
+
         if (!videoRef.current) {
           throw new Error('Video element not found');
         }
 
-        const validatedUrl = validateVideoUrl(url);
-        if (!validatedUrl) {
-          throw new Error('Invalid video URL');
-        }
+        videoRef.current.src = url;
+        setVideoUrl(url);
 
-        videoRef.current.src = validatedUrl;
-        setVideoUrl(validatedUrl);
-
+        // Wait for metadata to load
         await new Promise<void>((resolve, reject) => {
-          if (!videoRef.current) return reject(new Error('Video element not found'));
+          if (!videoRef.current) {
+            reject(new Error('Video element not found'));
+            return;
+          }
           
           const handleLoad = () => {
             videoRef.current?.removeEventListener('loadedmetadata', handleLoad);
@@ -58,8 +63,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
 
           videoRef.current.addEventListener('loadedmetadata', handleLoad);
           videoRef.current.addEventListener('error', handleError, { once: true });
-
-          setTimeout(() => reject(new Error('Video loading timed out')), 30000);
         });
 
         if (!videoRef.current || !isFinite(videoRef.current.duration)) {
@@ -89,7 +92,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
 
     return () => {
       if (url) {
-        cleanupVideoUrl(url);
+        URL.revokeObjectURL(url);
       }
     };
   }, [recordedBlob]);
@@ -99,8 +102,8 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   return (
     <div className="space-y-4 w-full max-w-2xl mx-auto mt-6">
       {isLoading ? (
-        <div className="flex items-center justify-center p-8 bg-gray-100 rounded-lg">
-          <p className="text-gray-600">Loading video, please wait...</p>
+        <div className="flex items-center justify-center p-8 bg-gray-800 rounded-lg">
+          <p className="text-gray-200">Loading video, please wait...</p>
         </div>
       ) : (
         <>
