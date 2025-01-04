@@ -11,15 +11,27 @@ export const CountdownTimer = ({ seconds, onComplete, onCancel }: CountdownTimer
   const [timeLeft, setTimeLeft] = useState(seconds);
 
   useEffect(() => {
+    // Reset timer when seconds prop changes
+    setTimeLeft(seconds);
+  }, [seconds]);
+
+  useEffect(() => {
     if (timeLeft === 0) {
       onComplete();
       return;
     }
 
     const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
+    // Cleanup interval on unmount or when timeLeft reaches 0
     return () => clearInterval(timer);
   }, [timeLeft, onComplete]);
 
