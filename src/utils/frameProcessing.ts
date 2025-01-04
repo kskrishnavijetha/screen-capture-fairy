@@ -1,6 +1,5 @@
-import { processVideoFrame } from '../components/video/VideoProcessing';
-
 export const setupCanvas = (width: number, height: number) => {
+  console.log('Setting up canvas with dimensions:', { width, height });
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -17,6 +16,7 @@ export const setupCanvas = (width: number, height: number) => {
 };
 
 export const createMediaRecorder = (canvas: HTMLCanvasElement, onDataAvailable: (data: BlobEvent) => void) => {
+  console.log('Creating MediaRecorder for canvas stream');
   const stream = canvas.captureStream(60);
   const mediaRecorder = new MediaRecorder(stream, {
     mimeType: 'video/webm;codecs=vp8,opus',

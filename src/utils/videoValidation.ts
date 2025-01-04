@@ -24,6 +24,8 @@ export const validateVideoMetadata = (video: HTMLVideoElement | null) => {
 };
 
 export const validateTimeRange = (start: number, end: number, duration: number) => {
+  console.log('Validating time range:', { start, end, duration });
+  
   if (!isFinite(start) || !isFinite(end) || !isFinite(duration)) {
     throw new Error('Invalid time values provided');
   }
