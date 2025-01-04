@@ -3,18 +3,21 @@ export const validateVideoMetadata = (video: HTMLVideoElement | null) => {
     throw new Error('No video element provided');
   }
 
-  // Wait for metadata to be loaded - readyState should be at least HAVE_METADATA (1)
-  if (video.readyState < 1) {
-    throw new Error('Video metadata not yet loaded');
-  }
-
-  if (!video.duration || !isFinite(video.duration)) {
-    throw new Error('Invalid or missing video duration');
-  }
-
+  // Check if video metadata is actually loaded
   if (!video.videoWidth || !video.videoHeight) {
-    throw new Error('Invalid video dimensions');
+    throw new Error('Video dimensions not available - metadata not fully loaded');
   }
+
+  if (!isFinite(video.duration)) {
+    throw new Error('Invalid video duration - metadata not fully loaded');
+  }
+
+  console.log('Validated video metadata:', {
+    duration: video.duration,
+    width: video.videoWidth,
+    height: video.videoHeight,
+    readyState: video.readyState
+  });
 
   return {
     duration: video.duration,
@@ -24,19 +27,19 @@ export const validateVideoMetadata = (video: HTMLVideoElement | null) => {
 };
 
 export const validateTimeRange = (start: number, end: number, duration: number) => {
-  console.log('Validating time range:', { start, end, duration });
-  
   if (!isFinite(start) || !isFinite(end) || !isFinite(duration)) {
     throw new Error('Invalid time values provided');
   }
 
   // Ensure values are within valid range
-  start = Math.max(0, Math.min(start, duration));
-  end = Math.max(start, Math.min(end, duration));
+  const validStart = Math.max(0, Math.min(start, duration));
+  const validEnd = Math.max(validStart, Math.min(end, duration));
 
-  if (start >= end) {
+  if (validStart >= validEnd) {
     throw new Error('Start time must be less than end time');
   }
 
-  return { start, end };
+  console.log('Validated time range:', { start: validStart, end: validEnd, duration });
+
+  return { start: validStart, end: validEnd };
 };

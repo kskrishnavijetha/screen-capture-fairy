@@ -20,6 +20,38 @@ interface ProcessingOptions {
 export const useVideoProcessing = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const waitForMetadata = async (video: HTMLVideoElement): Promise<void> => {
+    if (video.readyState >= 2) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        cleanup();
+        reject(new Error('Video metadata loading timed out'));
+      }, 30000); // 30 second timeout
+
+      const loadHandler = () => {
+        cleanup();
+        resolve();
+      };
+
+      const errorHandler = (error: Event) => {
+        cleanup();
+        reject(new Error('Error loading video metadata: ' + error.type));
+      };
+
+      const cleanup = () => {
+        clearTimeout(timeoutId);
+        video.removeEventListener('loadeddata', loadHandler);
+        video.removeEventListener('error', errorHandler);
+      };
+
+      video.addEventListener('loadeddata', loadHandler);
+      video.addEventListener('error', errorHandler);
+    });
+  };
+
   const processVideo = async ({
     recordedBlob,
     videoRef,
@@ -33,8 +65,11 @@ export const useVideoProcessing = () => {
     duration
   }: ProcessingOptions): Promise<Blob> => {
     if (!recordedBlob) {
-      console.error('No video blob provided');
       throw new Error('No video to process');
+    }
+
+    if (!videoRef.current) {
+      throw new Error('Video element not found');
     }
 
     setIsProcessing(true);
@@ -47,33 +82,9 @@ export const useVideoProcessing = () => {
     });
 
     try {
-      // Wait for video metadata to load
-      if (!videoRef.current?.duration || !isFinite(videoRef.current.duration)) {
-        await new Promise<void>((resolve, reject) => {
-          if (!videoRef.current) {
-            reject(new Error('Video element not found'));
-            return;
-          }
-
-          const timeout = setTimeout(() => {
-            reject(new Error('Timeout waiting for video metadata'));
-          }, 10000); // 10 second timeout
-
-          videoRef.current.onloadedmetadata = () => {
-            clearTimeout(timeout);
-            console.log('Video metadata loaded:', {
-              duration: videoRef.current?.duration,
-              width: videoRef.current?.videoWidth,
-              height: videoRef.current?.videoHeight
-            });
-            resolve();
-          };
-        });
-      }
-
-      if (!videoRef.current?.duration || !isFinite(videoRef.current.duration)) {
-        throw new Error('Video metadata still not available after waiting');
-      }
+      // Ensure video metadata is loaded
+      await waitForMetadata(videoRef.current);
+      console.log('Video metadata loaded successfully');
 
       // Validate video metadata
       const metadata = validateVideoMetadata(videoRef.current);
@@ -114,19 +125,10 @@ export const useVideoProcessing = () => {
         };
 
         const processFrame = () => {
-          if (!videoRef.current || !ctx) {
-            console.error('Missing video element or context in processFrame');
-            return;
-          }
+          if (!videoRef.current || !ctx) return;
 
           const currentTime = videoRef.current.currentTime;
-          if (!isFinite(currentTime)) {
-            console.error('Invalid currentTime:', currentTime);
-            return;
-          }
-
           const progress = (currentTime - timeRange.start) / (timeRange.end - timeRange.start);
-          console.log('Processing frame:', { currentTime, progress });
           
           try {
             processVideoFrame({
@@ -141,16 +143,12 @@ export const useVideoProcessing = () => {
             }, ctx, progress);
 
             if (currentTime < timeRange.end) {
-              const nextTime = currentTime + (1/60);
-              if (isFinite(nextTime) && nextTime <= timeRange.end) {
-                videoRef.current.currentTime = nextTime;
-                requestAnimationFrame(processFrame);
-              } else {
-                console.log('Reached end of processing, stopping...');
-                mediaRecorder.stop();
-              }
+              videoRef.current.currentTime = Math.min(
+                currentTime + (1/60),
+                timeRange.end
+              );
+              requestAnimationFrame(processFrame);
             } else {
-              console.log('Processing complete, stopping recorder...');
               mediaRecorder.stop();
             }
           } catch (error) {
@@ -163,14 +161,11 @@ export const useVideoProcessing = () => {
         try {
           console.log('Starting MediaRecorder...');
           mediaRecorder.start();
-          if (videoRef.current) {
-            console.log('Seeking to start time:', timeRange.start);
-            videoRef.current.currentTime = timeRange.start;
-            videoRef.current.onseeked = () => {
-              console.log('Video seeked to start time, beginning processing');
-              processFrame();
-            };
-          }
+          videoRef.current.currentTime = timeRange.start;
+          videoRef.current.onseeked = () => {
+            console.log('Video seeked to start time, beginning processing');
+            processFrame();
+          };
         } catch (error) {
           console.error('Failed to start processing:', error);
           reject(error);
