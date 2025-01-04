@@ -58,9 +58,11 @@ export const RecordingSettings: React.FC<RecordingSettingsProps> = ({
             <SelectValue placeholder="Select frame rate" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="15">15 FPS</SelectItem>
-            <SelectItem value="30">30 FPS</SelectItem>
             <SelectItem value="60">60 FPS</SelectItem>
+            <SelectItem value="120">120 FPS</SelectItem>
+            <SelectItem value="144">144 FPS</SelectItem>
+            <SelectItem value="240">240 FPS</SelectItem>
+            <SelectItem value="300">300 FPS</SelectItem>
           </SelectContent>
         </Select>
       </div>

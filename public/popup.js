@@ -32,7 +32,7 @@ async function startRecording(scheduled = false) {
     const stream = await navigator.mediaDevices.getDisplayMedia({
       video: {
         displaySurface: 'monitor',
-        frameRate: quality === 'high' ? 60 : quality === 'medium' ? 30 : 15,
+        frameRate: quality === 'high' ? 300 : quality === 'medium' ? 120 : 60,
       },
       audio: audioEnabled
     });
