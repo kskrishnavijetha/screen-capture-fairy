@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { MonitorPlay } from 'lucide-react';
+import { MonitorPlay, Sparkles } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
 import { RecordingControls } from '@/components/RecordingControls';
 import { Timer } from '@/components/Timer';
@@ -72,8 +72,15 @@ const Index = () => {
   return (
     <div className={`flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
       <div className="text-center space-y-6 w-full max-w-md">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold">Screen Recorder</h1>
+        <div className="flex flex-col items-center mb-8 space-y-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+              ScreenCraft Fairy
+            </h1>
+            <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+          </div>
+          <p className="text-muted-foreground">Capture your screen with magic ✨</p>
           <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
         </div>
         
