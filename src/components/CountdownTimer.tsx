@@ -25,14 +25,14 @@ export const CountdownTimer = ({ seconds, onComplete, onCancel }: CountdownTimer
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-background p-8 rounded-lg shadow-lg text-center">
-        <div className="text-6xl font-bold mb-4 text-primary">
+      <div className="bg-gradient-to-br from-sidebar-primary/20 to-sidebar-primary/10 backdrop-blur-md p-8 rounded-lg shadow-lg text-center border-2 border-primary/20">
+        <div className="text-8xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
           {timeLeft}
         </div>
-        <p className="text-lg mb-4">Recording will start in {timeLeft} seconds</p>
+        <p className="text-xl mb-6 text-foreground/90">Recording will start in {timeLeft} seconds</p>
         <button
           onClick={onCancel}
-          className="text-sm text-muted-foreground hover:text-primary transition-colors"
+          className="px-4 py-2 text-sm bg-secondary/80 hover:bg-secondary rounded-md transition-colors text-foreground"
         >
           Cancel
         </button>
