@@ -9,7 +9,8 @@ import { ExportControls } from './video/ExportControls';
 import { ProcessControls } from './video/ProcessControls';
 import { AnnotationControls } from './video/AnnotationControls';
 import { WatermarkControls } from './video/WatermarkControls';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { VideoPreviewSection } from './video/VideoPreviewSection';
+import { TransitionSelector } from './video/TransitionSelector';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
 interface VideoEditorProps {
@@ -18,50 +19,63 @@ interface VideoEditorProps {
   onSave: (newBlob: Blob) => void;
 }
 
-type TransitionType = 'none' | 'fade' | 'crossfade';
-
 export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const previewRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
   const [trimRange, setTrimRange] = useState([0, 100]);
   const [blurRegions, setBlurRegions] = useState<Array<{ x: number, y: number, width: number, height: number }>>([]);
   const [captions, setCaptions] = useState<Array<{ startTime: number; endTime: number; text: string }>>([]);
   const [annotations, setAnnotations] = useState<Array<{ id: string; timestamp: number; text: string; author: string }>>([]);
-  const [transitionType, setTransitionType] = useState<TransitionType>('none');
+  const [transitionType, setTransitionType] = useState<'none' | 'fade' | 'crossfade'>('none');
   const [watermark, setWatermark] = useState<any>(null);
   const [isMetadataLoaded, setIsMetadataLoaded] = useState(false);
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const { isProcessing, processVideo } = useVideoProcessing();
 
   useEffect(() => {
-    if (videoRef.current && recordedBlob) {
-      const url = URL.createObjectURL(recordedBlob);
-      videoRef.current.src = url;
-      
-      const handleMetadataLoaded = () => {
-        console.log('Video metadata loaded in VideoEditor');
-        setDuration(videoRef.current?.duration || 0);
-        setIsMetadataLoaded(true);
-      };
-
-      videoRef.current.onloadedmetadata = handleMetadataLoaded;
-
-      if (videoRef.current.readyState >= 1) {
-        handleMetadataLoaded();
-      }
-
-      return () => {
-        URL.revokeObjectURL(url);
-        if (videoRef.current) {
-          videoRef.current.onloadedmetadata = null;
+    let videoUrl: string | null = null;
+    
+    const setupVideo = async () => {
+      if (videoRef.current && recordedBlob) {
+        // Create new URL for the video
+        videoUrl = URL.createObjectURL(recordedBlob);
+        videoRef.current.src = videoUrl;
+        
+        // Wait for metadata to load
+        if (videoRef.current.readyState < 1) {
+          await new Promise<void>((resolve) => {
+            const handleLoad = () => {
+              videoRef.current?.removeEventListener('loadedmetadata', handleLoad);
+              resolve();
+            };
+            videoRef.current?.addEventListener('loadedmetadata', handleLoad);
+          });
         }
-      };
-    }
+        
+        // Set duration and metadata loaded flag
+        if (isFinite(videoRef.current.duration)) {
+          setDuration(videoRef.current.duration);
+          setIsMetadataLoaded(true);
+          console.log('Video metadata loaded successfully:', {
+            duration: videoRef.current.duration,
+            width: videoRef.current.videoWidth,
+            height: videoRef.current.videoHeight
+          });
+        }
+      }
+    };
+
+    setupVideo();
+
+    // Cleanup
+    return () => {
+      if (videoUrl) {
+        URL.revokeObjectURL(videoUrl);
+      }
+    };
   }, [recordedBlob]);
 
   useEffect(() => {
-    // Cleanup previous preview URL when component unmounts or new preview is generated
     return () => {
       if (processedVideoUrl) {
         URL.revokeObjectURL(processedVideoUrl);
@@ -73,9 +87,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     setTrimRange(newRange);
     if (videoRef.current && duration > 0) {
       const newTime = (newRange[0] / 100) * duration;
-      if (isFinite(newTime)) {
-        videoRef.current.currentTime = newTime;
-      }
+      videoRef.current.currentTime = newTime;
     }
   };
 
@@ -89,7 +101,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       return;
     }
 
-    if (!isMetadataLoaded) {
+    if (!isMetadataLoaded || !isFinite(duration) || duration <= 0) {
       toast({
         title: "Error",
         description: "Please wait for video to load completely",
@@ -112,7 +124,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         duration
       });
 
-      // Create URL for preview
       if (processedVideoUrl) {
         URL.revokeObjectURL(processedVideoUrl);
       }
@@ -122,13 +133,13 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       onSave(processedBlob);
       toast({
         title: "Success",
-        description: "Video processing completed. Preview is now available.",
+        description: "Video processing completed",
       });
     } catch (error) {
       console.error('Processing error:', error);
       toast({
         title: "Error processing video",
-        description: error instanceof Error ? error.message : "There was an error while processing your video. Please try again.",
+        description: error instanceof Error ? error.message : "Processing failed",
         variant: "destructive",
       });
     }
@@ -138,50 +149,17 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
 
   return (
     <div className="space-y-4 w-full max-w-2xl mx-auto mt-6">
-      <div className="relative rounded-lg overflow-hidden bg-black">
-        <video
-          ref={videoRef}
-          className="w-full"
-          controls
-        />
-        <BlurControls
-          videoRef={videoRef}
-          blurRegions={blurRegions}
-          setBlurRegions={setBlurRegions}
-        />
-      </div>
+      <VideoPreviewSection
+        videoRef={videoRef}
+        processedVideoUrl={processedVideoUrl}
+        blurRegions={blurRegions}
+        setBlurRegions={setBlurRegions}
+      />
 
-      {processedVideoUrl && (
-        <div className="mt-6">
-          <h3 className="text-lg font-semibold mb-2">Processed Video Preview</h3>
-          <div className="relative rounded-lg overflow-hidden bg-black">
-            <video
-              ref={previewRef}
-              src={processedVideoUrl}
-              className="w-full"
-              controls
-              autoPlay
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Transition Effect</label>
-        <Select
-          value={transitionType}
-          onValueChange={(value: TransitionType) => setTransitionType(value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select transition type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">None</SelectItem>
-            <SelectItem value="fade">Fade</SelectItem>
-            <SelectItem value="crossfade">Cross Fade</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <TransitionSelector
+        value={transitionType}
+        onChange={setTransitionType}
+      />
 
       <TrimControls
         duration={duration}
