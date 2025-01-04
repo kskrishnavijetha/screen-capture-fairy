@@ -22,6 +22,7 @@ type TransitionType = 'none' | 'fade' | 'crossfade';
 
 export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const previewRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
   const [trimRange, setTrimRange] = useState([0, 100]);
   const [blurRegions, setBlurRegions] = useState<Array<{ x: number, y: number, width: number, height: number }>>([]);
@@ -30,6 +31,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [transitionType, setTransitionType] = useState<TransitionType>('none');
   const [watermark, setWatermark] = useState<any>(null);
   const [isMetadataLoaded, setIsMetadataLoaded] = useState(false);
+  const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const { isProcessing, processVideo } = useVideoProcessing();
 
   useEffect(() => {
@@ -45,7 +47,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
 
       videoRef.current.onloadedmetadata = handleMetadataLoaded;
 
-      // If metadata is already loaded, call the handler immediately
       if (videoRef.current.readyState >= 1) {
         handleMetadataLoaded();
       }
@@ -58,6 +59,15 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       };
     }
   }, [recordedBlob]);
+
+  useEffect(() => {
+    // Cleanup previous preview URL when component unmounts or new preview is generated
+    return () => {
+      if (processedVideoUrl) {
+        URL.revokeObjectURL(processedVideoUrl);
+      }
+    };
+  }, [processedVideoUrl]);
 
   const handleTrimRangeChange = (newRange: number[]) => {
     setTrimRange(newRange);
@@ -102,10 +112,17 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         duration
       });
 
+      // Create URL for preview
+      if (processedVideoUrl) {
+        URL.revokeObjectURL(processedVideoUrl);
+      }
+      const newUrl = URL.createObjectURL(processedBlob);
+      setProcessedVideoUrl(newUrl);
+      
       onSave(processedBlob);
       toast({
         title: "Success",
-        description: "Video processing completed",
+        description: "Video processing completed. Preview is now available.",
       });
     } catch (error) {
       console.error('Processing error:', error);
@@ -133,6 +150,21 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
           setBlurRegions={setBlurRegions}
         />
       </div>
+
+      {processedVideoUrl && (
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-2">Processed Video Preview</h3>
+          <div className="relative rounded-lg overflow-hidden bg-black">
+            <video
+              ref={previewRef}
+              src={processedVideoUrl}
+              className="w-full"
+              controls
+              autoPlay
+            />
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2">
         <label className="text-sm font-medium">Transition Effect</label>
