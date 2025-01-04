@@ -3,8 +3,13 @@ export const validateVideoMetadata = (video: HTMLVideoElement | null) => {
     throw new Error('No video element provided');
   }
 
+  // Wait for metadata to be loaded
+  if (!video.readyState >= 1) {
+    throw new Error('Video metadata not yet loaded');
+  }
+
   if (!video.duration || !isFinite(video.duration)) {
-    throw new Error('Invalid video duration');
+    throw new Error('Invalid or missing video duration');
   }
 
   if (!video.videoWidth || !video.videoHeight) {
@@ -23,8 +28,12 @@ export const validateTimeRange = (start: number, end: number, duration: number) 
     throw new Error('Invalid time values provided');
   }
 
-  if (start < 0 || end > duration || start >= end) {
-    throw new Error('Invalid time range');
+  // Ensure values are within valid range
+  start = Math.max(0, Math.min(start, duration));
+  end = Math.max(start, Math.min(end, duration));
+
+  if (start >= end) {
+    throw new Error('Start time must be less than end time');
   }
 
   return { start, end };

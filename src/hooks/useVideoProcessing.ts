@@ -40,13 +40,25 @@ export const useVideoProcessing = () => {
     console.log('Starting video processing...');
 
     try {
-      // Wait for video metadata if needed
-      if (!videoRef.current?.duration) {
+      // Wait for video metadata to load
+      if (!videoRef.current?.duration || !isFinite(videoRef.current.duration)) {
         await new Promise<void>((resolve) => {
           if (videoRef.current) {
-            videoRef.current.onloadedmetadata = () => resolve();
+            videoRef.current.onloadedmetadata = () => {
+              console.log('Video metadata loaded:', {
+                duration: videoRef.current?.duration,
+                width: videoRef.current?.videoWidth,
+                height: videoRef.current?.videoHeight
+              });
+              resolve();
+            };
           }
         });
+      }
+
+      // Double check metadata after waiting
+      if (!videoRef.current?.duration || !isFinite(videoRef.current.duration)) {
+        throw new Error('Video metadata still not available after waiting');
       }
 
       // Validate video metadata
@@ -124,11 +136,13 @@ export const useVideoProcessing = () => {
 
         try {
           mediaRecorder.start();
-          videoRef.current!.currentTime = timeRange.start;
-          videoRef.current!.onseeked = () => {
-            console.log('Video seeked to start time, beginning processing');
-            processFrame();
-          };
+          if (videoRef.current) {
+            videoRef.current.currentTime = timeRange.start;
+            videoRef.current.onseeked = () => {
+              console.log('Video seeked to start time, beginning processing');
+              processFrame();
+            };
+          }
         } catch (error) {
           console.error('Failed to start processing:', error);
           reject(error);

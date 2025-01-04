@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { BlurControls } from './video/BlurControls';
 import { TrimControls } from './video/TrimControls';
 import { CaptionControls } from './video/CaptionControls';
@@ -29,16 +29,33 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [annotations, setAnnotations] = useState<Array<{ id: string; timestamp: number; text: string; author: string }>>([]);
   const [transitionType, setTransitionType] = useState<TransitionType>('none');
   const [watermark, setWatermark] = useState<any>(null);
+  const [isMetadataLoaded, setIsMetadataLoaded] = useState(false);
   const { isProcessing, processVideo } = useVideoProcessing();
 
   useEffect(() => {
     if (videoRef.current && recordedBlob) {
       const url = URL.createObjectURL(recordedBlob);
       videoRef.current.src = url;
-      videoRef.current.onloadedmetadata = () => {
+      
+      const handleMetadataLoaded = () => {
+        console.log('Video metadata loaded in VideoEditor');
         setDuration(videoRef.current?.duration || 0);
+        setIsMetadataLoaded(true);
       };
-      return () => URL.revokeObjectURL(url);
+
+      videoRef.current.onloadedmetadata = handleMetadataLoaded;
+
+      // If metadata is already loaded, call the handler immediately
+      if (videoRef.current.readyState >= 1) {
+        handleMetadataLoaded();
+      }
+
+      return () => {
+        URL.revokeObjectURL(url);
+        if (videoRef.current) {
+          videoRef.current.onloadedmetadata = null;
+        }
+      };
     }
   }, [recordedBlob]);
 
@@ -57,6 +74,15 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       toast({
         title: "Error",
         description: "No video to process",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isMetadataLoaded) {
+      toast({
+        title: "Error",
+        description: "Please wait for video to load completely",
         variant: "destructive",
       });
       return;
@@ -85,7 +111,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       console.error('Processing error:', error);
       toast({
         title: "Error processing video",
-        description: "There was an error while processing your video. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error while processing your video. Please try again.",
         variant: "destructive",
       });
     }
