@@ -20,38 +20,6 @@ interface ProcessingOptions {
 export const useVideoProcessing = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const waitForMetadata = async (video: HTMLVideoElement): Promise<void> => {
-    if (video.readyState >= 2) {
-      return Promise.resolve();
-    }
-
-    return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        cleanup();
-        reject(new Error('Video metadata loading timed out'));
-      }, 30000); // 30 second timeout
-
-      const loadHandler = () => {
-        cleanup();
-        resolve();
-      };
-
-      const errorHandler = (error: Event) => {
-        cleanup();
-        reject(new Error('Error loading video metadata: ' + error.type));
-      };
-
-      const cleanup = () => {
-        clearTimeout(timeoutId);
-        video.removeEventListener('loadeddata', loadHandler);
-        video.removeEventListener('error', errorHandler);
-      };
-
-      video.addEventListener('loadeddata', loadHandler);
-      video.addEventListener('error', errorHandler);
-    });
-  };
-
   const processVideo = async ({
     recordedBlob,
     videoRef,
@@ -68,27 +36,34 @@ export const useVideoProcessing = () => {
       throw new Error('No video to process');
     }
 
-    if (!videoRef.current) {
-      throw new Error('Video element not found');
-    }
-
     setIsProcessing(true);
-    console.log('Starting video processing...', {
-      blobSize: recordedBlob.size,
-      blobType: recordedBlob.type,
-      videoRef: !!videoRef.current,
-      trimRange,
-      duration
-    });
+    console.log('Starting video processing...');
 
     try {
-      // Ensure video metadata is loaded
-      await waitForMetadata(videoRef.current);
-      console.log('Video metadata loaded successfully');
+      // Wait for video metadata to load
+      if (!videoRef.current?.duration || !isFinite(videoRef.current.duration)) {
+        await new Promise<void>((resolve) => {
+          if (videoRef.current) {
+            videoRef.current.onloadedmetadata = () => {
+              console.log('Video metadata loaded:', {
+                duration: videoRef.current?.duration,
+                width: videoRef.current?.videoWidth,
+                height: videoRef.current?.videoHeight
+              });
+              resolve();
+            };
+          }
+        });
+      }
+
+      // Double check metadata after waiting
+      if (!videoRef.current?.duration || !isFinite(videoRef.current.duration)) {
+        throw new Error('Video metadata still not available after waiting');
+      }
 
       // Validate video metadata
       const metadata = validateVideoMetadata(videoRef.current);
-      console.log('Video metadata validated:', metadata);
+      console.log('Video metadata:', metadata);
 
       // Calculate and validate time range
       const timeRange = validateTimeRange(
@@ -96,16 +71,13 @@ export const useVideoProcessing = () => {
         (trimRange[1] / 100) * metadata.duration,
         metadata.duration
       );
-      console.log('Time range validated:', timeRange);
+      console.log('Time range:', timeRange);
 
       // Setup canvas and media recorder
       const { canvas, ctx } = setupCanvas(metadata.width, metadata.height);
-      console.log('Canvas setup complete:', { width: canvas.width, height: canvas.height });
-
       const chunks: Blob[] = [];
       const mediaRecorder = createMediaRecorder(canvas, (e) => {
         if (e.data && e.data.size > 0) {
-          console.log('Received data chunk:', e.data.size);
           chunks.push(e.data);
         }
       });
@@ -113,13 +85,10 @@ export const useVideoProcessing = () => {
       return new Promise((resolve, reject) => {
         mediaRecorder.onstop = () => {
           try {
-            console.log('MediaRecorder stopped, creating final blob...');
             const finalBlob = new Blob(chunks, { type: 'video/webm' });
-            console.log('Final blob created:', { size: finalBlob.size, type: finalBlob.type });
             setIsProcessing(false);
             resolve(finalBlob);
           } catch (error) {
-            console.error('Error creating final blob:', error);
             reject(error);
           }
         };
@@ -128,6 +97,11 @@ export const useVideoProcessing = () => {
           if (!videoRef.current || !ctx) return;
 
           const currentTime = videoRef.current.currentTime;
+          if (!isFinite(currentTime)) {
+            console.error('Invalid currentTime:', currentTime);
+            return;
+          }
+
           const progress = (currentTime - timeRange.start) / (timeRange.end - timeRange.start);
           
           try {
@@ -143,11 +117,13 @@ export const useVideoProcessing = () => {
             }, ctx, progress);
 
             if (currentTime < timeRange.end) {
-              videoRef.current.currentTime = Math.min(
-                currentTime + (1/60),
-                timeRange.end
-              );
-              requestAnimationFrame(processFrame);
+              const nextTime = currentTime + (1/60);
+              if (isFinite(nextTime) && nextTime <= timeRange.end) {
+                videoRef.current.currentTime = nextTime;
+                requestAnimationFrame(processFrame);
+              } else {
+                mediaRecorder.stop();
+              }
             } else {
               mediaRecorder.stop();
             }
@@ -159,13 +135,14 @@ export const useVideoProcessing = () => {
         };
 
         try {
-          console.log('Starting MediaRecorder...');
           mediaRecorder.start();
-          videoRef.current.currentTime = timeRange.start;
-          videoRef.current.onseeked = () => {
-            console.log('Video seeked to start time, beginning processing');
-            processFrame();
-          };
+          if (videoRef.current) {
+            videoRef.current.currentTime = timeRange.start;
+            videoRef.current.onseeked = () => {
+              console.log('Video seeked to start time, beginning processing');
+              processFrame();
+            };
+          }
         } catch (error) {
           console.error('Failed to start processing:', error);
           reject(error);

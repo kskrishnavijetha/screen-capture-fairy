@@ -1,8 +1,15 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
-import { validateVideoUrl, createVideoUrl, cleanupVideoUrl } from './video/VideoUrlHandler';
-import { VideoControls } from './video/VideoControls';
-import { ProcessingOptions } from './video/ProcessingOptions';
+import { BlurControls } from './video/BlurControls';
+import { TrimControls } from './video/TrimControls';
+import { CaptionControls } from './video/CaptionControls';
+import { ShareControls } from './video/ShareControls';
+import { EmbedControls } from './video/EmbedControls';
+import { ExportControls } from './video/ExportControls';
+import { ProcessControls } from './video/ProcessControls';
+import { AnnotationControls } from './video/AnnotationControls';
+import { WatermarkControls } from './video/WatermarkControls';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
 interface VideoEditorProps {
@@ -11,117 +18,202 @@ interface VideoEditorProps {
   onSave: (newBlob: Blob) => void;
 }
 
+type TransitionType = 'none' | 'fade' | 'crossfade';
+
 export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const previewRef = useRef<HTMLVideoElement>(null);
+  const [duration, setDuration] = useState(0);
+  const [trimRange, setTrimRange] = useState([0, 100]);
+  const [blurRegions, setBlurRegions] = useState<Array<{ x: number, y: number, width: number, height: number }>>([]);
+  const [captions, setCaptions] = useState<Array<{ startTime: number; endTime: number; text: string }>>([]);
+  const [annotations, setAnnotations] = useState<Array<{ id: string; timestamp: number; text: string; author: string }>>([]);
+  const [transitionType, setTransitionType] = useState<TransitionType>('none');
+  const [watermark, setWatermark] = useState<any>(null);
   const [isMetadataLoaded, setIsMetadataLoaded] = useState(false);
+  const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const { isProcessing, processVideo } = useVideoProcessing();
 
   useEffect(() => {
-    let url: string | null = null;
-    
-    const setupVideo = async () => {
-      if (!recordedBlob) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        url = URL.createObjectURL(recordedBlob);
-        
-        if (!url) {
-          throw new Error('Failed to create video URL');
-        }
-
-        // Wait for next render cycle to ensure video element exists
-        await new Promise(resolve => setTimeout(resolve, 0));
-
-        if (!videoRef.current) {
-          throw new Error('Video element not found');
-        }
-
-        videoRef.current.src = url;
-        setVideoUrl(url);
-
-        // Wait for metadata to load
-        await new Promise<void>((resolve, reject) => {
-          if (!videoRef.current) {
-            reject(new Error('Video element not found'));
-            return;
-          }
-          
-          const handleLoad = () => {
-            videoRef.current?.removeEventListener('loadedmetadata', handleLoad);
-            resolve();
-          };
-
-          const handleError = (error: Event) => {
-            reject(new Error(`Failed to load video: ${error.type}`));
-          };
-
-          videoRef.current.addEventListener('loadedmetadata', handleLoad);
-          videoRef.current.addEventListener('error', handleError, { once: true });
-        });
-
-        if (!videoRef.current || !isFinite(videoRef.current.duration)) {
-          throw new Error('Invalid video duration');
-        }
-
+    if (videoRef.current && recordedBlob) {
+      const url = URL.createObjectURL(recordedBlob);
+      videoRef.current.src = url;
+      
+      const handleMetadataLoaded = () => {
+        console.log('Video metadata loaded in VideoEditor');
+        setDuration(videoRef.current?.duration || 0);
         setIsMetadataLoaded(true);
-        setIsLoading(false);
-        console.log('Video loaded successfully:', {
-          duration: videoRef.current.duration,
-          width: videoRef.current.videoWidth,
-          height: videoRef.current.videoHeight
-        });
+      };
 
-      } catch (error) {
-        console.error('Error loading video:', error);
-        setIsLoading(false);
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "Failed to load video",
-          variant: "destructive",
-        });
+      videoRef.current.onloadedmetadata = handleMetadataLoaded;
+
+      if (videoRef.current.readyState >= 1) {
+        handleMetadataLoaded();
       }
-    };
 
-    setupVideo();
-
-    return () => {
-      if (url) {
+      return () => {
         URL.revokeObjectURL(url);
+        if (videoRef.current) {
+          videoRef.current.onloadedmetadata = null;
+        }
+      };
+    }
+  }, [recordedBlob]);
+
+  useEffect(() => {
+    // Cleanup previous preview URL when component unmounts or new preview is generated
+    return () => {
+      if (processedVideoUrl) {
+        URL.revokeObjectURL(processedVideoUrl);
       }
     };
-  }, [recordedBlob]);
+  }, [processedVideoUrl]);
+
+  const handleTrimRangeChange = (newRange: number[]) => {
+    setTrimRange(newRange);
+    if (videoRef.current && duration > 0) {
+      const newTime = (newRange[0] / 100) * duration;
+      if (isFinite(newTime)) {
+        videoRef.current.currentTime = newTime;
+      }
+    }
+  };
+
+  const handleProcess = async () => {
+    if (!recordedBlob) {
+      toast({
+        title: "Error",
+        description: "No video to process",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isMetadataLoaded) {
+      toast({
+        title: "Error",
+        description: "Please wait for video to load completely",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const processedBlob = await processVideo({
+        recordedBlob,
+        videoRef,
+        transitionType,
+        blurRegions,
+        captions,
+        annotations,
+        watermark,
+        timestamps,
+        trimRange,
+        duration
+      });
+
+      // Create URL for preview
+      if (processedVideoUrl) {
+        URL.revokeObjectURL(processedVideoUrl);
+      }
+      const newUrl = URL.createObjectURL(processedBlob);
+      setProcessedVideoUrl(newUrl);
+      
+      onSave(processedBlob);
+      toast({
+        title: "Success",
+        description: "Video processing completed. Preview is now available.",
+      });
+    } catch (error) {
+      console.error('Processing error:', error);
+      toast({
+        title: "Error processing video",
+        description: error instanceof Error ? error.message : "There was an error while processing your video. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (!recordedBlob) return null;
 
   return (
     <div className="space-y-4 w-full max-w-2xl mx-auto mt-6">
-      {isLoading ? (
-        <div className="flex items-center justify-center p-8 bg-gray-800 rounded-lg">
-          <p className="text-gray-200">Loading video, please wait...</p>
+      <div className="relative rounded-lg overflow-hidden bg-black">
+        <video
+          ref={videoRef}
+          className="w-full"
+          controls
+        />
+        <BlurControls
+          videoRef={videoRef}
+          blurRegions={blurRegions}
+          setBlurRegions={setBlurRegions}
+        />
+      </div>
+
+      {processedVideoUrl && (
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-2">Processed Video Preview</h3>
+          <div className="relative rounded-lg overflow-hidden bg-black">
+            <video
+              ref={previewRef}
+              src={processedVideoUrl}
+              className="w-full"
+              controls
+              autoPlay
+            />
+          </div>
         </div>
-      ) : (
-        <>
-          <VideoControls
-            videoRef={videoRef}
-            videoUrl={videoUrl}
-            isMetadataLoaded={isMetadataLoaded}
-          />
-          <ProcessingOptions
-            videoRef={videoRef}
-            timestamps={timestamps}
-            isMetadataLoaded={isMetadataLoaded}
-            isProcessing={isProcessing}
-            onSave={onSave}
-            processVideo={processVideo}
-          />
-        </>
       )}
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Transition Effect</label>
+        <Select
+          value={transitionType}
+          onValueChange={(value: TransitionType) => setTransitionType(value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select transition type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            <SelectItem value="fade">Fade</SelectItem>
+            <SelectItem value="crossfade">Cross Fade</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <TrimControls
+        duration={duration}
+        trimRange={trimRange}
+        onTrimRangeChange={handleTrimRangeChange}
+      />
+
+      <CaptionControls
+        duration={duration}
+        captions={captions}
+        onCaptionsChange={setCaptions}
+      />
+
+      <AnnotationControls
+        duration={duration}
+        annotations={annotations}
+        onAnnotationsChange={setAnnotations}
+      />
+
+      <WatermarkControls
+        watermark={watermark}
+        onWatermarkChange={setWatermark}
+      />
+
+      <ShareControls recordedBlob={recordedBlob} />
+      <EmbedControls recordedBlob={recordedBlob} />
+      <ExportControls recordedBlob={recordedBlob} />
+
+      <ProcessControls 
+        onProcess={handleProcess} 
+        isProcessing={isProcessing}
+      />
     </div>
   );
 };
