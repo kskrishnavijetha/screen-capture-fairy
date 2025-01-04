@@ -29,6 +29,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [transitionType, setTransitionType] = useState<'none' | 'fade' | 'crossfade'>('none');
   const [watermark, setWatermark] = useState<any>(null);
   const [isMetadataLoaded, setIsMetadataLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const { isProcessing, processVideo } = useVideoProcessing();
 
@@ -36,38 +37,72 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     let videoUrl: string | null = null;
     
     const setupVideo = async () => {
-      if (videoRef.current && recordedBlob) {
+      if (!recordedBlob) return;
+
+      try {
+        setIsLoading(true);
+        
         // Create new URL for the video
         videoUrl = URL.createObjectURL(recordedBlob);
+        
+        if (!videoRef.current) {
+          throw new Error('Video element not found');
+        }
+
         videoRef.current.src = videoUrl;
-        
+
         // Wait for metadata to load
-        if (videoRef.current.readyState < 1) {
-          await new Promise<void>((resolve) => {
-            const handleLoad = () => {
-              videoRef.current?.removeEventListener('loadedmetadata', handleLoad);
-              resolve();
-            };
-            videoRef.current?.addEventListener('loadedmetadata', handleLoad);
-          });
+        await new Promise<void>((resolve, reject) => {
+          const handleLoad = () => {
+            if (!videoRef.current) {
+              reject(new Error('Video element not found'));
+              return;
+            }
+            videoRef.current.removeEventListener('loadedmetadata', handleLoad);
+            resolve();
+          };
+
+          const handleError = (error: Event) => {
+            reject(new Error(`Failed to load video: ${error.type}`));
+          };
+
+          videoRef.current.addEventListener('loadedmetadata', handleLoad);
+          videoRef.current.addEventListener('error', handleError, { once: true });
+
+          // Add timeout to prevent infinite waiting
+          setTimeout(() => {
+            reject(new Error('Video loading timed out'));
+          }, 30000);
+        });
+
+        // Verify video metadata
+        if (!videoRef.current || !isFinite(videoRef.current.duration)) {
+          throw new Error('Invalid video duration');
         }
-        
-        // Set duration and metadata loaded flag
-        if (isFinite(videoRef.current.duration)) {
-          setDuration(videoRef.current.duration);
-          setIsMetadataLoaded(true);
-          console.log('Video metadata loaded successfully:', {
-            duration: videoRef.current.duration,
-            width: videoRef.current.videoWidth,
-            height: videoRef.current.videoHeight
-          });
-        }
+
+        setDuration(videoRef.current.duration);
+        setIsMetadataLoaded(true);
+        setIsLoading(false);
+
+        console.log('Video loaded successfully:', {
+          duration: videoRef.current.duration,
+          width: videoRef.current.videoWidth,
+          height: videoRef.current.videoHeight
+        });
+
+      } catch (error) {
+        console.error('Error loading video:', error);
+        setIsLoading(false);
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to load video",
+          variant: "destructive",
+        });
       }
     };
 
     setupVideo();
 
-    // Cleanup
     return () => {
       if (videoUrl) {
         URL.revokeObjectURL(videoUrl);
@@ -149,49 +184,57 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
 
   return (
     <div className="space-y-4 w-full max-w-2xl mx-auto mt-6">
-      <VideoPreviewSection
-        videoRef={videoRef}
-        processedVideoUrl={processedVideoUrl}
-        blurRegions={blurRegions}
-        setBlurRegions={setBlurRegions}
-      />
+      {isLoading ? (
+        <div className="flex items-center justify-center p-8 bg-gray-100 rounded-lg">
+          <p className="text-gray-600">Loading video, please wait...</p>
+        </div>
+      ) : (
+        <>
+          <VideoPreviewSection
+            videoRef={videoRef}
+            processedVideoUrl={processedVideoUrl}
+            blurRegions={blurRegions}
+            setBlurRegions={setBlurRegions}
+          />
 
-      <TransitionSelector
-        value={transitionType}
-        onChange={setTransitionType}
-      />
+          <TransitionSelector
+            value={transitionType}
+            onChange={setTransitionType}
+          />
 
-      <TrimControls
-        duration={duration}
-        trimRange={trimRange}
-        onTrimRangeChange={handleTrimRangeChange}
-      />
+          <TrimControls
+            duration={duration}
+            trimRange={trimRange}
+            onTrimRangeChange={handleTrimRangeChange}
+          />
 
-      <CaptionControls
-        duration={duration}
-        captions={captions}
-        onCaptionsChange={setCaptions}
-      />
+          <CaptionControls
+            duration={duration}
+            captions={captions}
+            onCaptionsChange={setCaptions}
+          />
 
-      <AnnotationControls
-        duration={duration}
-        annotations={annotations}
-        onAnnotationsChange={setAnnotations}
-      />
+          <AnnotationControls
+            duration={duration}
+            annotations={annotations}
+            onAnnotationsChange={setAnnotations}
+          />
 
-      <WatermarkControls
-        watermark={watermark}
-        onWatermarkChange={setWatermark}
-      />
+          <WatermarkControls
+            watermark={watermark}
+            onWatermarkChange={setWatermark}
+          />
 
-      <ShareControls recordedBlob={recordedBlob} />
-      <EmbedControls recordedBlob={recordedBlob} />
-      <ExportControls recordedBlob={recordedBlob} />
+          <ShareControls recordedBlob={recordedBlob} />
+          <EmbedControls recordedBlob={recordedBlob} />
+          <ExportControls recordedBlob={recordedBlob} />
 
-      <ProcessControls 
-        onProcess={handleProcess} 
-        isProcessing={isProcessing}
-      />
+          <ProcessControls 
+            onProcess={handleProcess} 
+            isProcessing={isProcessing}
+          />
+        </>
+      )}
     </div>
   );
 };
