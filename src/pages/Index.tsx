@@ -71,6 +71,11 @@ const Index = () => {
 
   return (
     <div className={`flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
+      <img 
+        src="/lovable-uploads/6bbd4c78-befc-47a7-b021-8c806bc94ebd.png" 
+        alt="ScreenCraft Logo" 
+        className="absolute top-4 left-4 w-12 h-12 object-contain"
+      />
       <div className="text-center space-y-6 w-full max-w-md">
         <div className="flex flex-col items-center mb-8 space-y-4">
           <div className="flex items-center gap-2">
