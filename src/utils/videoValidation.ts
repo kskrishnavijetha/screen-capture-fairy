@@ -3,8 +3,8 @@ export const validateVideoMetadata = (video: HTMLVideoElement | null) => {
     throw new Error('No video element provided');
   }
 
-  // Wait for metadata to be loaded
-  if (!video.readyState >= 1) {
+  // Wait for metadata to be loaded - readyState should be at least HAVE_METADATA (1)
+  if (video.readyState < 1) {
     throw new Error('Video metadata not yet loaded');
   }
 
