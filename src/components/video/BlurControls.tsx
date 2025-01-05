@@ -72,7 +72,10 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBlurRegions();
 
-    ctx.strokeStyle = '#ff0000';
+    // Draw the current selection with black overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(startPos.x, startPos.y, x - startPos.x, y - startPos.y);
+    ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
     ctx.strokeRect(startPos.x, startPos.y, x - startPos.x, y - startPos.y);
   };
@@ -119,9 +122,12 @@ export const BlurControls = ({ videoRef, blurRegions, setBlurRegions }: BlurCont
 
     canvas.style.cursor = 'crosshair';
     blurRegions.forEach(region => {
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+      // Fill with semi-transparent black
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
       ctx.fillRect(region.x, region.y, region.width, region.height);
-      ctx.strokeStyle = '#ff0000';
+      
+      // White border for better visibility
+      ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 2;
       ctx.strokeRect(region.x, region.y, region.width, region.height);
     });
