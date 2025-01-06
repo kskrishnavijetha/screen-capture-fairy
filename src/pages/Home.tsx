@@ -10,47 +10,51 @@ const FEATURES = [
     label: 'AI Content Generator',
     icon: FileText,
     description: 'Generate engaging content with AI assistance',
-    path: '/'
+    path: '/content'
   },
   {
     id: 'video',
     label: 'AI Short Video Generator',
     icon: Video,
     description: 'Create compelling short-form videos using AI',
-    path: '/'
+    path: '/video'
   },
   {
     id: 'recorder',
     label: 'Screen Recorder',
     icon: MonitorPlay,
     description: 'Record your screen with professional tools',
-    path: '/'
+    path: '/recorder'
   },
   {
     id: 'calendar',
     label: 'Content Calendar',
     icon: Calendar,
     description: 'Plan and schedule your content effectively',
-    path: '/'
+    path: '/calendar'
   },
   {
     id: 'analytics',
     label: 'Social Media Analytics',
     icon: ChartBar,
     description: 'Track and analyze your social media performance',
-    path: '/'
+    path: '/analytics'
   },
   {
     id: 'monetization',
     label: 'Monetization Hub',
     icon: DollarSign,
     description: 'Optimize your content for revenue generation',
-    path: '/'
+    path: '/monetization'
   }
 ];
 
 const Home = () => {
   const navigate = useNavigate();
+
+  const handleCardClick = (path: string) => {
+    navigate(path);
+  };
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -66,7 +70,7 @@ const Home = () => {
           <Card 
             key={feature.id}
             className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => navigate(feature.path)}
+            onClick={() => handleCardClick(feature.path)}
           >
             <CardHeader>
               <div className="flex items-center gap-2 mb-2">
