@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Menu, FileText, Video, MonitorPlay, Calendar, ChartBar, DollarSign } from 'lucide-react';
+import { Menu, FileText, Video, MonitorPlay, Calendar, ChartBar, DollarSign, Home } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
 import { RecordingControls } from '@/components/RecordingControls';
 import { Timer } from '@/components/Timer';
@@ -11,6 +11,7 @@ import { RecordingManager } from '@/components/RecordingManager';
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { RecordingSettings } from '@/components/recording/RecordingSettings';
 import { Resolution } from '@/types/recording';
+import { useNavigate } from 'react-router-dom';
 import {
   Sheet,
   SheetContent,
@@ -27,6 +28,7 @@ const RESOLUTIONS: Resolution[] = [
 ];
 
 const MENU_ITEMS = [
+  { id: 'home', label: 'Home', icon: Home, path: '/home' },
   { id: 'content', label: 'AI Content Generator', icon: FileText },
   { id: 'video', label: 'AI Short Video Generator', icon: Video },
   { id: 'recorder', label: 'Screen Recorder', icon: MonitorPlay },
@@ -51,6 +53,7 @@ const getThemeClasses = (themeName: string) => {
 };
 
 const Index = () => {
+  const navigate = useNavigate();
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -61,6 +64,13 @@ const Index = () => {
   const [currentTheme, setCurrentTheme] = useState('Default Dark');
   const [filename, setFilename] = useState('recording');
   const [selectedComponent, setSelectedComponent] = useState('recorder');
+
+  const handleMenuItemClick = (itemId: string, path?: string) => {
+    if (path) {
+      navigate(path);
+    }
+    setSelectedComponent(itemId);
+  };
 
   const handleRecordingStart = () => {
     setDuration(0);
@@ -199,7 +209,7 @@ const Index = () => {
                   key={item.id}
                   variant={selectedComponent === item.id ? "default" : "ghost"}
                   className="w-full justify-start"
-                  onClick={() => setSelectedComponent(item.id)}
+                  onClick={() => handleMenuItemClick(item.id, item.path)}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.label}
