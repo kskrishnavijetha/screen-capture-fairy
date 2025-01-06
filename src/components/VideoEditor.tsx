@@ -9,6 +9,8 @@ import { ExportControls } from './video/ExportControls';
 import { ProcessControls } from './video/ProcessControls';
 import { AnnotationControls } from './video/AnnotationControls';
 import { WatermarkControls } from './video/WatermarkControls';
+import { SilenceControls } from './video/SilenceControls';
+import { FillerWordControls } from './video/FillerWordControls';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
@@ -32,6 +34,8 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [watermark, setWatermark] = useState<any>(null);
   const [isMetadataLoaded, setIsMetadataLoaded] = useState(false);
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
+  const [removeSilences, setRemoveSilences] = useState(false);
+  const [removeFillerWords, setRemoveFillerWords] = useState(false);
   const { isProcessing, processVideo } = useVideoProcessing();
 
   useEffect(() => {
@@ -109,10 +113,11 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         watermark,
         timestamps,
         trimRange,
-        duration
+        duration,
+        removeSilences,
+        removeFillerWords
       });
 
-      // Create URL for preview
       if (processedVideoUrl) {
         URL.revokeObjectURL(processedVideoUrl);
       }
@@ -166,54 +171,66 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         </div>
       )}
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Transition Effect</label>
-        <Select
-          value={transitionType}
-          onValueChange={(value: TransitionType) => setTransitionType(value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select transition type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">None</SelectItem>
-            <SelectItem value="fade">Fade</SelectItem>
-            <SelectItem value="crossfade">Cross Fade</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="space-y-4">
+        <TrimControls
+          duration={duration}
+          trimRange={trimRange}
+          onTrimRangeChange={handleTrimRangeChange}
+        />
+
+        <SilenceControls
+          enabled={removeSilences}
+          onToggle={setRemoveSilences}
+        />
+
+        <FillerWordControls
+          enabled={removeFillerWords}
+          onToggle={setRemoveFillerWords}
+        />
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Transition Effect</label>
+          <Select
+            value={transitionType}
+            onValueChange={(value: TransitionType) => setTransitionType(value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select transition type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="fade">Fade</SelectItem>
+              <SelectItem value="crossfade">Cross Fade</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <CaptionControls
+          duration={duration}
+          captions={captions}
+          onCaptionsChange={setCaptions}
+        />
+
+        <AnnotationControls
+          duration={duration}
+          annotations={annotations}
+          onAnnotationsChange={setAnnotations}
+        />
+
+        <WatermarkControls
+          watermark={watermark}
+          onWatermarkChange={setWatermark}
+        />
+
+        <ShareControls recordedBlob={recordedBlob} />
+        <EmbedControls recordedBlob={recordedBlob} />
+        <ExportControls recordedBlob={recordedBlob} />
+
+        <ProcessControls 
+          onProcess={handleProcess} 
+          isProcessing={isProcessing}
+        />
       </div>
-
-      <TrimControls
-        duration={duration}
-        trimRange={trimRange}
-        onTrimRangeChange={handleTrimRangeChange}
-      />
-
-      <CaptionControls
-        duration={duration}
-        captions={captions}
-        onCaptionsChange={setCaptions}
-      />
-
-      <AnnotationControls
-        duration={duration}
-        annotations={annotations}
-        onAnnotationsChange={setAnnotations}
-      />
-
-      <WatermarkControls
-        watermark={watermark}
-        onWatermarkChange={setWatermark}
-      />
-
-      <ShareControls recordedBlob={recordedBlob} />
-      <EmbedControls recordedBlob={recordedBlob} />
-      <ExportControls recordedBlob={recordedBlob} />
-
-      <ProcessControls 
-        onProcess={handleProcess} 
-        isProcessing={isProcessing}
-      />
     </div>
   );
 };
