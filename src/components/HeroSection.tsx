@@ -4,12 +4,12 @@ export const HeroSection = () => {
   return (
     <div className="text-center space-y-6 max-w-3xl mx-auto mb-12">
       <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent whitespace-nowrap overflow-x-auto">
-        Let a Single Video Paint the Full Picture
+        One video is worth a thousand words
       </h1>
       <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-        Let your recordings speak volumes – share AI-powered videos to
+        Easily record and share AI-powered video messages with your
         <br className="hidden sm:block" />
-        streamline teamwork and delight customers
+        teammates and customers to supercharge productivity
       </p>
     </div>
   );
