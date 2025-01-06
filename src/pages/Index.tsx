@@ -43,19 +43,19 @@ const Index = () => {
     });
   }, []);
 
-  const renderComponent = () => {
-    const recordingProps = {
-      captureMode: 'screen' as CaptureMode,
-      frameRate: 30,
-      resolution: defaultResolution,
-      onRecordingStart: handleRecordingStart,
-      onRecordingStop: handleRecordingStop,
-      isRecording,
-      setIsRecording,
-      isPaused,
-      setIsPaused
-    };
+  const recordingProps = {
+    captureMode: 'screen' as CaptureMode,
+    frameRate: 30,
+    resolution: defaultResolution,
+    onRecordingStart: handleRecordingStart,
+    onRecordingStop: handleRecordingStop,
+    isRecording,
+    setIsRecording,
+    isPaused,
+    setIsPaused
+  };
 
+  const renderComponent = () => {
     switch (selectedComponent) {
       case "calendar":
         return <ContentCalendar />;
