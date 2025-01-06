@@ -9,7 +9,7 @@ export const HomePage = ({ setSelectedComponent }: HomePageProps) => {
   return (
     <div className="space-y-8">
       <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold">
+        <h1 className="text-5xl font-bold tracking-tight leading-tight">
           A Single Recording Can Tell the Whole Story
         </h1>
         <p className="text-lg text-muted-foreground">
