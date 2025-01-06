@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { MonitorPlay } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
@@ -7,15 +7,7 @@ import { DownloadRecording } from '@/components/DownloadRecording';
 import { CameraPreview } from '@/components/CameraPreview';
 import { MediaPlayer } from '@/components/MediaPlayer';
 import { RecordingManager } from '@/components/RecordingManager';
-import { RecordingSettings } from '@/components/recording/RecordingSettings';
-import { Resolution } from '@/types/recording';
-
-const RESOLUTIONS: Resolution[] = [
-  { label: "720p", width: 1280, height: 720 },
-  { label: "1080p", width: 1920, height: 1080 },
-  { label: "2K", width: 2560, height: 1440 },
-  { label: "4K", width: 3840, height: 2160 },
-];
+import { CountdownTimer } from '@/components/CountdownTimer';
 
 export const RecordingComponent = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -23,8 +15,7 @@ export const RecordingComponent = () => {
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [duration, setDuration] = useState(0);
   const [captureMode, setCaptureMode] = useState<CaptureMode>('screen');
-  const [frameRate, setFrameRate] = useState<number>(30);
-  const [selectedResolution, setSelectedResolution] = useState<Resolution>(RESOLUTIONS[0]);
+  const [showCountdown, setShowCountdown] = useState(false);
   const [filename, setFilename] = useState('recording');
 
   const handleRecordingStart = () => {
@@ -41,6 +32,16 @@ export const RecordingComponent = () => {
     if (stopButton) stopButton.click();
   };
 
+  const startRecordingWithCountdown = () => {
+    setShowCountdown(true);
+  };
+
+  const handleCountdownComplete = () => {
+    setShowCountdown(false);
+    const startButton = document.getElementById('start-recording') as HTMLButtonElement;
+    if (startButton) startButton.click();
+  };
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isRecording && !isPaused) {
@@ -55,21 +56,10 @@ export const RecordingComponent = () => {
     <div className="text-center space-y-6 w-full max-w-md mx-auto">
       <CaptureModeSelector mode={captureMode} onChange={setCaptureMode} />
 
-      <RecordingSettings
-        countdownSeconds={3}
-        setCountdownSeconds={() => {}}
-        frameRate={frameRate}
-        setFrameRate={setFrameRate}
-        selectedResolution={selectedResolution}
-        setSelectedResolution={setSelectedResolution}
-        resolutions={RESOLUTIONS}
-        isRecording={isRecording}
-      />
-
       <RecordingManager
         captureMode={captureMode}
-        frameRate={frameRate}
-        resolution={selectedResolution}
+        frameRate={30}
+        resolution={{ width: 1920, height: 1080 }}
         onRecordingStart={handleRecordingStart}
         onRecordingStop={handleRecordingStop}
         isRecording={isRecording}
@@ -77,6 +67,14 @@ export const RecordingComponent = () => {
         setIsPaused={setIsPaused}
         isPaused={isPaused}
       />
+
+      {showCountdown && (
+        <CountdownTimer
+          seconds={5}
+          onComplete={handleCountdownComplete}
+          onCancel={() => setShowCountdown(false)}
+        />
+      )}
 
       {isRecording && (
         <RecordingControls
@@ -100,12 +98,9 @@ export const RecordingComponent = () => {
 
       <CameraPreview isRecording={isRecording} captureMode={captureMode} />
 
-      {!isRecording && (
+      {!isRecording && !showCountdown && (
         <Button 
-          onClick={() => {
-            const startButton = document.getElementById('start-recording') as HTMLButtonElement;
-            if (startButton) startButton.click();
-          }}
+          onClick={startRecordingWithCountdown}
           className="w-full bg-primary hover:bg-primary/90"
         >
           <MonitorPlay className="mr-2 h-5 w-5" />
