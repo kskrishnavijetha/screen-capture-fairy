@@ -1,22 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Smile, Heart, Laugh, Angry, MessageCircle } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
+import { formatTime } from '@/utils/timeUtils';
 
 interface Comment {
   id: string;
   text: string;
   emoji?: string;
   timestamp: Date;
+  videoTimestamp: number;
 }
 
 interface CommentSectionProps {
   videoId: string;
+  onCommentSelect: (comment: string) => void;
+  videoRef: React.RefObject<HTMLVideoElement>;
 }
 
-export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
+export const CommentSection: React.FC<CommentSectionProps> = ({ 
+  videoId, 
+  onCommentSelect,
+  videoRef 
+}) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
@@ -38,11 +46,14 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
       return;
     }
 
+    const currentTime = videoRef.current?.currentTime || 0;
+
     const comment: Comment = {
       id: Date.now().toString(),
       text: newComment,
       emoji: selectedEmoji || undefined,
       timestamp: new Date(),
+      videoTimestamp: currentTime,
     };
 
     setComments([...comments, comment]);
@@ -53,6 +64,13 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
       title: "Success",
       description: "Comment added successfully",
     });
+  };
+
+  const handleCommentClick = (comment: Comment) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = comment.videoTimestamp;
+    }
+    onCommentSelect(comment.text);
   };
 
   return (
@@ -86,7 +104,11 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
 
       <div className="space-y-4 mt-6">
         {comments.map((comment) => (
-          <Card key={comment.id} className="p-4">
+          <Card 
+            key={comment.id} 
+            className="p-4 cursor-pointer hover:bg-accent/50 transition-colors"
+            onClick={() => handleCommentClick(comment)}
+          >
             <div className="flex items-start gap-2">
               {comment.emoji && (
                 <div className="flex-shrink-0">
@@ -98,7 +120,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
               )}
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground">
-                  {comment.timestamp.toLocaleString()}
+                  {formatTime(comment.videoTimestamp)} - {comment.timestamp.toLocaleString()}
                 </p>
                 <p className="mt-1">{comment.text}</p>
               </div>
