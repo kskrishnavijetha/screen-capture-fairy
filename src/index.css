@@ -4,50 +4,50 @@
 
 @layer base {
   :root {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
+    --background: 252 100% 95%;
+    --foreground: 252 40% 15%;
 
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 100%;
+    --card-foreground: 252 40% 15%;
 
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 252 40% 15%;
 
-    --primary: 252 87% 74%;
+    --primary: 252 87% 59%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 13%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 252 20% 95%;
+    --secondary-foreground: 252 40% 15%;
 
-    --muted: 0 0% 13%;
-    --muted-foreground: 0 0% 63.9%;
+    --muted: 252 20% 90%;
+    --muted-foreground: 252 20% 40%;
 
-    --accent: 0 0% 13%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 252 20% 90%;
+    --accent-foreground: 252 40% 15%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 252 87% 74%;
+    --border: 252 20% 85%;
+    --input: 252 20% 85%;
+    --ring: 252 87% 59%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
 
-    --sidebar-background: 0 0% 7%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 252 87% 74%;
+    --sidebar-background: 252 20% 95%;
+    --sidebar-foreground: 252 40% 15%;
+    --sidebar-primary: 252 87% 59%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 13%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 252 87% 74%;
+    --sidebar-accent: 252 20% 90%;
+    --sidebar-accent-foreground: 252 40% 15%;
+    --sidebar-border: 252 20% 85%;
+    --sidebar-ring: 252 87% 59%;
 
     /* New thicker colors */
-    --thick-primary: 252 90% 65%;
-    --thick-secondary: 0 0% 18%;
-    --thick-accent: 280 85% 65%;
-    --thick-muted: 0 0% 25%;
+    --thick-primary: 252 90% 55%;
+    --thick-secondary: 252 20% 90%;
+    --thick-accent: 252 85% 65%;
+    --thick-muted: 252 20% 85%;
   }
 }
 
