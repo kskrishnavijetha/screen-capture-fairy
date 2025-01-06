@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  Robot, 
+  Bot, 
   Video, 
   Monitor, 
   Calendar, 
@@ -11,7 +11,7 @@ import {
 import { Button } from './ui/button';
 
 const MENU_ITEMS = [
-  { id: 'ai-content', label: 'AI Content Generator', icon: Robot },
+  { id: 'ai-content', label: 'AI Content Generator', icon: Bot },
   { id: 'ai-video', label: 'AI Short video Generator', icon: Video },
   { id: 'screen-recorder', label: 'Screen Recorder', icon: Monitor },
   { id: 'calendar', label: 'Content Calendar', icon: Calendar },
