@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, KeyboardEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Smile, Heart, Laugh, Angry, MessageCircle } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 
@@ -10,6 +11,7 @@ interface Comment {
   text: string;
   emoji?: string;
   timestamp: Date;
+  username: string;
 }
 
 interface CommentSectionProps {
@@ -20,6 +22,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
+  const [username, setUsername] = useState('User'); // In a real app, this would come from authentication
 
   const emojis = [
     { icon: Smile, label: 'smile' },
@@ -43,6 +46,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
       text: newComment,
       emoji: selectedEmoji || undefined,
       timestamp: new Date(),
+      username: username,
     };
 
     setComments([...comments, comment]);
@@ -53,6 +57,13 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
       title: "Success",
       description: "Comment added successfully",
     });
+  };
+
+  const handleKeyPress = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAddComment();
+    }
   };
 
   return (
@@ -75,6 +86,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
         <Textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
+          onKeyPress={handleKeyPress}
           placeholder="Add a comment..."
           className="flex-1"
         />
@@ -87,20 +99,28 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
       <div className="space-y-4 mt-6">
         {comments.map((comment) => (
           <Card key={comment.id} className="p-4">
-            <div className="flex items-start gap-2">
-              {comment.emoji && (
-                <div className="flex-shrink-0">
-                  {emojis.find(e => e.label === comment.emoji)?.icon && 
-                    React.createElement(emojis.find(e => e.label === comment.emoji)!.icon, {
-                      className: "h-5 w-5"
-                    })}
-                </div>
-              )}
+            <div className="flex items-start gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback>{comment.username[0].toUpperCase()}</AvatarFallback>
+              </Avatar>
               <div className="flex-1">
-                <p className="text-sm text-muted-foreground">
-                  {comment.timestamp.toLocaleString()}
-                </p>
-                <p className="mt-1">{comment.text}</p>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{comment.username}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {comment.timestamp.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  {comment.emoji && (
+                    <div className="flex-shrink-0">
+                      {emojis.find(e => e.label === comment.emoji)?.icon && 
+                        React.createElement(emojis.find(e => e.label === comment.emoji)!.icon, {
+                          className: "h-4 w-4"
+                        })}
+                    </div>
+                  )}
+                  <p className="text-sm">{comment.text}</p>
+                </div>
               </div>
             </div>
           </Card>
