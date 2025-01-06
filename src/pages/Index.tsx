@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Menu, FileText, Video, MonitorPlay, Calendar, ChartBar, DollarSign } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
@@ -11,6 +11,7 @@ import { RecordingManager } from '@/components/RecordingManager';
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { RecordingSettings } from '@/components/recording/RecordingSettings';
 import { Resolution } from '@/types/recording';
+import { HeroSection } from '@/components/HeroSection';
 import {
   Sheet,
   SheetContent,
@@ -217,6 +218,7 @@ const Index = () => {
       
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="text-center space-y-6 w-full max-w-md">
+          <HeroSection />
           <div className="flex flex-col items-center mb-8 space-y-4">
             <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
           </div>
