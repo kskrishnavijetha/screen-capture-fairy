@@ -209,8 +209,8 @@ const Index = () => {
           </SheetContent>
         </Sheet>
         <img 
-          src="/lovable-uploads/54cd55ec-2ab7-464a-a5c9-7388b5f53a05.png" 
-          alt="ScreenCraft Logo" 
+          src="/lovable-uploads/fae7d82d-9e93-4fd2-b527-9f39bce9277a.png" 
+          alt="Technova Logo" 
           className="w-12 h-12 object-contain"
         />
       </div>
