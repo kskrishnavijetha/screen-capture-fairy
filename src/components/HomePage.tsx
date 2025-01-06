@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MENU_ITEMS } from "./MainMenu";
-import { VideoPreviewCard } from "./VideoPreviewCard";
 
 interface HomePageProps {
   setSelectedComponent: (id: string) => void;
@@ -16,7 +15,6 @@ export const HomePage = ({ setSelectedComponent }: HomePageProps) => {
         <p className="text-lg text-muted-foreground">
           Easily create and share AI-enhanced video messages that tell the whole story and drive seamless collaboration
         </p>
-        <VideoPreviewCard />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
         {MENU_ITEMS.filter(item => item.id !== 'home').map((item) => (
