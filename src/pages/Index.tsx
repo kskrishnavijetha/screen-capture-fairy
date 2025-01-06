@@ -17,6 +17,7 @@ const Index = () => {
   const [isPaused, setIsPaused] = useState(false);
 
   const defaultResolution: Resolution = {
+    label: '1080p',
     width: 1920,
     height: 1080
   };
