@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { MonitorPlay } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
@@ -59,7 +59,7 @@ export const RecordingComponent = () => {
       <RecordingManager
         captureMode={captureMode}
         frameRate={30}
-        resolution={{ width: 1920, height: 1080 }}
+        resolution={{ width: 1920, height: 1080, label: "1080p" }}
         onRecordingStart={handleRecordingStart}
         onRecordingStop={handleRecordingStop}
         isRecording={isRecording}
