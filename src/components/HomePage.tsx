@@ -7,26 +7,31 @@ interface HomePageProps {
 
 export const HomePage = ({ setSelectedComponent }: HomePageProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-      {MENU_ITEMS.filter(item => item.id !== 'home').map((item) => (
-        <Card 
-          key={item.id}
-          className="cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => setSelectedComponent(item.id)}
-        >
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CardDescription>
-              {getFeatureDescription(item.id)}
-            </CardDescription>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="space-y-8">
+      <h1 className="text-3xl font-bold text-center mb-8">
+        A Single Recording Can Tell the Whole Story
+      </h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+        {MENU_ITEMS.filter(item => item.id !== 'home').map((item) => (
+          <Card 
+            key={item.id}
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setSelectedComponent(item.id)}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription>
+                {getFeatureDescription(item.id)}
+              </CardDescription>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
