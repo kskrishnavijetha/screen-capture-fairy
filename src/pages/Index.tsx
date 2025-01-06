@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { MonitorPlay, Sparkles } from 'lucide-react';
+import { MonitorPlay, Sparkles, Menu } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
 import { RecordingControls } from '@/components/RecordingControls';
 import { Timer } from '@/components/Timer';
@@ -11,6 +11,7 @@ import { RecordingManager } from '@/components/RecordingManager';
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { RecordingSettings } from '@/components/recording/RecordingSettings';
 import { Resolution } from '@/types/recording';
+import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger } from "@/components/ui/sidebar";
 
 const RESOLUTIONS: Resolution[] = [
   { label: "720p", width: 1280, height: 720 },
@@ -70,123 +71,149 @@ const Index = () => {
   }, [isRecording, isPaused]);
 
   return (
-    <div className={`flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
-      <img 
-        src="/lovable-uploads/54cd55ec-2ab7-464a-a5c9-7388b5f53a05.png" 
-        alt="ScreenCraft Logo" 
-        className="absolute top-4 left-4 w-12 h-12 object-contain"
-      />
-      <div className="text-center space-y-6 w-full max-w-md">
-        <div className="flex flex-col items-center mb-8 space-y-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-8 h-8 text-primary animate-pulse" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-              ScreenCraft Fairy
-            </h1>
-            <Sparkles className="w-8 h-8 text-primary animate-pulse" />
-          </div>
-          <p className="text-muted-foreground">Capture your screen with magic ✨</p>
-          <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
-        </div>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <Sidebar>
+          <SidebarContent>
+            <div className="p-4 space-y-4">
+              <h2 className="text-xl font-bold">Menu</h2>
+              <nav className="space-y-2">
+                <Button variant="ghost" className="w-full justify-start">
+                  <MonitorPlay className="mr-2 h-4 w-4" />
+                  Recording
+                </Button>
+                <Button variant="ghost" className="w-full justify-start">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Effects
+                </Button>
+              </nav>
+            </div>
+          </SidebarContent>
+        </Sidebar>
         
-        <CaptureModeSelector 
-          mode={captureMode} 
-          onChange={setCaptureMode}
-        />
+        <div className={`flex-1 flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
+          <div className="absolute top-4 left-4 flex items-center gap-4">
+            <SidebarTrigger />
+            <img 
+              src="/lovable-uploads/54cd55ec-2ab7-464a-a5c9-7388b5f53a05.png" 
+              alt="ScreenCraft Logo" 
+              className="w-12 h-12 object-contain"
+            />
+          </div>
+          
+          <div className="text-center space-y-6 w-full max-w-md">
+            <div className="flex flex-col items-center mb-8 space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+                  ScreenCraft Fairy
+                </h1>
+                <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+              </div>
+              <p className="text-muted-foreground">Capture your screen with magic ✨</p>
+              <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
+            </div>
+            
+            <CaptureModeSelector 
+              mode={captureMode} 
+              onChange={setCaptureMode}
+            />
 
-        <RecordingSettings
-          countdownSeconds={3}
-          setCountdownSeconds={() => {}}
-          frameRate={frameRate}
-          setFrameRate={setFrameRate}
-          selectedResolution={selectedResolution}
-          setSelectedResolution={setSelectedResolution}
-          resolutions={RESOLUTIONS}
-          isRecording={isRecording}
-        />
+            <RecordingSettings
+              countdownSeconds={3}
+              setCountdownSeconds={() => {}}
+              frameRate={frameRate}
+              setFrameRate={setFrameRate}
+              selectedResolution={selectedResolution}
+              setSelectedResolution={setSelectedResolution}
+              resolutions={RESOLUTIONS}
+              isRecording={isRecording}
+            />
 
-        <RecordingManager
-          captureMode={captureMode}
-          frameRate={frameRate}
-          resolution={selectedResolution}
-          onRecordingStart={handleRecordingStart}
-          onRecordingStop={handleRecordingStop}
-          isRecording={isRecording}
-          setIsRecording={setIsRecording}
-          setIsPaused={setIsPaused}
-          isPaused={isPaused}
-        />
-
-        {isRecording && (
-          <RecordingControls
-            isPaused={isPaused}
-            onPause={() => {
-              const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
-              if (pauseButton) pauseButton.click();
-            }}
-            onResume={() => {
-              const resumeButton = document.getElementById('resume-recording') as HTMLButtonElement;
-              if (resumeButton) resumeButton.click();
-            }}
-            onStop={() => {
-              const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
-              if (stopButton) stopButton.click();
-            }}
-            duration={duration}
-            onMaxDurationReached={handleMaxDurationReached}
-          />
-        )}
-
-        <CameraPreview 
-          isRecording={isRecording} 
-          captureMode={captureMode} 
-        />
-
-        <div className="space-y-4">
-          {!isRecording ? (
-            <Button 
-              onClick={() => {
-                const startButton = document.getElementById('start-recording') as HTMLButtonElement;
-                if (startButton) startButton.click();
-              }}
-              className="w-full bg-primary hover:bg-primary/90"
-            >
-              <MonitorPlay className="mr-2 h-5 w-5" />
-              Start Recording
-            </Button>
-          ) : (
-            <RecordingControls
+            <RecordingManager
+              captureMode={captureMode}
+              frameRate={frameRate}
+              resolution={selectedResolution}
+              onRecordingStart={handleRecordingStart}
+              onRecordingStop={handleRecordingStop}
+              isRecording={isRecording}
+              setIsRecording={setIsRecording}
+              setIsPaused={setIsPaused}
               isPaused={isPaused}
-              onPause={() => {
-                const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
-                if (pauseButton) pauseButton.click();
-              }}
-              onResume={() => {
-                const resumeButton = document.getElementById('resume-recording') as HTMLButtonElement;
-                if (resumeButton) resumeButton.click();
-              }}
-              onStop={() => {
-                const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
-                if (stopButton) stopButton.click();
-              }}
-              duration={duration}
-              onMaxDurationReached={handleMaxDurationReached}
             />
-          )}
-        </div>
 
-        {recordedBlob && !isRecording && (
-          <>
-            <MediaPlayer recordedBlob={recordedBlob} />
-            <DownloadRecording
-              recordedBlob={recordedBlob}
-              filename={filename}
-              onFilenameChange={setFilename}
+            {isRecording && (
+              <RecordingControls
+                isPaused={isPaused}
+                onPause={() => {
+                  const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
+                  if (pauseButton) pauseButton.click();
+                }}
+                onResume={() => {
+                  const resumeButton = document.getElementById('resume-recording') as HTMLButtonElement;
+                  if (resumeButton) resumeButton.click();
+                }}
+                onStop={() => {
+                  const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
+                  if (stopButton) stopButton.click();
+                }}
+                duration={duration}
+                onMaxDurationReached={handleMaxDurationReached}
+              />
+            )}
+
+            <CameraPreview 
+              isRecording={isRecording} 
+              captureMode={captureMode} 
             />
-          </>
-        )}
+
+            <div className="space-y-4">
+              {!isRecording ? (
+                <Button 
+                  onClick={() => {
+                    const startButton = document.getElementById('start-recording') as HTMLButtonElement;
+                    if (startButton) startButton.click();
+                  }}
+                  className="w-full bg-primary hover:bg-primary/90"
+                >
+                  <MonitorPlay className="mr-2 h-5 w-5" />
+                  Start Recording
+                </Button>
+              ) : (
+                <RecordingControls
+                  isPaused={isPaused}
+                  onPause={() => {
+                    const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
+                    if (pauseButton) pauseButton.click();
+                  }}
+                  onResume={() => {
+                    const resumeButton = document.getElementById('resume-recording') as HTMLButtonElement;
+                    if (resumeButton) resumeButton.click();
+                  }}
+                  onStop={() => {
+                    const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
+                    if (stopButton) stopButton.click();
+                  }}
+                  duration={duration}
+                  onMaxDurationReached={handleMaxDurationReached}
+                />
+              )}
+            </div>
+
+            {recordedBlob && !isRecording && (
+              <>
+                <MediaPlayer recordedBlob={recordedBlob} />
+                <DownloadRecording
+                  recordedBlob={recordedBlob}
+                  filename={filename}
+                  onFilenameChange={setFilename}
+                />
+              </>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
