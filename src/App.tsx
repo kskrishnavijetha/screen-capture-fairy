@@ -17,12 +17,6 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/home" element={<Home />} />
-          <Route path="/content" element={<Home />} />
-          <Route path="/video" element={<Home />} />
-          <Route path="/recorder" element={<Home />} />
-          <Route path="/calendar" element={<Home />} />
-          <Route path="/analytics" element={<Home />} />
-          <Route path="/monetization" element={<Home />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
