@@ -73,15 +73,17 @@ const Index = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <AppSidebar onSelectComponent={setSelectedComponent} />
-      <div className="flex-1">
-        <MainHeader />
-        <main className="p-4 mt-16">
-          {renderComponent()}
-        </main>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-background">
+        <AppSidebar onSelectComponent={setSelectedComponent} />
+        <div className="flex-1">
+          <MainHeader />
+          <main className="p-4 mt-16">
+            {renderComponent()}
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
