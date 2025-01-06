@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { MonitorPlay } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
 import { RecordingControls } from '@/components/RecordingControls';
 import { DownloadRecording } from '@/components/DownloadRecording';
 import { CameraPreview } from '@/components/CameraPreview';
-import { MediaPlayer } from '@/components/MediaPlayer';
 import { RecordingManager } from '@/components/RecordingManager';
 import { CountdownTimer } from '@/components/CountdownTimer';
 
 export const RecordingComponent = () => {
+  const navigate = useNavigate();
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -25,6 +26,8 @@ export const RecordingComponent = () => {
 
   const handleRecordingStop = (blob: Blob) => {
     setRecordedBlob(blob);
+    // Navigate to the playback page with the recorded blob
+    navigate('/playback', { state: { recordedBlob: blob } });
   };
 
   const handleMaxDurationReached = () => {
@@ -110,7 +113,6 @@ export const RecordingComponent = () => {
 
       {recordedBlob && !isRecording && (
         <>
-          <MediaPlayer recordedBlob={recordedBlob} />
           <DownloadRecording
             recordedBlob={recordedBlob}
             filename={filename}
