@@ -33,7 +33,7 @@ const Index = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'recording.webm';
+    a.download = `screen-recording-${new Date().toISOString()}.webm`;
     a.click();
     URL.revokeObjectURL(url);
     
@@ -73,17 +73,15 @@ const Index = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <AppSidebar onSelectComponent={setSelectedComponent} />
-        <div className="flex-1 relative">
-          <MainHeader />
-          <main className="p-4 mt-16">
-            {renderComponent()}
-          </main>
-        </div>
+    <div className="flex min-h-screen bg-background">
+      <AppSidebar onSelectComponent={setSelectedComponent} />
+      <div className="flex-1">
+        <MainHeader />
+        <main className="p-4 mt-16">
+          {renderComponent()}
+        </main>
       </div>
-    </SidebarProvider>
+    </div>
   );
 };
 
