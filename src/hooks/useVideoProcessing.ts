@@ -15,6 +15,8 @@ interface ProcessingOptions {
   timestamps: Array<{ time: number; label: string }>;
   trimRange: number[];
   duration: number;
+  removeSilences: boolean;
+  removeFillerWords: boolean;
 }
 
 export const useVideoProcessing = () => {
@@ -30,7 +32,9 @@ export const useVideoProcessing = () => {
     watermark,
     timestamps,
     trimRange,
-    duration
+    duration,
+    removeSilences,
+    removeFillerWords
   }: ProcessingOptions): Promise<Blob> => {
     if (!recordedBlob) {
       throw new Error('No video to process');
