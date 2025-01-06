@@ -8,9 +8,14 @@ interface HomePageProps {
 export const HomePage = ({ setSelectedComponent }: HomePageProps) => {
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-center mb-8">
-        A Single Recording Can Tell the Whole Story
-      </h1>
+      <div className="text-center space-y-4">
+        <h1 className="text-3xl font-bold">
+          A Single Recording Can Tell the Whole Story
+        </h1>
+        <p className="text-lg text-muted-foreground">
+          Easily create and share AI-enhanced video messages that tell the whole story and drive seamless collaboration
+        </p>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
         {MENU_ITEMS.filter(item => item.id !== 'home').map((item) => (
           <Card 
