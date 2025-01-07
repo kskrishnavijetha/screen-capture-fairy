@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { Scissors, Play, Pause, RotateCcw } from 'lucide-react';
+import { Scissors, RotateCcw } from 'lucide-react';
 
 interface TrimControlsProps {
   duration: number;
@@ -11,13 +11,15 @@ interface TrimControlsProps {
 
 export const TrimControls = ({ duration, trimRange, onTrimRangeChange }: TrimControlsProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleReset = () => {
+    onTrimRangeChange([0, 100]);
   };
 
   useEffect(() => {
@@ -61,22 +63,13 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange }: TrimCon
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-medium">Trim Video</h3>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsPlaying(!isPlaying)}
-          >
-            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onTrimRangeChange([0, 100])}
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleReset}
+        >
+          <RotateCcw className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="relative">

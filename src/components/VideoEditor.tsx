@@ -37,9 +37,15 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       videoRef.current.src = url;
       
       const handleMetadataLoaded = () => {
-        console.log('Video metadata loaded in VideoEditor');
-        setDuration(videoRef.current?.duration || 0);
-        setIsMetadataLoaded(true);
+        if (videoRef.current) {
+          setDuration(videoRef.current.duration);
+          setIsMetadataLoaded(true);
+          console.log('Video metadata loaded:', {
+            duration: videoRef.current.duration,
+            width: videoRef.current.videoWidth,
+            height: videoRef.current.videoHeight
+          });
+        }
       };
 
       videoRef.current.onloadedmetadata = handleMetadataLoaded;
