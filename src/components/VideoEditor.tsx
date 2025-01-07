@@ -151,6 +151,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
           duration={duration}
           trimRange={trimRange}
           onTrimRangeChange={handleTrimRangeChange}
+          videoRef={videoRef}
         />
 
         <SilenceControls
