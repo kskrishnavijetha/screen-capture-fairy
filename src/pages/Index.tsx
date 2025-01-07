@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MainMenu } from "@/components/MainMenu";
 import { HomePage } from "@/components/HomePage";
 import { ThemeSelector } from '@/components/ThemeSelector';
@@ -25,12 +25,17 @@ const Index = () => {
   const [currentTheme, setCurrentTheme] = useState('Default Dark');
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
 
+  const handleRecordingComplete = (blob: Blob) => {
+    setRecordedBlob(blob);
+    setSelectedComponent('editor');
+  };
+
   const renderComponent = () => {
     switch (selectedComponent) {
       case 'home':
         return <HomePage setSelectedComponent={setSelectedComponent} />;
       case 'recorder':
-        return <RecordingComponent />;
+        return <RecordingComponent onRecordingComplete={handleRecordingComplete} />;
       case 'editor':
         return recordedBlob ? (
           <VideoEditor
@@ -38,7 +43,6 @@ const Index = () => {
             timestamps={[]}
             onSave={(newBlob) => {
               setRecordedBlob(newBlob);
-              // You might want to add additional handling here
             }}
           />
         ) : (
