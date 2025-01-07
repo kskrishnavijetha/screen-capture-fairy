@@ -2,16 +2,14 @@ import React, { useRef, useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
 import { BlurControls } from './video/BlurControls';
 import { TrimControls } from './video/TrimControls';
-import { CaptionControls } from './video/CaptionControls';
 import { ShareControls } from './video/ShareControls';
 import { EmbedControls } from './video/EmbedControls';
 import { ExportControls } from './video/ExportControls';
 import { ProcessControls } from './video/ProcessControls';
-import { AnnotationControls } from './video/AnnotationControls';
 import { WatermarkControls } from './video/WatermarkControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { VideoPreviewSection } from './video/VideoPreviewSection';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
 interface VideoEditorProps {
@@ -20,17 +18,12 @@ interface VideoEditorProps {
   onSave: (newBlob: Blob) => void;
 }
 
-type TransitionType = 'none' | 'fade' | 'crossfade';
-
 export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
   const [trimRange, setTrimRange] = useState([0, 100]);
   const [blurRegions, setBlurRegions] = useState<Array<{ x: number, y: number, width: number, height: number }>>([]);
-  const [captions, setCaptions] = useState<Array<{ startTime: number; endTime: number; text: string }>>([]);
-  const [annotations, setAnnotations] = useState<Array<{ id: string; timestamp: number; text: string; author: string }>>([]);
-  const [transitionType, setTransitionType] = useState<TransitionType>('none');
   const [watermark, setWatermark] = useState<any>(null);
   const [isMetadataLoaded, setIsMetadataLoaded] = useState(false);
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
@@ -65,7 +58,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   }, [recordedBlob]);
 
   useEffect(() => {
-    // Cleanup previous preview URL when component unmounts or new preview is generated
     return () => {
       if (processedVideoUrl) {
         URL.revokeObjectURL(processedVideoUrl);
@@ -106,10 +98,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       const processedBlob = await processVideo({
         recordedBlob,
         videoRef,
-        transitionType,
         blurRegions,
-        captions,
-        annotations,
         watermark,
         timestamps,
         trimRange,
@@ -143,33 +132,13 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
 
   return (
     <div className="space-y-4 w-full max-w-2xl mx-auto mt-6">
-      <div className="relative rounded-lg overflow-hidden bg-black">
-        <video
-          ref={videoRef}
-          className="w-full"
-          controls
-        />
-        <BlurControls
-          videoRef={videoRef}
-          blurRegions={blurRegions}
-          setBlurRegions={setBlurRegions}
-        />
-      </div>
-
-      {processedVideoUrl && (
-        <div className="mt-6">
-          <h3 className="text-lg font-semibold mb-2">Processed Video Preview</h3>
-          <div className="relative rounded-lg overflow-hidden bg-black">
-            <video
-              ref={previewRef}
-              src={processedVideoUrl}
-              className="w-full"
-              controls
-              autoPlay
-            />
-          </div>
-        </div>
-      )}
+      <VideoPreviewSection
+        videoRef={videoRef}
+        previewRef={previewRef}
+        processedVideoUrl={processedVideoUrl}
+        blurRegions={blurRegions}
+        setBlurRegions={setBlurRegions}
+      />
 
       <div className="space-y-4">
         <TrimControls
@@ -186,35 +155,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         <FillerWordControls
           enabled={removeFillerWords}
           onToggle={setRemoveFillerWords}
-        />
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Transition Effect</label>
-          <Select
-            value={transitionType}
-            onValueChange={(value: TransitionType) => setTransitionType(value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select transition type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              <SelectItem value="fade">Fade</SelectItem>
-              <SelectItem value="crossfade">Cross Fade</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <CaptionControls
-          duration={duration}
-          captions={captions}
-          onCaptionsChange={setCaptions}
-        />
-
-        <AnnotationControls
-          duration={duration}
-          annotations={annotations}
-          onAnnotationsChange={setAnnotations}
         />
 
         <WatermarkControls
