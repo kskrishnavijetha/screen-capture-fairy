@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MainMenu } from "@/components/MainMenu";
 import { HomePage } from "@/components/HomePage";
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { RecordingComponent } from '@/components/RecordingComponent';
-import { VideoEditor } from '@/components/VideoEditor';
 
 const getThemeClasses = (themeName: string) => {
   switch (themeName) {
@@ -23,31 +22,13 @@ const getThemeClasses = (themeName: string) => {
 const Index = () => {
   const [selectedComponent, setSelectedComponent] = useState('home');
   const [currentTheme, setCurrentTheme] = useState('Default Dark');
-  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
-
-  const handleRecordingComplete = (blob: Blob) => {
-    setRecordedBlob(blob);
-    setSelectedComponent('editor');
-  };
 
   const renderComponent = () => {
     switch (selectedComponent) {
       case 'home':
         return <HomePage setSelectedComponent={setSelectedComponent} />;
       case 'recorder':
-        return <RecordingComponent onRecordingComplete={handleRecordingComplete} />;
-      case 'editor':
-        return recordedBlob ? (
-          <VideoEditor
-            recordedBlob={recordedBlob}
-            timestamps={[]}
-            onSave={(newBlob) => {
-              setRecordedBlob(newBlob);
-            }}
-          />
-        ) : (
-          <div className="text-center">No video selected for editing</div>
-        );
+        return <RecordingComponent />;
       case 'content':
         return <div className="text-center">AI Content Generator Coming Soon</div>;
       case 'video':
