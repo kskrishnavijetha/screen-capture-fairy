@@ -23,6 +23,7 @@ export const WaveformView = ({ videoRef, onTimeUpdate }: WaveformViewProps) => {
         normalize: true,
         interact: true,
         mediaControls: true,
+        media: videoRef.current
       });
 
       wavesurfer.current.on('ready', () => {
@@ -34,13 +35,6 @@ export const WaveformView = ({ videoRef, onTimeUpdate }: WaveformViewProps) => {
           onTimeUpdate(time);
         }
       });
-
-      try {
-        const mediaStream = (videoRef.current as any).captureStream();
-        await wavesurfer.current.loadMediaElement(videoRef.current, mediaStream);
-      } catch (error) {
-        console.error('Error loading media:', error);
-      }
     };
 
     initWaveSurfer();
