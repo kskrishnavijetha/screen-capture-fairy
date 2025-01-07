@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Scissors, RotateCcw, Play, Pause, SkipBack, SkipForward } from 'lucide-react';
+import { WaveformView } from './WaveformView';
 
 interface TrimControlsProps {
   duration: number;
@@ -11,9 +12,8 @@ interface TrimControlsProps {
 }
 
 export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef }: TrimControlsProps) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [currentTime, setCurrentTime] = React.useState(0);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -51,51 +51,9 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
     }
   };
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleTimeUpdate = () => {
-      setCurrentTime(video.currentTime);
-    };
-
-    const handlePlayPause = () => {
-      setIsPlaying(!video.paused);
-    };
-
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('play', handlePlayPause);
-    video.addEventListener('pause', handlePlayPause);
-
-    return () => {
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('play', handlePlayPause);
-      video.removeEventListener('pause', handlePlayPause);
-    };
-  }, [videoRef]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#e2e8f0';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const startX = (trimRange[0] / 100) * canvas.width;
-    const endX = (trimRange[1] / 100) * canvas.width;
-    
-    ctx.fillStyle = '#3b82f6';
-    ctx.fillRect(startX, 0, endX - startX, canvas.height);
-
-    // Draw current time indicator
-    const currentTimeX = (currentTime / duration) * canvas.width;
-    ctx.fillStyle = '#ef4444';
-    ctx.fillRect(currentTimeX - 2, 0, 4, canvas.height);
-  }, [trimRange, currentTime, duration]);
+  const handleTimeUpdate = (time: number) => {
+    setCurrentTime(time);
+  };
 
   return (
     <div className="space-y-4">
@@ -110,22 +68,16 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
         </Button>
       </div>
 
+      <WaveformView videoRef={videoRef} onTimeUpdate={handleTimeUpdate} />
+
       <div className="relative">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-24 rounded-md"
-          width={800}
-          height={100}
+        <Slider
+          value={trimRange}
+          onValueChange={onTrimRangeChange}
+          max={100}
+          step={1}
+          className="w-full"
         />
-        <div className="absolute bottom-0 left-0 right-0">
-          <Slider
-            value={trimRange}
-            onValueChange={onTrimRangeChange}
-            max={100}
-            step={1}
-            className="w-full"
-          />
-        </div>
       </div>
 
       <div className="flex justify-between text-sm text-muted-foreground">
