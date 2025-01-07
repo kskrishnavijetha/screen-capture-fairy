@@ -2,10 +2,7 @@ import React from 'react';
 
 interface VideoProcessingProps {
   videoRef: React.RefObject<HTMLVideoElement>;
-  transitionType: 'none' | 'fade' | 'crossfade';
   blurRegions: Array<{ x: number; y: number; width: number; height: number }>;
-  captions: Array<{ text: string; startTime: number; endTime: number }>;
-  annotations: Array<{ text: string; timestamp: number; author: string }>;
   watermark: {
     image: HTMLImageElement;
     position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -18,10 +15,7 @@ interface VideoProcessingProps {
 
 export const processVideoFrame = ({
   videoRef,
-  transitionType,
   blurRegions,
-  captions,
-  annotations,
   watermark,
   timestamps,
   trimRange
@@ -67,73 +61,6 @@ export const processVideoFrame = ({
     }
   }
 
-  // Apply captions
-  const activeCaption = captions.find(
-    caption => currentTime >= caption.startTime && currentTime <= caption.endTime
-  );
-
-  if (activeCaption) {
-    outputCtx.save();
-    const fontSize = Math.floor(canvas.height * 0.05);
-    outputCtx.font = `bold ${fontSize}px Arial`;
-    outputCtx.fillStyle = 'white';
-    outputCtx.strokeStyle = 'black';
-    outputCtx.lineWidth = Math.floor(canvas.height * 0.003);
-    outputCtx.textAlign = 'center';
-    outputCtx.textBaseline = 'bottom';
-    
-    const text = activeCaption.text;
-    const x = canvas.width / 2;
-    const y = canvas.height * 0.9;
-    
-    // Add text shadow
-    outputCtx.shadowColor = 'black';
-    outputCtx.shadowBlur = 4;
-    outputCtx.shadowOffsetX = 2;
-    outputCtx.shadowOffsetY = 2;
-    
-    outputCtx.strokeText(text, x, y);
-    outputCtx.fillText(text, x, y);
-    outputCtx.restore();
-  }
-
-  // Apply annotations
-  const activeAnnotation = annotations.find(
-    annotation => Math.abs(currentTime - annotation.timestamp) < 0.5
-  );
-
-  if (activeAnnotation) {
-    outputCtx.save();
-    const fontSize = Math.floor(canvas.height * 0.04);
-    outputCtx.font = `bold ${fontSize}px Arial`;
-    outputCtx.fillStyle = '#FFD700';
-    outputCtx.strokeStyle = 'black';
-    outputCtx.lineWidth = Math.floor(canvas.height * 0.003);
-    outputCtx.textAlign = 'center';
-    outputCtx.textBaseline = 'top';
-    
-    const text = `${activeAnnotation.author}: ${activeAnnotation.text}`;
-    const x = canvas.width / 2;
-    const y = canvas.height * 0.1;
-    
-    // Add background
-    const textMetrics = outputCtx.measureText(text);
-    const padding = fontSize * 0.5;
-    
-    outputCtx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    outputCtx.fillRect(
-      x - textMetrics.width / 2 - padding,
-      y - padding,
-      textMetrics.width + padding * 2,
-      fontSize + padding * 2
-    );
-    
-    outputCtx.fillStyle = '#FFD700';
-    outputCtx.strokeText(text, x, y);
-    outputCtx.fillText(text, x, y);
-    outputCtx.restore();
-  }
-
   // Apply watermark
   if (watermark && watermark.image) {
     outputCtx.save();
@@ -163,21 +90,6 @@ export const processVideoFrame = ({
     }
     
     outputCtx.drawImage(watermark.image, x, y, watermarkWidth, watermarkHeight);
-    outputCtx.restore();
-  }
-
-  // Apply transition effects
-  if (transitionType !== 'none') {
-    outputCtx.save();
-    switch (transitionType) {
-      case 'fade':
-        outputCtx.fillStyle = `rgba(0, 0, 0, ${1 - progress})`;
-        outputCtx.fillRect(0, 0, canvas.width, canvas.height);
-        break;
-      case 'crossfade':
-        outputCtx.globalAlpha = Math.sin(progress * Math.PI / 2);
-        break;
-    }
     outputCtx.restore();
   }
 };

@@ -7,10 +7,7 @@ import { processVideoFrame } from '../components/video/VideoProcessing';
 interface ProcessingOptions {
   recordedBlob: Blob;
   videoRef: React.RefObject<HTMLVideoElement>;
-  transitionType: 'none' | 'fade' | 'crossfade';
   blurRegions: Array<{ x: number; y: number; width: number; height: number }>;
-  captions: Array<{ startTime: number; endTime: number; text: string }>;
-  annotations: Array<{ id: string; timestamp: number; text: string; author: string }>;
   watermark: any;
   timestamps: Array<{ time: number; label: string }>;
   trimRange: number[];
@@ -25,10 +22,7 @@ export const useVideoProcessing = () => {
   const processVideo = async ({
     recordedBlob,
     videoRef,
-    transitionType,
     blurRegions,
-    captions,
-    annotations,
     watermark,
     timestamps,
     trimRange,
@@ -111,10 +105,7 @@ export const useVideoProcessing = () => {
           try {
             processVideoFrame({
               videoRef,
-              transitionType,
               blurRegions,
-              captions,
-              annotations,
               watermark,
               timestamps,
               trimRange: [timeRange.start, timeRange.end]
