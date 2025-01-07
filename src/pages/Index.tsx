@@ -3,6 +3,7 @@ import { MainMenu } from "@/components/MainMenu";
 import { HomePage } from "@/components/HomePage";
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { RecordingComponent } from '@/components/RecordingComponent';
+import { VideoEditor } from '@/components/VideoEditor';
 
 const getThemeClasses = (themeName: string) => {
   switch (themeName) {
@@ -22,6 +23,7 @@ const getThemeClasses = (themeName: string) => {
 const Index = () => {
   const [selectedComponent, setSelectedComponent] = useState('home');
   const [currentTheme, setCurrentTheme] = useState('Default Dark');
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
 
   const renderComponent = () => {
     switch (selectedComponent) {
@@ -29,6 +31,19 @@ const Index = () => {
         return <HomePage setSelectedComponent={setSelectedComponent} />;
       case 'recorder':
         return <RecordingComponent />;
+      case 'editor':
+        return recordedBlob ? (
+          <VideoEditor
+            recordedBlob={recordedBlob}
+            timestamps={[]}
+            onSave={(newBlob) => {
+              setRecordedBlob(newBlob);
+              // You might want to add additional handling here
+            }}
+          />
+        ) : (
+          <div className="text-center">No video selected for editing</div>
+        );
       case 'content':
         return <div className="text-center">AI Content Generator Coming Soon</div>;
       case 'video':
