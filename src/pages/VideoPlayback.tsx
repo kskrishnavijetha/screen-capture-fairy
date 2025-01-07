@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { MessageCircle, X, Scissors } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { VideoEditor } from '@/components/VideoEditor';
 
 interface VideoPlaybackProps {
   recordedBlob?: Blob;
@@ -16,6 +17,13 @@ const VideoPlayback = () => {
   const [showSidebar, setShowSidebar] = useState(true);
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [processedBlob, setProcessedBlob] = useState<Blob | null>(null);
+
+  const handleSaveEdit = (newBlob: Blob) => {
+    setProcessedBlob(newBlob);
+    setIsEditing(false);
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -25,11 +33,19 @@ const VideoPlayback = () => {
         showSidebar ? "mr-[400px]" : "mr-0"
       )}>
         <div className="max-w-4xl mx-auto">
-          <video
-            src={recordedBlob ? URL.createObjectURL(recordedBlob) : ''}
-            controls
-            className="w-full rounded-lg bg-black mb-6"
-          />
+          {isEditing ? (
+            <VideoEditor 
+              recordedBlob={recordedBlob || null}
+              timestamps={[]}
+              onSave={handleSaveEdit}
+            />
+          ) : (
+            <video
+              src={processedBlob ? URL.createObjectURL(processedBlob) : (recordedBlob ? URL.createObjectURL(recordedBlob) : '')}
+              controls
+              className="w-full rounded-lg bg-black mb-6"
+            />
+          )}
         </div>
       </div>
 
@@ -53,7 +69,7 @@ const VideoPlayback = () => {
             <Button 
               variant="outline" 
               className="w-full justify-between group hover:border-primary"
-              onClick={() => {/* Handle edit */}}
+              onClick={() => setIsEditing(true)}
             >
               <div className="flex items-center gap-2">
                 <Scissors className="h-4 w-4" />
