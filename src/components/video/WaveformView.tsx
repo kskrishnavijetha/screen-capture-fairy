@@ -4,10 +4,9 @@ import WaveSurfer from 'wavesurfer.js';
 interface WaveformViewProps {
   videoRef: React.RefObject<HTMLVideoElement>;
   onTimeUpdate?: (time: number) => void;
-  isReady?: (ready: boolean) => void;
 }
 
-export const WaveformView = ({ videoRef, onTimeUpdate, isReady }: WaveformViewProps) => {
+export const WaveformView = ({ videoRef, onTimeUpdate }: WaveformViewProps) => {
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurfer = useRef<WaveSurfer | null>(null);
 
@@ -15,10 +14,6 @@ export const WaveformView = ({ videoRef, onTimeUpdate, isReady }: WaveformViewPr
     if (!waveformRef.current || !videoRef.current) return;
 
     const initWaveSurfer = async () => {
-      if (wavesurfer.current) {
-        wavesurfer.current.destroy();
-      }
-
       wavesurfer.current = WaveSurfer.create({
         container: waveformRef.current!,
         waveColor: '#8b5cf6',
@@ -28,21 +23,24 @@ export const WaveformView = ({ videoRef, onTimeUpdate, isReady }: WaveformViewPr
         normalize: true,
         interact: true,
         mediaControls: true,
-        media: videoRef.current
       });
 
       wavesurfer.current.on('ready', () => {
         console.log('WaveSurfer is ready');
-        if (isReady) {
-          isReady(true);
-        }
       });
 
       wavesurfer.current.on('timeupdate', (time: number) => {
-        if (onTimeUpdate && !isNaN(time)) {
+        if (onTimeUpdate) {
           onTimeUpdate(time);
         }
       });
+
+      try {
+        const mediaStream = (videoRef.current as any).captureStream();
+        await wavesurfer.current.loadMediaElement(videoRef.current, mediaStream);
+      } catch (error) {
+        console.error('Error loading media:', error);
+      }
     };
 
     initWaveSurfer();
@@ -52,7 +50,7 @@ export const WaveformView = ({ videoRef, onTimeUpdate, isReady }: WaveformViewPr
         wavesurfer.current.destroy();
       }
     };
-  }, [videoRef, onTimeUpdate, isReady]);
+  }, [videoRef, onTimeUpdate]);
 
   return (
     <div className="relative w-full">

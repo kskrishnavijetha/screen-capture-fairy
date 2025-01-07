@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Scissors, RotateCcw, Play, Pause, SkipBack, SkipForward } from 'lucide-react';
@@ -12,32 +12,13 @@ interface TrimControlsProps {
 }
 
 export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef }: TrimControlsProps) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [isWaveformReady, setIsWaveformReady] = useState(false);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      const handlePlay = () => setIsPlaying(true);
-      const handlePause = () => setIsPlaying(false);
-      
-      videoRef.current.addEventListener('play', handlePlay);
-      videoRef.current.addEventListener('pause', handlePause);
-      
-      return () => {
-        if (videoRef.current) {
-          videoRef.current.removeEventListener('play', handlePlay);
-          videoRef.current.removeEventListener('pause', handlePause);
-        }
-      };
-    }
-  }, [videoRef]);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [currentTime, setCurrentTime] = React.useState(0);
 
   const formatTime = (seconds: number): string => {
-    if (isNaN(seconds) || !isFinite(seconds)) return '00:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleReset = () => {
@@ -54,6 +35,7 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
       } else {
         videoRef.current.play();
       }
+      setIsPlaying(!isPlaying);
     }
   };
 
@@ -65,19 +47,13 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
 
   const skipForward = () => {
     if (videoRef.current) {
-      videoRef.current.currentTime = Math.min(
-        duration, 
-        videoRef.current.currentTime + 5
-      );
+      videoRef.current.currentTime = Math.min(duration, videoRef.current.currentTime + 5);
     }
   };
 
   const handleTimeUpdate = (time: number) => {
     setCurrentTime(time);
   };
-
-  const startTime = (trimRange[0] / 100) * (duration || 0);
-  const endTime = (trimRange[1] / 100) * (duration || 0);
 
   return (
     <div className="space-y-4">
@@ -92,62 +68,54 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
         </Button>
       </div>
 
-      <WaveformView 
-        videoRef={videoRef} 
-        onTimeUpdate={handleTimeUpdate}
-        isReady={setIsWaveformReady}
-      />
+      <WaveformView videoRef={videoRef} onTimeUpdate={handleTimeUpdate} />
 
-      {isWaveformReady && (
-        <>
-          <div className="relative">
-            <Slider
-              value={trimRange}
-              onValueChange={onTrimRangeChange}
-              max={100}
-              step={1}
-              className="w-full"
-            />
-          </div>
+      <div className="relative">
+        <Slider
+          value={trimRange}
+          onValueChange={onTrimRangeChange}
+          max={100}
+          step={1}
+          className="w-full"
+        />
+      </div>
 
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>{formatTime(startTime)}</span>
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(endTime)}</span>
-          </div>
+      <div className="flex justify-between text-sm text-muted-foreground">
+        <span>{formatTime((trimRange[0] / 100) * duration)}</span>
+        <span>{formatTime(currentTime)}</span>
+        <span>{formatTime((trimRange[1] / 100) * duration)}</span>
+      </div>
 
-          <div className="flex items-center justify-center gap-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={skipBackward}
-            >
-              <SkipBack className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={togglePlayPause}
-            >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={skipForward}
-            >
-              <SkipForward className="h-4 w-4" />
-            </Button>
-          </div>
+      <div className="flex items-center justify-center gap-4">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={skipBackward}
+        >
+          <SkipBack className="h-4 w-4" />
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={togglePlayPause}
+        >
+          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={skipForward}
+        >
+          <SkipForward className="h-4 w-4" />
+        </Button>
+      </div>
 
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Scissors className="h-4 w-4" />
-            <span>Drag the handles to trim your video</span>
-          </div>
-        </>
-      )}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Scissors className="h-4 w-4" />
+        <span>Drag the handles to trim your video</span>
+      </div>
     </div>
   );
 };
