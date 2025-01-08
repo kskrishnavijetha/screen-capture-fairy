@@ -44,10 +44,10 @@ export const TrimControls = ({
   }, [trimRange, duration, videoRef]);
 
   const formatTime = (seconds: number): string => {
-    if (!isFinite(seconds) || isNaN(seconds)) return '00:00';
+    if (isNaN(seconds) || seconds < 0) return '00:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
   const handleReset = () => {
@@ -72,7 +72,6 @@ export const TrimControls = ({
 
   const skipBackward = () => {
     if (!videoRef.current) return;
-    
     const startTime = (trimRange[0] / 100) * duration;
     const newTime = Math.max(startTime, currentTime - 5);
     videoRef.current.currentTime = newTime;
@@ -80,7 +79,6 @@ export const TrimControls = ({
 
   const skipForward = () => {
     if (!videoRef.current) return;
-    
     const endTime = (trimRange[1] / 100) * duration;
     const newTime = Math.min(endTime, currentTime + 5);
     videoRef.current.currentTime = newTime;
@@ -139,11 +137,6 @@ export const TrimControls = ({
         >
           <SkipForward className="h-4 w-4" />
         </Button>
-      </div>
-
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Scissors className="h-4 w-4" />
-        <span>Drag the handles to trim your video</span>
       </div>
     </div>
   );

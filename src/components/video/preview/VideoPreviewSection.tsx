@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { VideoPreviewPlayer } from './VideoPreviewPlayer';
 import { BlurControls } from '../BlurControls';
 
@@ -25,13 +25,15 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
 }) => {
   const videoUrl = recordedBlob ? URL.createObjectURL(recordedBlob) : null;
 
-  useEffect(() => {
+  React.useEffect(() => {
     return () => {
       if (videoUrl) {
         URL.revokeObjectURL(videoUrl);
       }
     };
   }, [videoUrl]);
+
+  if (!videoUrl) return null;
 
   return (
     <div className="space-y-6">
