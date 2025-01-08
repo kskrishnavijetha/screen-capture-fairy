@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Scissors, RotateCcw, Play, Pause, SkipBack, SkipForward } from 'lucide-react';
@@ -15,6 +15,35 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [currentTime, setCurrentTime] = React.useState(0);
 
+  // Update video time when trim range changes
+  useEffect(() => {
+    if (videoRef.current) {
+      const startTime = (trimRange[0] / 100) * duration;
+      videoRef.current.currentTime = startTime;
+      setCurrentTime(startTime);
+    }
+  }, [trimRange, duration]);
+
+  // Handle video time updates
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(video.currentTime);
+      // Stop playback if we reach the end of trim range
+      const endTime = (trimRange[1] / 100) * duration;
+      if (video.currentTime >= endTime) {
+        video.pause();
+        setIsPlaying(false);
+        video.currentTime = (trimRange[0] / 100) * duration;
+      }
+    };
+
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    return () => video.removeEventListener('timeupdate', handleTimeUpdate);
+  }, [trimRange, duration]);
+
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -25,6 +54,7 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
     onTrimRangeChange([0, 100]);
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
+      setCurrentTime(0);
     }
   };
 
@@ -33,6 +63,8 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
       if (isPlaying) {
         videoRef.current.pause();
       } else {
+        const startTime = (trimRange[0] / 100) * duration;
+        videoRef.current.currentTime = startTime;
         videoRef.current.play();
       }
       setIsPlaying(!isPlaying);
@@ -41,18 +73,29 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
 
   const skipBackward = () => {
     if (videoRef.current) {
-      videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 5);
+      const startTime = (trimRange[0] / 100) * duration;
+      const newTime = Math.max(startTime, currentTime - 5);
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
     }
   };
 
   const skipForward = () => {
     if (videoRef.current) {
-      videoRef.current.currentTime = Math.min(duration, videoRef.current.currentTime + 5);
+      const endTime = (trimRange[1] / 100) * duration;
+      const newTime = Math.min(endTime, currentTime + 5);
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
     }
   };
 
   const handleTimeUpdate = (time: number) => {
-    setCurrentTime(time);
+    if (time >= 0 && time <= duration) {
+      setCurrentTime(time);
+      if (videoRef.current) {
+        videoRef.current.currentTime = time;
+      }
+    }
   };
 
   return (
@@ -73,7 +116,14 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
       <div className="relative">
         <Slider
           value={trimRange}
-          onValueChange={onTrimRangeChange}
+          onValueChange={(newRange) => {
+            onTrimRangeChange(newRange);
+            const newTime = (newRange[0] / 100) * duration;
+            if (videoRef.current) {
+              videoRef.current.currentTime = newTime;
+              setCurrentTime(newTime);
+            }
+          }}
           max={100}
           step={1}
           className="w-full"
