@@ -75,9 +75,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     setTrimRange(newRange);
     if (videoRef.current && duration > 0) {
       const newTime = (newRange[0] / 100) * duration;
-      if (isFinite(newTime)) {
-        videoRef.current.currentTime = newTime;
-      }
+      videoRef.current.currentTime = newTime;
     }
   };
 
@@ -101,13 +99,16 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     }
 
     try {
+      const startTime = (trimRange[0] / 100) * duration;
+      const endTime = (trimRange[1] / 100) * duration;
+
       const processedBlob = await processVideo({
         recordedBlob,
         videoRef,
         blurRegions,
         watermark,
         timestamps,
-        trimRange,
+        trimRange: [startTime, endTime],
         duration,
         removeSilences,
         removeFillerWords

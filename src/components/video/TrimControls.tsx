@@ -15,34 +15,29 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [currentTime, setCurrentTime] = React.useState(0);
 
-  // Update video time when trim range changes
-  useEffect(() => {
-    if (videoRef.current) {
-      const startTime = (trimRange[0] / 100) * duration;
-      videoRef.current.currentTime = startTime;
-      setCurrentTime(startTime);
-    }
-  }, [trimRange, duration]);
-
-  // Handle video time updates
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleTimeUpdate = () => {
       setCurrentTime(video.currentTime);
-      // Stop playback if we reach the end of trim range
+      
+      // Check if current time is outside trim range
+      const startTime = (trimRange[0] / 100) * duration;
       const endTime = (trimRange[1] / 100) * duration;
-      if (video.currentTime >= endTime) {
+      
+      if (video.currentTime < startTime) {
+        video.currentTime = startTime;
+      } else if (video.currentTime > endTime) {
         video.pause();
         setIsPlaying(false);
-        video.currentTime = (trimRange[0] / 100) * duration;
+        video.currentTime = startTime;
       }
     };
 
     video.addEventListener('timeupdate', handleTimeUpdate);
     return () => video.removeEventListener('timeupdate', handleTimeUpdate);
-  }, [trimRange, duration]);
+  }, [trimRange, duration, videoRef]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -89,12 +84,12 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
     }
   };
 
-  const handleTimeUpdate = (time: number) => {
-    if (time >= 0 && time <= duration) {
-      setCurrentTime(time);
-      if (videoRef.current) {
-        videoRef.current.currentTime = time;
-      }
+  const handleSliderChange = (newRange: number[]) => {
+    onTrimRangeChange(newRange);
+    if (videoRef.current) {
+      const newTime = (newRange[0] / 100) * duration;
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
     }
   };
 
@@ -111,19 +106,12 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
         </Button>
       </div>
 
-      <WaveformView videoRef={videoRef} onTimeUpdate={handleTimeUpdate} />
+      <WaveformView videoRef={videoRef} onTimeUpdate={setCurrentTime} />
 
       <div className="relative">
         <Slider
           value={trimRange}
-          onValueChange={(newRange) => {
-            onTrimRangeChange(newRange);
-            const newTime = (newRange[0] / 100) * duration;
-            if (videoRef.current) {
-              videoRef.current.currentTime = newTime;
-              setCurrentTime(newTime);
-            }
-          }}
+          onValueChange={handleSliderChange}
           max={100}
           step={1}
           className="w-full"
