@@ -23,7 +23,6 @@ export const VideoPreviewPlayer: React.FC<VideoPreviewPlayerProps> = ({
       const duration = video.duration;
       if (!isNaN(duration) && isFinite(duration) && onMetadataLoaded) {
         onMetadataLoaded(duration);
-        console.log('Video metadata loaded, duration:', duration);
       }
     };
 
