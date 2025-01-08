@@ -28,19 +28,29 @@ export const TrimControls = ({
       const startTime = (trimRange[0] / 100) * duration;
       const endTime = (trimRange[1] / 100) * duration;
       
-      if (video.currentTime >= endTime) {
+      if (video.currentTime < startTime) {
+        video.currentTime = startTime;
+      } else if (video.currentTime >= endTime) {
         video.pause();
         setIsPlaying(false);
         video.currentTime = startTime;
       }
     };
 
+    const handleEnded = () => {
+      setIsPlaying(false);
+      if (video) {
+        const startTime = (trimRange[0] / 100) * duration;
+        video.currentTime = startTime;
+      }
+    };
+
     video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('ended', () => setIsPlaying(false));
+    video.addEventListener('ended', handleEnded);
 
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('ended', () => setIsPlaying(false));
+      video.removeEventListener('ended', handleEnded);
     };
   }, [trimRange, duration, videoRef]);
 
