@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Scissors, RotateCcw, Play, Pause, SkipBack, SkipForward } from 'lucide-react';
 import { WaveformView } from './WaveformView';
+import { toast } from "@/hooks/use-toast";
 
 interface TrimControlsProps {
   duration: number;
@@ -14,14 +15,29 @@ interface TrimControlsProps {
 export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef }: TrimControlsProps) => {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [currentTime, setCurrentTime] = React.useState(0);
+  const [isMetadataLoaded, setIsMetadataLoaded] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
+    const handleMetadataLoaded = () => {
+      setIsMetadataLoaded(true);
+      if (isNaN(video.duration) || !isFinite(video.duration)) {
+        toast({
+          title: "Error",
+          description: "Invalid video duration. Please try a different video file.",
+          variant: "destructive"
+        });
+        return;
+      }
+      console.log('Video metadata loaded:', { duration: video.duration });
+    };
+
     const handleTimeUpdate = () => {
-      setCurrentTime(video.currentTime);
+      if (!isMetadataLoaded) return;
       
+      setCurrentTime(video.currentTime);
       const startTime = (trimRange[0] / 100) * duration;
       const endTime = (trimRange[1] / 100) * duration;
       
@@ -34,18 +50,24 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
       }
     };
 
+    video.addEventListener('loadedmetadata', handleMetadataLoaded);
     video.addEventListener('timeupdate', handleTimeUpdate);
-    return () => video.removeEventListener('timeupdate', handleTimeUpdate);
-  }, [trimRange, duration, videoRef]);
+    
+    return () => {
+      video.removeEventListener('loadedmetadata', handleMetadataLoaded);
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+    };
+  }, [trimRange, duration, videoRef, isMetadataLoaded]);
 
   const formatTime = (seconds: number): string => {
-    if (!isFinite(seconds) || isNaN(seconds)) return '0:00';
+    if (!isFinite(seconds) || isNaN(seconds)) return '00:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleReset = () => {
+    if (!isMetadataLoaded) return;
     onTrimRangeChange([0, 100]);
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
@@ -54,37 +76,39 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
   };
 
   const togglePlayPause = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        const startTime = (trimRange[0] / 100) * duration;
-        videoRef.current.currentTime = startTime;
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
+    if (!videoRef.current || !isMetadataLoaded) return;
+    
+    if (isPlaying) {
+      videoRef.current.pause();
+    } else {
+      const startTime = (trimRange[0] / 100) * duration;
+      videoRef.current.currentTime = startTime;
+      videoRef.current.play();
     }
+    setIsPlaying(!isPlaying);
   };
 
   const skipBackward = () => {
-    if (videoRef.current) {
-      const startTime = (trimRange[0] / 100) * duration;
-      const newTime = Math.max(startTime, currentTime - 5);
-      videoRef.current.currentTime = newTime;
-      setCurrentTime(newTime);
-    }
+    if (!videoRef.current || !isMetadataLoaded) return;
+    
+    const startTime = (trimRange[0] / 100) * duration;
+    const newTime = Math.max(startTime, currentTime - 5);
+    videoRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
   };
 
   const skipForward = () => {
-    if (videoRef.current) {
-      const endTime = (trimRange[1] / 100) * duration;
-      const newTime = Math.min(endTime, currentTime + 5);
-      videoRef.current.currentTime = newTime;
-      setCurrentTime(newTime);
-    }
+    if (!videoRef.current || !isMetadataLoaded) return;
+    
+    const endTime = (trimRange[1] / 100) * duration;
+    const newTime = Math.min(endTime, currentTime + 5);
+    videoRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
   };
 
   const handleSliderChange = (newRange: number[]) => {
+    if (!isMetadataLoaded) return;
+    
     onTrimRangeChange(newRange);
     if (videoRef.current) {
       const newTime = (newRange[0] / 100) * duration;
@@ -92,6 +116,10 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
       setCurrentTime(newTime);
     }
   };
+
+  if (!isMetadataLoaded) {
+    return <div className="text-center p-4">Loading video metadata...</div>;
+  }
 
   return (
     <div className="space-y-4">

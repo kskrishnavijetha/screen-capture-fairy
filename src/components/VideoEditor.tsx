@@ -38,26 +38,31 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       
       const handleMetadataLoaded = () => {
         if (videoRef.current) {
-          setDuration(videoRef.current.duration);
+          const videoDuration = videoRef.current.duration;
+          if (isNaN(videoDuration) || !isFinite(videoDuration)) {
+            toast({
+              title: "Error",
+              description: "Invalid video duration. Please try a different video file.",
+              variant: "destructive"
+            });
+            return;
+          }
+          setDuration(videoDuration);
           setIsMetadataLoaded(true);
           console.log('Video metadata loaded:', {
-            duration: videoRef.current.duration,
+            duration: videoDuration,
             width: videoRef.current.videoWidth,
             height: videoRef.current.videoHeight
           });
         }
       };
 
-      videoRef.current.onloadedmetadata = handleMetadataLoaded;
-
-      if (videoRef.current.readyState >= 1) {
-        handleMetadataLoaded();
-      }
+      videoRef.current.addEventListener('loadedmetadata', handleMetadataLoaded);
 
       return () => {
         URL.revokeObjectURL(url);
         if (videoRef.current) {
-          videoRef.current.onloadedmetadata = null;
+          videoRef.current.removeEventListener('loadedmetadata', handleMetadataLoaded);
         }
       };
     }
@@ -72,6 +77,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   }, [processedVideoUrl]);
 
   const handleTrimRangeChange = (newRange: number[]) => {
+    if (!isMetadataLoaded) return;
     setTrimRange(newRange);
     if (videoRef.current && duration > 0) {
       const newTime = (newRange[0] / 100) * duration;
@@ -101,6 +107,17 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     try {
       const startTime = (trimRange[0] / 100) * duration;
       const endTime = (trimRange[1] / 100) * duration;
+
+      if (isNaN(startTime) || isNaN(endTime) || !isFinite(startTime) || !isFinite(endTime)) {
+        toast({
+          title: "Error",
+          description: "Invalid trim range values",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Processing video with trim range:', { startTime, endTime, duration });
 
       const processedBlob = await processVideo({
         recordedBlob,
