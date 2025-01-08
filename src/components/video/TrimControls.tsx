@@ -22,7 +22,6 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
     const handleTimeUpdate = () => {
       setCurrentTime(video.currentTime);
       
-      // Check if current time is outside trim range
       const startTime = (trimRange[0] / 100) * duration;
       const endTime = (trimRange[1] / 100) * duration;
       
@@ -40,6 +39,7 @@ export const TrimControls = ({ duration, trimRange, onTrimRangeChange, videoRef 
   }, [trimRange, duration, videoRef]);
 
   const formatTime = (seconds: number): string => {
+    if (!isFinite(seconds) || isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
