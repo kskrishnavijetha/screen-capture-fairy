@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
-import { BlurControls } from './video/BlurControls';
 import { TrimControls } from './video/TrimControls';
 import { ShareControls } from './video/ShareControls';
 import { EmbedControls } from './video/EmbedControls';
@@ -9,7 +8,7 @@ import { ProcessControls } from './video/ProcessControls';
 import { WatermarkControls } from './video/WatermarkControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
-import { VideoPreviewSection } from './video/VideoPreviewSection';
+import { VideoPreviewSection } from './video/preview/VideoPreviewSection';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
 interface VideoEditorProps {
@@ -22,51 +21,14 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
   const [trimRange, setTrimRange] = useState([0, 100]);
   const [blurRegions, setBlurRegions] = useState<Array<{ x: number, y: number, width: number, height: number }>>([]);
   const [watermark, setWatermark] = useState<any>(null);
-  const [isMetadataLoaded, setIsMetadataLoaded] = useState(false);
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
   const { isProcessing, processVideo } = useVideoProcessing();
-
-  useEffect(() => {
-    if (videoRef.current && recordedBlob) {
-      const url = URL.createObjectURL(recordedBlob);
-      videoRef.current.src = url;
-      
-      const handleMetadataLoaded = () => {
-        if (videoRef.current) {
-          const videoDuration = videoRef.current.duration;
-          if (isNaN(videoDuration) || !isFinite(videoDuration)) {
-            toast({
-              title: "Error",
-              description: "Invalid video duration. Please try a different video file.",
-              variant: "destructive"
-            });
-            return;
-          }
-          setDuration(videoDuration);
-          setIsMetadataLoaded(true);
-          console.log('Video metadata loaded:', {
-            duration: videoDuration,
-            width: videoRef.current.videoWidth,
-            height: videoRef.current.videoHeight
-          });
-        }
-      };
-
-      videoRef.current.addEventListener('loadedmetadata', handleMetadataLoaded);
-
-      return () => {
-        URL.revokeObjectURL(url);
-        if (videoRef.current) {
-          videoRef.current.removeEventListener('loadedmetadata', handleMetadataLoaded);
-        }
-      };
-    }
-  }, [recordedBlob]);
 
   useEffect(() => {
     return () => {
@@ -76,8 +38,16 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     };
   }, [processedVideoUrl]);
 
+  const handleMetadataLoaded = (videoDuration: number) => {
+    setDuration(videoDuration);
+    console.log('Video duration set:', videoDuration);
+  };
+
+  const handleTimeUpdate = (time: number) => {
+    setCurrentTime(time);
+  };
+
   const handleTrimRangeChange = (newRange: number[]) => {
-    if (!isMetadataLoaded) return;
     setTrimRange(newRange);
     if (videoRef.current && duration > 0) {
       const newTime = (newRange[0] / 100) * duration;
@@ -90,15 +60,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       toast({
         title: "Error",
         description: "No video to process",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!isMetadataLoaded) {
-      toast({
-        title: "Error",
-        description: "Please wait for video to load completely",
         variant: "destructive",
       });
       return;
@@ -159,14 +120,18 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       <VideoPreviewSection
         videoRef={videoRef}
         previewRef={previewRef}
+        recordedBlob={recordedBlob}
         processedVideoUrl={processedVideoUrl}
         blurRegions={blurRegions}
         setBlurRegions={setBlurRegions}
+        onMetadataLoaded={handleMetadataLoaded}
+        onTimeUpdate={handleTimeUpdate}
       />
 
       <div className="space-y-4">
         <TrimControls
           duration={duration}
+          currentTime={currentTime}
           trimRange={trimRange}
           onTrimRangeChange={handleTrimRangeChange}
           videoRef={videoRef}
