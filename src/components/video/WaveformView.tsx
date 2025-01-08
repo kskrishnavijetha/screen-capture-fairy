@@ -36,9 +36,9 @@ export const WaveformView = ({ videoRef, onTimeUpdate }: WaveformViewProps) => {
       });
 
       try {
-        // Use load() method instead of loadMediaElement
-        const mediaElement = videoRef.current;
-        wavesurfer.current.load(mediaElement);
+        // Create a URL from the video source
+        const videoUrl = videoRef.current.src;
+        wavesurfer.current.load(videoUrl);
       } catch (error) {
         console.error('Error loading media:', error);
       }
