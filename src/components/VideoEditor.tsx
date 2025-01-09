@@ -10,6 +10,7 @@ import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
 import { VideoPreviewSection } from './video/preview/VideoPreviewSection';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
+import { BlurControls } from './video/BlurControls';
 
 interface VideoEditorProps {
   recordedBlob: Blob | null;
@@ -117,25 +118,36 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
 
   return (
     <div className="space-y-4 w-full max-w-2xl mx-auto mt-6">
-      <VideoPreviewSection
-        videoRef={videoRef}
-        previewRef={previewRef}
-        recordedBlob={recordedBlob}
-        processedVideoUrl={processedVideoUrl}
-        blurRegions={blurRegions}
-        setBlurRegions={setBlurRegions}
-        onMetadataLoaded={handleMetadataLoaded}
-        onTimeUpdate={handleTimeUpdate}
-      />
-
-      <div className="space-y-4">
-        <TrimControls
-          duration={duration}
-          currentTime={currentTime}
-          trimRange={trimRange}
-          onTrimRangeChange={handleTrimRangeChange}
-          videoRef={videoRef}
+      <div className="relative">
+        <video
+          ref={videoRef}
+          className="w-full rounded-lg bg-black"
+          controls
         />
+      </div>
+
+      <div className="space-y-4 mt-6">
+        <div className="bg-card rounded-lg p-4">
+          <h3 className="text-lg font-semibold mb-4">Video Editing Controls</h3>
+          
+          <div className="space-y-6">
+            <TrimControls
+              duration={duration}
+              currentTime={currentTime}
+              trimRange={trimRange}
+              onTrimRangeChange={handleTrimRangeChange}
+              videoRef={videoRef}
+            />
+
+            <div className="relative">
+              <BlurControls
+                videoRef={videoRef}
+                blurRegions={blurRegions}
+                setBlurRegions={setBlurRegions}
+              />
+            </div>
+          </div>
+        </div>
 
         <SilenceControls
           enabled={removeSilences}
