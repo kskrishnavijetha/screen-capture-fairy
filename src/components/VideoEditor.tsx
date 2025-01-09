@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
-import { TrimControls } from './video/TrimControls';
 import { ShareControls } from './video/ShareControls';
 import { EmbedControls } from './video/EmbedControls';
 import { ExportControls } from './video/ExportControls';
@@ -22,7 +21,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const previewRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const [trimRange, setTrimRange] = useState([0, 100]);
   const [blurRegions, setBlurRegions] = useState<Array<{ x: number, y: number, width: number, height: number }>>([]);
   const [watermark, setWatermark] = useState<any>(null);
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
@@ -47,14 +45,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     setCurrentTime(time);
   };
 
-  const handleTrimRangeChange = (newRange: number[]) => {
-    setTrimRange(newRange);
-    if (videoRef.current && duration > 0) {
-      const newTime = (newRange[0] / 100) * duration;
-      videoRef.current.currentTime = newTime;
-    }
-  };
-
   const handleProcess = async () => {
     if (!recordedBlob) {
       toast({
@@ -66,19 +56,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     }
 
     try {
-      const startTime = (trimRange[0] / 100) * duration;
-      const endTime = (trimRange[1] / 100) * duration;
-
-      if (isNaN(startTime) || isNaN(endTime) || !isFinite(startTime) || !isFinite(endTime)) {
-        toast({
-          title: "Error",
-          description: "Invalid trim range values",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Processing video with trim range:', { startTime, endTime, duration });
+      console.log('Processing video...');
 
       const processedBlob = await processVideo({
         recordedBlob,
@@ -86,7 +64,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         blurRegions,
         watermark,
         timestamps,
-        trimRange: [startTime, endTime],
         duration,
         removeSilences,
         removeFillerWords
@@ -129,14 +106,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       />
 
       <div className="space-y-4">
-        <TrimControls
-          duration={duration}
-          currentTime={currentTime}
-          trimRange={trimRange}
-          onTrimRangeChange={handleTrimRangeChange}
-          videoRef={videoRef}
-        />
-
         <SilenceControls
           enabled={removeSilences}
           onToggle={setRemoveSilences}
