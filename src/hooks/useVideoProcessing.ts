@@ -7,7 +7,6 @@ export interface ProcessingOptions {
   blurRegions: Array<{ x: number; y: number; width: number; height: number }>;
   watermark: any;
   timestamps: Array<{ time: number; label: string }>;
-  trimRange: number[];
   duration: number;
   removeSilences: boolean;
   removeFillerWords: boolean;
@@ -19,7 +18,7 @@ export const useVideoProcessing = () => {
   const processVideo = async (options: ProcessingOptions): Promise<Blob> => {
     setIsProcessing(true);
     try {
-      const { recordedBlob, videoRef, trimRange, duration } = options;
+      const { recordedBlob, videoRef, duration } = options;
       
       if (!videoRef.current) {
         throw new Error('Video reference not available');
@@ -39,10 +38,6 @@ export const useVideoProcessing = () => {
 
             reader.onload = async () => {
               const videoData = reader.result as ArrayBuffer;
-              
-              // Calculate trim points
-              const startTime = (trimRange[0] / 100) * duration;
-              const endTime = (trimRange[1] / 100) * duration;
               
               // Process the video data
               sourceBuffer.addEventListener('updateend', () => {

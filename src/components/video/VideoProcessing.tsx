@@ -10,7 +10,6 @@ interface VideoProcessingProps {
     size: number;
   } | null;
   timestamps: Array<{ time: number; label: string }>;
-  trimRange: number[];
 }
 
 export const processVideoFrame = ({
@@ -18,7 +17,6 @@ export const processVideoFrame = ({
   blurRegions,
   watermark,
   timestamps,
-  trimRange
 }: VideoProcessingProps, outputCtx: CanvasRenderingContext2D, progress: number) => {
   if (!videoRef.current || !outputCtx) return;
 
