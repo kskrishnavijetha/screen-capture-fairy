@@ -1,33 +1,44 @@
 import React from 'react';
-import { BlurControls } from './BlurControls';
 
 interface VideoPreviewSectionProps {
   videoRef: React.RefObject<HTMLVideoElement>;
   previewRef: React.RefObject<HTMLVideoElement>;
+  recordedBlob: Blob | null;
   processedVideoUrl: string | null;
-  blurRegions: Array<{ x: number; y: number; width: number; height: number }>;
-  setBlurRegions: React.Dispatch<React.SetStateAction<Array<{ x: number; y: number; width: number; height: number }>>>;
+  onMetadataLoaded?: (duration: number) => void;
+  onTimeUpdate?: (time: number) => void;
 }
 
 export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
   videoRef,
   previewRef,
+  recordedBlob,
   processedVideoUrl,
-  blurRegions,
-  setBlurRegions
+  onMetadataLoaded,
+  onTimeUpdate,
 }) => {
+  const videoUrl = recordedBlob ? URL.createObjectURL(recordedBlob) : null;
+
+  React.useEffect(() => {
+    return () => {
+      if (videoUrl) {
+        URL.revokeObjectURL(videoUrl);
+      }
+    };
+  }, [videoUrl]);
+
+  if (!videoUrl) return null;
+
   return (
-    <>
+    <div className="space-y-6">
       <div className="relative rounded-lg overflow-hidden bg-black">
         <video
           ref={videoRef}
+          src={videoUrl}
           className="w-full"
           controls
-        />
-        <BlurControls
-          videoRef={videoRef}
-          blurRegions={blurRegions}
-          setBlurRegions={setBlurRegions}
+          onLoadedMetadata={(e) => onMetadataLoaded?.(e.currentTarget.duration)}
+          onTimeUpdate={(e) => onTimeUpdate?.(e.currentTarget.currentTime)}
         />
       </div>
 
@@ -40,11 +51,10 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
               src={processedVideoUrl}
               className="w-full"
               controls
-              autoPlay
             />
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
