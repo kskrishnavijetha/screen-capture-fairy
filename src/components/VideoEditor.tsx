@@ -24,6 +24,14 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
 
   useEffect(() => {
+    if (videoRef.current && recordedBlob) {
+      const url = URL.createObjectURL(recordedBlob);
+      videoRef.current.src = url;
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [recordedBlob]);
+
+  useEffect(() => {
     return () => {
       if (processedVideoUrl) {
         URL.revokeObjectURL(processedVideoUrl);
@@ -42,7 +50,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   if (!recordedBlob) return null;
 
   return (
-    <div className="space-y-4 w-full max-w-2xl mx-auto mt-6">
+    <div className="space-y-4 w-full max-w-2xl mx-auto">
       <VideoPreviewSection
         videoRef={videoRef}
         previewRef={previewRef}

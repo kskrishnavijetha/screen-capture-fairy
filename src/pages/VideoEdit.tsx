@@ -15,14 +15,13 @@ const VideoEdit = () => {
   }
 
   const handleBack = () => {
-    // Navigate back to playback page with the original blob
     navigate('/playback', { 
       state: { recordedBlob }
     });
   };
 
   return (
-    <div className="p-6">
+    <div className="container mx-auto p-6">
       <Button 
         variant="ghost" 
         onClick={handleBack}
@@ -35,7 +34,9 @@ const VideoEdit = () => {
         recordedBlob={recordedBlob}
         timestamps={[]}
         onSave={(newBlob) => {
-          navigate('/playback', { state: { recordedBlob: newBlob } });
+          navigate('/playback', { 
+            state: { recordedBlob: newBlob } 
+          });
         }}
       />
     </div>
