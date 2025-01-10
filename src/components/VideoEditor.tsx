@@ -52,6 +52,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         processedVideoUrl={processedVideoUrl}
         onMetadataLoaded={handleMetadataLoaded}
         onTimeUpdate={handleTimeUpdate}
+        watermark={watermark}
       />
 
       <div className="space-y-4">
