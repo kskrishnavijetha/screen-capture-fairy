@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { ImageIcon } from 'lucide-react';
 
 export interface Watermark {
@@ -18,6 +19,7 @@ interface WatermarkControlsProps {
 
 export const WatermarkControls = ({ watermark, onWatermarkChange }: WatermarkControlsProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isEnabled, setIsEnabled] = useState(!!watermark);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -43,90 +45,115 @@ export const WatermarkControls = ({ watermark, onWatermarkChange }: WatermarkCon
     }
   };
 
+  const handleEnableChange = (enabled: boolean) => {
+    setIsEnabled(enabled);
+    if (!enabled) {
+      onWatermarkChange(null);
+    } else if (selectedFile) {
+      // Re-trigger file change to restore watermark
+      const input = document.getElementById('watermark-upload') as HTMLInputElement;
+      if (input.files?.length) {
+        handleFileChange({ target: input } as React.ChangeEvent<HTMLInputElement>);
+      }
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="outline"
-          onClick={() => document.getElementById('watermark-upload')?.click()}
-          className="w-full"
-        >
-          <ImageIcon className="w-4 h-4 mr-2" />
-          {watermark ? 'Change Logo' : 'Add Logo'}
-        </Button>
-        {watermark && (
-          <Button
-            variant="destructive"
-            onClick={() => onWatermarkChange(null)}
-          >
-            Remove
-          </Button>
-        )}
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium">Enable Watermark</label>
+        <Switch
+          checked={isEnabled}
+          onCheckedChange={handleEnableChange}
+        />
       </div>
 
-      <input
-        type="file"
-        id="watermark-upload"
-        className="hidden"
-        accept="image/*"
-        onChange={handleFileChange}
-      />
-
-      {watermark && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
+      {isEnabled && (
+        <>
+          <div className="flex items-center gap-4">
             <Button
-              variant={watermark.position === 'top-left' ? 'default' : 'outline'}
-              onClick={() => handlePositionChange('top-left')}
-              size="sm"
+              variant="outline"
+              onClick={() => document.getElementById('watermark-upload')?.click()}
+              className="w-full"
             >
-              Top Left
+              <ImageIcon className="w-4 h-4 mr-2" />
+              {watermark ? 'Change Logo' : 'Add Logo'}
             </Button>
-            <Button
-              variant={watermark.position === 'top-right' ? 'default' : 'outline'}
-              onClick={() => handlePositionChange('top-right')}
-              size="sm"
-            >
-              Top Right
-            </Button>
-            <Button
-              variant={watermark.position === 'bottom-left' ? 'default' : 'outline'}
-              onClick={() => handlePositionChange('bottom-left')}
-              size="sm"
-            >
-              Bottom Left
-            </Button>
-            <Button
-              variant={watermark.position === 'bottom-right' ? 'default' : 'outline'}
-              onClick={() => handlePositionChange('bottom-right')}
-              size="sm"
-            >
-              Bottom Right
-            </Button>
+            {watermark && (
+              <Button
+                variant="destructive"
+                onClick={() => onWatermarkChange(null)}
+              >
+                Remove
+              </Button>
+            )}
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Opacity ({Math.round(watermark.opacity * 100)}%)</label>
-            <Slider
-              value={[watermark.opacity * 100]}
-              onValueChange={(value) => onWatermarkChange({ ...watermark, opacity: value[0] / 100 })}
-              min={1}
-              max={100}
-              step={1}
-            />
-          </div>
+          <input
+            type="file"
+            id="watermark-upload"
+            className="hidden"
+            accept="image/*"
+            onChange={handleFileChange}
+          />
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Size ({watermark.size}%)</label>
-            <Slider
-              value={[watermark.size]}
-              onValueChange={(value) => onWatermarkChange({ ...watermark, size: value[0] })}
-              min={5}
-              max={50}
-              step={1}
-            />
-          </div>
-        </div>
+          {watermark && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant={watermark.position === 'top-left' ? 'default' : 'outline'}
+                  onClick={() => handlePositionChange('top-left')}
+                  size="sm"
+                >
+                  Top Left
+                </Button>
+                <Button
+                  variant={watermark.position === 'top-right' ? 'default' : 'outline'}
+                  onClick={() => handlePositionChange('top-right')}
+                  size="sm"
+                >
+                  Top Right
+                </Button>
+                <Button
+                  variant={watermark.position === 'bottom-left' ? 'default' : 'outline'}
+                  onClick={() => handlePositionChange('bottom-left')}
+                  size="sm"
+                >
+                  Bottom Left
+                </Button>
+                <Button
+                  variant={watermark.position === 'bottom-right' ? 'default' : 'outline'}
+                  onClick={() => handlePositionChange('bottom-right')}
+                  size="sm"
+                >
+                  Bottom Right
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Opacity ({Math.round(watermark.opacity * 100)}%)</label>
+                <Slider
+                  value={[watermark.opacity * 100]}
+                  onValueChange={(value) => onWatermarkChange({ ...watermark, opacity: value[0] / 100 })}
+                  min={1}
+                  max={100}
+                  step={1}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Size ({watermark.size}%)</label>
+                <Slider
+                  value={[watermark.size]}
+                  onValueChange={(value) => onWatermarkChange({ ...watermark, size: value[0] })}
+                  min={5}
+                  max={50}
+                  step={1}
+                />
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
