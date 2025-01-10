@@ -1,72 +1,76 @@
-import { useState } from 'react';
-import { processVideoFrame } from '@/components/video/VideoProcessing';
-
-export interface ProcessingOptions {
-  recordedBlob: Blob;
-  videoRef: React.RefObject<HTMLVideoElement>;
-  blurRegions: Array<{ x: number; y: number; width: number; height: number }>;
-  watermark: any;
-  timestamps: Array<{ time: number; label: string }>;
-  duration: number;
-  removeSilences: boolean;
-  removeFillerWords: boolean;
-}
+import { useState, useCallback } from 'react';
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { toast } from './use-toast';
 
 export const useVideoProcessing = () => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
 
-  const processVideo = async (options: ProcessingOptions): Promise<Blob> => {
+  const trimVideo = useCallback(async (
+    videoBlob: Blob,
+    startTime: number,
+    endTime: number
+  ): Promise<Blob | null> => {
     setIsProcessing(true);
+    setProgress(0);
+
     try {
-      const { recordedBlob, videoRef, duration } = options;
+      const ffmpeg = new FFmpeg();
       
-      if (!videoRef.current) {
-        throw new Error('Video reference not available');
-      }
-
-      // Create a new MediaSource
-      const mediaSource = new MediaSource();
-      const url = URL.createObjectURL(mediaSource);
-      const video = videoRef.current;
-      video.src = url;
-
-      return new Promise((resolve, reject) => {
-        mediaSource.addEventListener('sourceopen', async () => {
-          try {
-            const sourceBuffer = mediaSource.addSourceBuffer('video/webm;codecs=vp8,opus');
-            const reader = new FileReader();
-
-            reader.onload = async () => {
-              const videoData = reader.result as ArrayBuffer;
-              
-              // Process the video data
-              sourceBuffer.addEventListener('updateend', () => {
-                if (!sourceBuffer.updating) {
-                  mediaSource.endOfStream();
-                  // Create final blob
-                  const processedBlob = new Blob([videoData], { type: 'video/webm' });
-                  setIsProcessing(false);
-                  resolve(processedBlob);
-                }
-              });
-
-              sourceBuffer.appendBuffer(videoData);
-            };
-
-            reader.readAsArrayBuffer(recordedBlob);
-          } catch (error) {
-            reject(error);
-          }
-        });
+      // Load FFmpeg
+      await ffmpeg.load({
+        coreURL: await toBlobURL('/ffmpeg-core.js', 'text/javascript'),
+        wasmURL: await toBlobURL('/ffmpeg-core.wasm', 'application/wasm'),
       });
-    } catch (error) {
+
+      // Write input file
+      const inputFileName = 'input.webm';
+      const outputFileName = 'output.webm';
+      ffmpeg.writeFile(inputFileName, await fetchFile(videoBlob));
+
+      // Set up progress tracking
+      ffmpeg.on('progress', ({ progress }) => {
+        setProgress(Math.round(progress * 100));
+      });
+
+      // Execute trim command
+      const duration = endTime - startTime;
+      await ffmpeg.exec([
+        '-i', inputFileName,
+        '-ss', startTime.toString(),
+        '-t', duration.toString(),
+        '-c', 'copy',
+        outputFileName
+      ]);
+
+      // Read the output file
+      const data = await ffmpeg.readFile(outputFileName);
+      const trimmedBlob = new Blob([data], { type: 'video/webm' });
+
       setIsProcessing(false);
-      throw error;
+      setProgress(100);
+      toast({
+        title: "Video trimmed successfully",
+        description: "Your video has been trimmed and is ready to save.",
+      });
+
+      return trimmedBlob;
+    } catch (error) {
+      console.error('Error trimming video:', error);
+      toast({
+        title: "Error trimming video",
+        description: "There was an error processing your video. Please try again.",
+        variant: "destructive",
+      });
+      setIsProcessing(false);
+      return null;
     }
-  };
+  }, []);
 
   return {
+    trimVideo,
     isProcessing,
-    processVideo
+    progress
   };
 };
