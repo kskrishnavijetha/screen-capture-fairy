@@ -28,7 +28,7 @@ export const HomePage = ({ setSelectedComponent }: HomePageProps) => {
             muted 
             playsInline
           >
-            <source src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=1280&h=720" type="video/mp4" />
+            <source src="/lovable-uploads/54cd55ec-2ab7-464a-a5c9-7388b5f53a05.png" type="video/mp4" />
             Your browser does not support the video tag.
           </video>
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
