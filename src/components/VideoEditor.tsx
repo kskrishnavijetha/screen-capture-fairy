@@ -7,9 +7,7 @@ import { WatermarkControls } from './video/WatermarkControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
 import { VideoPreviewSection } from './video/preview/VideoPreviewSection';
-import { TrimControls } from './video/TrimControls';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
-import { Button } from './ui/button';
 
 interface VideoEditorProps {
   recordedBlob: Blob | null;
@@ -26,9 +24,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
-  const [trimRange, setTrimRange] = useState([0, 100]);
-
-  const { trimVideo, isProcessing, progress } = useVideoProcessing();
 
   useEffect(() => {
     return () => {
@@ -46,28 +41,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     setCurrentTime(time);
   };
 
-  const handleTrimRangeChange = (newRange: number[]) => {
-    setTrimRange(newRange);
-  };
-
-  const handleTrimVideo = async () => {
-    if (!recordedBlob || !duration) return;
-
-    const startTime = (trimRange[0] / 100) * duration;
-    const endTime = (trimRange[1] / 100) * duration;
-
-    const trimmedBlob = await trimVideo(recordedBlob, startTime, endTime);
-    
-    if (trimmedBlob) {
-      if (processedVideoUrl) {
-        URL.revokeObjectURL(processedVideoUrl);
-      }
-      const newUrl = URL.createObjectURL(trimmedBlob);
-      setProcessedVideoUrl(newUrl);
-      onSave(trimmedBlob);
-    }
-  };
-
   if (!recordedBlob) return null;
 
   return (
@@ -82,22 +55,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       />
 
       <div className="space-y-4">
-        <TrimControls
-          duration={duration}
-          currentTime={currentTime}
-          trimRange={trimRange}
-          onTrimRangeChange={handleTrimRangeChange}
-          videoRef={videoRef}
-        />
-
-        <Button 
-          onClick={handleTrimVideo}
-          disabled={isProcessing}
-          className="w-full"
-        >
-          {isProcessing ? `Processing... ${progress}%` : 'Trim Video'}
-        </Button>
-
         <SilenceControls
           enabled={removeSilences}
           onToggle={setRemoveSilences}
