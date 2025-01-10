@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { MessageCircle, X, Scissors } from 'lucide-react';
+import { MessageCircle, X, ArrowLeft } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { VideoEditor } from '@/components/VideoEditor';
 
@@ -23,8 +23,21 @@ const VideoPlayback = () => {
     navigate('/edit', { state: { recordedBlob } });
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
+      {/* Back button */}
+      <Button
+        variant="ghost"
+        className="absolute top-4 left-4 p-2"
+        onClick={handleBack}
+      >
+        <ArrowLeft className="h-6 w-6" />
+      </Button>
+
       {/* Main content */}
       <div className={cn(
         "flex-1 p-6 transition-all duration-300",
@@ -41,7 +54,7 @@ const VideoPlayback = () => {
             className="w-full flex items-center justify-center gap-2"
           >
             <Scissors className="h-4 w-4" />
-            Edit and Trim Video
+            Edit Video
           </Button>
         </div>
       </div>
