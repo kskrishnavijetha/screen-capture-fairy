@@ -41,7 +41,13 @@ const VideoPlayback = () => {
     let parsedRecordings: Recording[] = [];
     
     try {
-      parsedRecordings = existingRecordings ? JSON.parse(existingRecordings) : [];
+      const storedRecordings = existingRecordings ? JSON.parse(existingRecordings) : [];
+      // Convert stored data back to Blob objects
+      parsedRecordings = storedRecordings.map((recording: any) => ({
+        ...recording,
+        blob: new Blob([recording.blob], { type: 'video/webm' }),
+        timestamp: new Date(recording.timestamp)
+      }));
     } catch (error) {
       console.error('Error parsing recordings:', error);
     }
@@ -56,27 +62,30 @@ const VideoPlayback = () => {
       };
 
       const updatedRecordings = [newRecording, ...parsedRecordings];
-      localStorage.setItem('recordings', JSON.stringify(updatedRecordings));
+      
+      // Store only the necessary data
+      const recordingsToStore = updatedRecordings.map(recording => ({
+        ...recording,
+        blob: Array.from(new Uint8Array(recording.blob.slice(0))),
+        timestamp: recording.timestamp.toISOString()
+      }));
+      
+      localStorage.setItem('recordings', JSON.stringify(recordingsToStore));
       setPreviousRecordings(updatedRecordings);
     }
   }, [recordedBlob, currentRecordingTime, location.state, navigate]);
 
   useEffect(() => {
-    // Cleanup previous URL if it exists
     if (videoUrl) {
       URL.revokeObjectURL(videoUrl);
     }
 
-    // Create new URL based on selected or current recording
-    if (selectedRecording) {
-      const url = URL.createObjectURL(selectedRecording);
-      setVideoUrl(url);
-    } else if (recordedBlob) {
-      const url = URL.createObjectURL(recordedBlob);
+    const blobToUse = selectedRecording || recordedBlob;
+    if (blobToUse) {
+      const url = URL.createObjectURL(blobToUse);
       setVideoUrl(url);
     }
 
-    // Cleanup function
     return () => {
       if (videoUrl) {
         URL.revokeObjectURL(videoUrl);
@@ -121,6 +130,8 @@ const VideoPlayback = () => {
   const handleRecordingClick = (recording: Recording) => {
     setSelectedRecording(recording.blob);
   };
+
+  // ... keep existing code (JSX rendering part remains the same)
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -180,7 +191,7 @@ const VideoPlayback = () => {
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">
-                          {format(new Date(recording.timestamp), 'PPpp')}
+                          {format(recording.timestamp, 'PPpp')}
                         </span>
                       </div>
                       <div className="flex gap-2">
