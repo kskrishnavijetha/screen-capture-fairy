@@ -28,14 +28,13 @@ const VideoPlayback = () => {
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
   const [previousRecordings, setPreviousRecordings] = useState<Recording[]>([]);
   const [currentRecordingTime] = useState(new Date());
+  const [selectedRecording, setSelectedRecording] = useState<Blob | null>(null);
 
   useEffect(() => {
-    // Get existing recordings from localStorage
     const existingRecordings = localStorage.getItem('recordings');
     const parsedRecordings = existingRecordings ? JSON.parse(existingRecordings) : [];
     setPreviousRecordings(parsedRecordings);
 
-    // Add new recording if exists
     if (recordedBlob) {
       const newRecording: Recording = {
         blob: recordedBlob,
@@ -83,6 +82,10 @@ const VideoPlayback = () => {
     });
   };
 
+  const handleRecordingClick = (recording: Recording) => {
+    setSelectedRecording(recording.blob);
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       <Button
@@ -106,9 +109,14 @@ const VideoPlayback = () => {
           </div>
           
           <video
-            src={recordedBlob ? URL.createObjectURL(recordedBlob) : ''}
+            src={selectedRecording ? URL.createObjectURL(selectedRecording) : (recordedBlob ? URL.createObjectURL(recordedBlob) : '')}
             controls
             className="w-full rounded-lg bg-black mb-6"
+            onEnded={() => {
+              if (selectedRecording) {
+                URL.revokeObjectURL(URL.createObjectURL(selectedRecording));
+              }
+            }}
           />
           <div className="flex gap-4">
             <Button 
@@ -141,14 +149,23 @@ const VideoPlayback = () => {
                           {format(new Date(recording.timestamp), 'PPpp')}
                         </span>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownload(recording.blob)}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRecordingClick(recording)}
+                        >
+                          Preview
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownload(recording.blob)}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Download
+                        </Button>
+                      </div>
                     </div>
                   </Card>
                 ))}
