@@ -10,19 +10,15 @@ const VideoEdit = () => {
   const { recordedBlob } = location.state || {};
 
   if (!recordedBlob) {
-    return (
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">No video selected</h1>
-        <Button onClick={() => navigate('/')}>Return to Home</Button>
-      </div>
-    );
+    navigate('/');
+    return null;
   }
 
   return (
     <div className="p-6">
       <Button 
         variant="ghost" 
-        onClick={() => navigate(-1)} 
+        onClick={() => navigate('/')} 
         className="mb-4"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
@@ -32,7 +28,6 @@ const VideoEdit = () => {
         recordedBlob={recordedBlob}
         timestamps={[]}
         onSave={(newBlob) => {
-          // Handle the saved blob
           navigate('/playback', { state: { recordedBlob: newBlob } });
         }}
       />
