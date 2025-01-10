@@ -32,55 +32,68 @@ const VideoPlayback = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!recordedBlob && !location.state) {
-      navigate('/');
-      return;
-    }
+    const loadRecordings = async () => {
+      if (!recordedBlob && !location.state) {
+        navigate('/');
+        return;
+      }
 
-    const existingRecordings = localStorage.getItem('recordings');
-    let parsedRecordings: Recording[] = [];
-    
-    try {
-      const storedRecordings = existingRecordings ? JSON.parse(existingRecordings) : [];
-      // Convert stored data back to Blob objects
-      parsedRecordings = await Promise.all(storedRecordings.map(async (recording: any) => {
-        const uint8Array = new Uint8Array(recording.blob);
-        const blob = new Blob([uint8Array], { type: 'video/webm' });
-        return {
-          ...recording,
-          blob,
-          timestamp: new Date(recording.timestamp)
-        };
-      }));
-    } catch (error) {
-      console.error('Error parsing recordings:', error);
-    }
-    
-    setPreviousRecordings(parsedRecordings);
-
-    if (recordedBlob) {
-      const newRecording: Recording = {
-        blob: recordedBlob,
-        timestamp: currentRecordingTime,
-        id: Date.now().toString()
-      };
-
-      const updatedRecordings = [newRecording, ...parsedRecordings];
+      const existingRecordings = localStorage.getItem('recordings');
+      let parsedRecordings: Recording[] = [];
       
-      // Store only the necessary data
-      const recordingsToStore = await Promise.all(updatedRecordings.map(async (recording) => {
-        const arrayBuffer = await recording.blob.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        return {
-          ...recording,
-          blob: Array.from(uint8Array),
-          timestamp: recording.timestamp.toISOString()
-        };
-      }));
+      try {
+        const storedRecordings = existingRecordings ? JSON.parse(existingRecordings) : [];
+        // Convert stored data back to Blob objects
+        parsedRecordings = await Promise.all(storedRecordings.map(async (recording: any) => {
+          const uint8Array = new Uint8Array(recording.blob);
+          const blob = new Blob([uint8Array], { type: 'video/webm' });
+          return {
+            ...recording,
+            blob,
+            timestamp: new Date(recording.timestamp)
+          };
+        }));
+      } catch (error) {
+        console.error('Error parsing recordings:', error);
+      }
       
-      localStorage.setItem('recordings', JSON.stringify(recordingsToStore));
-      setPreviousRecordings(updatedRecordings);
-    }
+      setPreviousRecordings(parsedRecordings);
+
+      if (recordedBlob) {
+        const newRecording: Recording = {
+          blob: recordedBlob,
+          timestamp: currentRecordingTime,
+          id: Date.now().toString()
+        };
+
+        const updatedRecordings = [newRecording, ...parsedRecordings];
+        
+        try {
+          // Store only the necessary data
+          const recordingsToStore = await Promise.all(updatedRecordings.map(async (recording) => {
+            const arrayBuffer = await recording.blob.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+            return {
+              ...recording,
+              blob: Array.from(uint8Array),
+              timestamp: recording.timestamp.toISOString()
+            };
+          }));
+          
+          localStorage.setItem('recordings', JSON.stringify(recordingsToStore));
+          setPreviousRecordings(updatedRecordings);
+        } catch (error) {
+          console.error('Error storing recordings:', error);
+          toast({
+            variant: "destructive",
+            title: "Error saving recording",
+            description: "Failed to save the recording to storage"
+          });
+        }
+      }
+    };
+
+    loadRecordings();
   }, [recordedBlob, currentRecordingTime, location.state, navigate]);
 
   useEffect(() => {
