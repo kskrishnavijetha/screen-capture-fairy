@@ -1,14 +1,11 @@
 import React from 'react';
 import { VideoPreviewPlayer } from './VideoPreviewPlayer';
-import { BlurControls } from '../BlurControls';
 
 interface VideoPreviewSectionProps {
   videoRef: React.RefObject<HTMLVideoElement>;
   previewRef: React.RefObject<HTMLVideoElement>;
   recordedBlob: Blob | null;
   processedVideoUrl: string | null;
-  blurRegions: Array<{ x: number; y: number; width: number; height: number }>;
-  setBlurRegions: React.Dispatch<React.SetStateAction<Array<{ x: number; y: number; width: number; height: number }>>>;
   onMetadataLoaded?: (duration: number) => void;
   onTimeUpdate?: (time: number) => void;
 }
@@ -18,8 +15,6 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
   previewRef,
   recordedBlob,
   processedVideoUrl,
-  blurRegions,
-  setBlurRegions,
   onMetadataLoaded,
   onTimeUpdate,
 }) => {
@@ -43,11 +38,6 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
           src={videoUrl}
           onMetadataLoaded={onMetadataLoaded}
           onTimeUpdate={onTimeUpdate}
-        />
-        <BlurControls
-          videoRef={videoRef}
-          blurRegions={blurRegions}
-          setBlurRegions={setBlurRegions}
         />
       </div>
 

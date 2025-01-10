@@ -8,7 +8,6 @@ import { WatermarkControls } from './video/WatermarkControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
 import { VideoPreviewSection } from './video/preview/VideoPreviewSection';
-import { BlurSection } from './video/BlurSection';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
 interface VideoEditorProps {
@@ -22,7 +21,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const previewRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const [blurRegions, setBlurRegions] = useState<Array<{ x: number, y: number, width: number, height: number }>>([]);
   const [watermark, setWatermark] = useState<any>(null);
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [removeSilences, setRemoveSilences] = useState(false);
@@ -59,7 +57,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       const processedBlob = await processVideo({
         recordedBlob,
         videoRef,
-        blurRegions,
+        blurRegions: [],
         watermark,
         timestamps,
         duration,
@@ -97,19 +95,11 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         previewRef={previewRef}
         recordedBlob={recordedBlob}
         processedVideoUrl={processedVideoUrl}
-        blurRegions={blurRegions}
-        setBlurRegions={setBlurRegions}
         onMetadataLoaded={handleMetadataLoaded}
         onTimeUpdate={handleTimeUpdate}
       />
 
       <div className="space-y-4">
-        <BlurSection
-          videoRef={videoRef}
-          blurRegions={blurRegions}
-          setBlurRegions={setBlurRegions}
-        />
-
         <SilenceControls
           enabled={removeSilences}
           onToggle={setRemoveSilences}
