@@ -43,65 +43,81 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
     if (!ctx) return;
 
     const watermarkImg = new Image();
+    watermarkImg.crossOrigin = "anonymous";
     watermarkImg.src = watermark.image;
 
     let animationFrameId: number;
+    let isPlaying = false;
 
-    watermarkImg.onload = () => {
-      const updateCanvas = () => {
-        if (!videoRef.current || !canvas) return;
+    const updateCanvas = () => {
+      if (!videoRef.current || !canvas || !isPlaying) return;
 
-        // Set canvas dimensions to match video
-        canvas.width = videoRef.current.videoWidth || videoRef.current.clientWidth;
-        canvas.height = videoRef.current.videoHeight || videoRef.current.clientHeight;
+      canvas.width = videoRef.current.videoWidth || videoRef.current.clientWidth;
+      canvas.height = videoRef.current.videoHeight || videoRef.current.clientHeight;
 
-        // Draw the video frame
-        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
-        // Calculate watermark dimensions
-        const maxWidth = canvas.width * (watermark.size / 100);
-        const scale = maxWidth / watermarkImg.width;
-        const watermarkWidth = watermarkImg.width * scale;
-        const watermarkHeight = watermarkImg.height * scale;
+      const maxWidth = canvas.width * (watermark.size / 100);
+      const scale = maxWidth / watermarkImg.width;
+      const watermarkWidth = watermarkImg.width * scale;
+      const watermarkHeight = watermarkImg.height * scale;
 
-        // Calculate position
-        const padding = Math.floor(canvas.width * 0.02);
-        let x = padding;
-        let y = padding;
+      const padding = Math.floor(canvas.width * 0.02);
+      let x = padding;
+      let y = padding;
 
-        switch (watermark.position) {
-          case 'top-right':
-            x = canvas.width - watermarkWidth - padding;
-            break;
-          case 'bottom-left':
-            y = canvas.height - watermarkHeight - padding;
-            break;
-          case 'bottom-right':
-            x = canvas.width - watermarkWidth - padding;
-            y = canvas.height - watermarkHeight - padding;
-            break;
-        }
+      switch (watermark.position) {
+        case 'top-right':
+          x = canvas.width - watermarkWidth - padding;
+          break;
+        case 'bottom-left':
+          y = canvas.height - watermarkHeight - padding;
+          break;
+        case 'bottom-right':
+          x = canvas.width - watermarkWidth - padding;
+          y = canvas.height - watermarkHeight - padding;
+          break;
+      }
 
-        // Draw watermark
-        ctx.globalAlpha = watermark.opacity;
-        ctx.drawImage(watermarkImg, x, y, watermarkWidth, watermarkHeight);
-        ctx.globalAlpha = 1.0;
+      ctx.globalAlpha = watermark.opacity;
+      ctx.drawImage(watermarkImg, x, y, watermarkWidth, watermarkHeight);
+      ctx.globalAlpha = 1.0;
 
-        animationFrameId = requestAnimationFrame(updateCanvas);
-      };
+      animationFrameId = requestAnimationFrame(updateCanvas);
+    };
 
-      const handlePlay = () => {
-        updateCanvas();
-      };
+    const handlePlay = () => {
+      isPlaying = true;
+      updateCanvas();
+    };
 
-      videoRef.current?.addEventListener('play', handlePlay);
+    const handlePause = () => {
+      isPlaying = false;
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
 
-      return () => {
-        videoRef.current?.removeEventListener('play', handlePlay);
-        if (animationFrameId) {
-          cancelAnimationFrame(animationFrameId);
-        }
-      };
+    const handleEnded = () => {
+      isPlaying = false;
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+
+    videoRef.current.addEventListener('play', handlePlay);
+    videoRef.current.addEventListener('pause', handlePause);
+    videoRef.current.addEventListener('ended', handleEnded);
+
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.removeEventListener('play', handlePlay);
+        videoRef.current.removeEventListener('pause', handlePause);
+        videoRef.current.removeEventListener('ended', handleEnded);
+      }
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
     };
   }, [watermark]);
 
