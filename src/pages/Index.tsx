@@ -46,15 +46,10 @@ const Index = () => {
 
   return (
     <div className={`min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
-      <div className="absolute top-4 left-4 flex items-center gap-4">
+      <div className="absolute top-4 left-4">
         <MainMenu
           selectedComponent={selectedComponent}
           setSelectedComponent={setSelectedComponent}
-        />
-        <img 
-          src="/lovable-uploads/fae7d82d-9e93-4fd2-b527-9f39bce9277a.png" 
-          alt="Technova Logo" 
-          className="w-12 h-12 object-contain"
         />
       </div>
       
