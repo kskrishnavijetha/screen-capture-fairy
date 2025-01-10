@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { VideoPreviewPlayer } from './VideoPreviewPlayer';
 
 interface VideoPreviewSectionProps {
@@ -18,9 +18,13 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
   onMetadataLoaded,
   onTimeUpdate,
 }) => {
-  const videoUrl = recordedBlob ? URL.createObjectURL(recordedBlob) : null;
+  // Create video URL only once when blob changes
+  const videoUrl = useMemo(() => 
+    recordedBlob ? URL.createObjectURL(recordedBlob) : null
+  , [recordedBlob]);
 
-  React.useEffect(() => {
+  // Clean up the URL when component unmounts or blob changes
+  useEffect(() => {
     return () => {
       if (videoUrl) {
         URL.revokeObjectURL(videoUrl);
