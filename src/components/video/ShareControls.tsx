@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Share2 } from 'lucide-react';
+import { Share2, Linkedin } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { LinkShareControls } from './LinkShareControls';
 import {
@@ -29,7 +29,7 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
     
     toast({
       title: "Authentication Required",
-      description: `Please set up your ${platform.name} API credentials in the project settings to enable sharing. You can find your API keys in the ${platform.name} developer console.`,
+      description: `Please set up your ${platform.name} API credentials in the project settings to enable sharing.`,
     });
 
     setShowAuthDialog(false);
@@ -57,6 +57,11 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
           title: "Instagram Sharing",
           description: "To share on Instagram, download the video and upload it through the Instagram app or website.",
         });
+        return;
+      }
+
+      if (selectedPlatform === 'linkedin') {
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`, '_blank', 'width=600,height=400');
         return;
       }
 

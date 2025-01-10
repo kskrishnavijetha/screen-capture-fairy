@@ -8,6 +8,7 @@ import { WatermarkControls } from './video/WatermarkControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
 import { VideoPreviewSection } from './video/preview/VideoPreviewSection';
+import { BlurSection } from './video/BlurSection';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
 interface VideoEditorProps {
@@ -38,7 +39,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
 
   const handleMetadataLoaded = (videoDuration: number) => {
     setDuration(videoDuration);
-    console.log('Video duration set:', videoDuration);
   };
 
   const handleTimeUpdate = (time: number) => {
@@ -56,8 +56,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     }
 
     try {
-      console.log('Processing video...');
-
       const processedBlob = await processVideo({
         recordedBlob,
         videoRef,
@@ -106,6 +104,12 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       />
 
       <div className="space-y-4">
+        <BlurSection
+          videoRef={videoRef}
+          blurRegions={blurRegions}
+          setBlurRegions={setBlurRegions}
+        />
+
         <SilenceControls
           enabled={removeSilences}
           onToggle={setRemoveSilences}
