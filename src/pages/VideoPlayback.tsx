@@ -22,7 +22,7 @@ interface Recording {
 const VideoPlayback = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { recordedBlob } = location.state as VideoPlaybackProps;
+  const { recordedBlob } = (location.state || {}) as VideoPlaybackProps;
   const [showSidebar, setShowSidebar] = useState(true);
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
@@ -32,6 +32,11 @@ const VideoPlayback = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!recordedBlob && !location.state) {
+      navigate('/');
+      return;
+    }
+
     const existingRecordings = localStorage.getItem('recordings');
     let parsedRecordings: Recording[] = [];
     
@@ -54,19 +59,29 @@ const VideoPlayback = () => {
       localStorage.setItem('recordings', JSON.stringify(updatedRecordings));
       setPreviousRecordings(updatedRecordings);
     }
-  }, [recordedBlob, currentRecordingTime]);
+  }, [recordedBlob, currentRecordingTime, location.state, navigate]);
 
   useEffect(() => {
-    // Create and cleanup video URLs
+    // Cleanup previous URL if it exists
+    if (videoUrl) {
+      URL.revokeObjectURL(videoUrl);
+    }
+
+    // Create new URL based on selected or current recording
     if (selectedRecording) {
       const url = URL.createObjectURL(selectedRecording);
       setVideoUrl(url);
-      return () => URL.revokeObjectURL(url);
     } else if (recordedBlob) {
       const url = URL.createObjectURL(recordedBlob);
       setVideoUrl(url);
-      return () => URL.revokeObjectURL(url);
     }
+
+    // Cleanup function
+    return () => {
+      if (videoUrl) {
+        URL.revokeObjectURL(videoUrl);
+      }
+    };
   }, [selectedRecording, recordedBlob]);
 
   const handleBack = () => {
@@ -139,14 +154,14 @@ const VideoPlayback = () => {
 
           <div className="flex gap-4">
             <Button 
-              onClick={() => navigate('/edit', { state: { recordedBlob } })}
+              onClick={() => navigate('/edit', { state: { recordedBlob: selectedRecording || recordedBlob } })}
               className="flex-1 items-center justify-center"
             >
               <Scissors className="h-4 w-4 mr-2" />
               Edit Video
             </Button>
             <Button
-              onClick={() => handleDownload()}
+              onClick={() => handleDownload(selectedRecording || recordedBlob)}
               variant="outline"
               className="flex-1 items-center justify-center bg-green-500 text-white hover:bg-green-600"
             >
