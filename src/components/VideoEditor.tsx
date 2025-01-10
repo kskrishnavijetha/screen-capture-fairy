@@ -22,12 +22,15 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (videoRef.current && recordedBlob) {
+    if (recordedBlob) {
       const url = URL.createObjectURL(recordedBlob);
-      videoRef.current.src = url;
-      return () => URL.revokeObjectURL(url);
+      setVideoUrl(url);
+      return () => {
+        URL.revokeObjectURL(url);
+      };
     }
   }, [recordedBlob]);
 
@@ -36,8 +39,11 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       if (processedVideoUrl) {
         URL.revokeObjectURL(processedVideoUrl);
       }
+      if (videoUrl) {
+        URL.revokeObjectURL(videoUrl);
+      }
     };
-  }, [processedVideoUrl]);
+  }, [processedVideoUrl, videoUrl]);
 
   const handleMetadataLoaded = (videoDuration: number) => {
     setDuration(videoDuration);
@@ -54,7 +60,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       <VideoPreviewSection
         videoRef={videoRef}
         previewRef={previewRef}
-        recordedBlob={recordedBlob}
+        videoUrl={videoUrl}
         processedVideoUrl={processedVideoUrl}
         onMetadataLoaded={handleMetadataLoaded}
         onTimeUpdate={handleTimeUpdate}

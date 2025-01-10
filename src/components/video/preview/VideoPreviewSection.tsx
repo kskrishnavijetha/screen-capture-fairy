@@ -3,7 +3,7 @@ import React from 'react';
 interface VideoPreviewSectionProps {
   videoRef: React.RefObject<HTMLVideoElement>;
   previewRef: React.RefObject<HTMLVideoElement>;
-  recordedBlob: Blob | null;
+  videoUrl: string | null;
   processedVideoUrl: string | null;
   onMetadataLoaded?: (duration: number) => void;
   onTimeUpdate?: (time: number) => void;
@@ -12,21 +12,11 @@ interface VideoPreviewSectionProps {
 export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
   videoRef,
   previewRef,
-  recordedBlob,
+  videoUrl,
   processedVideoUrl,
   onMetadataLoaded,
   onTimeUpdate,
 }) => {
-  const videoUrl = recordedBlob ? URL.createObjectURL(recordedBlob) : null;
-
-  React.useEffect(() => {
-    return () => {
-      if (videoUrl) {
-        URL.revokeObjectURL(videoUrl);
-      }
-    };
-  }, [videoUrl]);
-
   const handleTimeUpdate = () => {
     if (onTimeUpdate && videoRef.current) {
       onTimeUpdate(videoRef.current.currentTime);
