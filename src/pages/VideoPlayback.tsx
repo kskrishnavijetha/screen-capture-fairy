@@ -30,22 +30,27 @@ const VideoPlayback = () => {
   const [currentRecordingTime] = useState(new Date());
 
   useEffect(() => {
+    // Get existing recordings from localStorage
+    const existingRecordings = localStorage.getItem('recordings');
+    const parsedRecordings = existingRecordings ? JSON.parse(existingRecordings) : [];
+    setPreviousRecordings(parsedRecordings);
+
+    // Add new recording if exists
     if (recordedBlob) {
       const newRecording: Recording = {
         blob: recordedBlob,
         timestamp: currentRecordingTime,
         id: Date.now().toString()
       };
-      setPreviousRecordings(prev => [newRecording, ...prev]);
+
+      const updatedRecordings = [newRecording, ...parsedRecordings];
+      localStorage.setItem('recordings', JSON.stringify(updatedRecordings));
+      setPreviousRecordings(updatedRecordings);
     }
   }, [recordedBlob, currentRecordingTime]);
 
-  const handleEditClick = () => {
-    navigate('/edit', { state: { recordedBlob } });
-  };
-
   const handleBack = () => {
-    navigate('/'); // Changed to navigate to home page
+    navigate('/');
   };
 
   const handleDownload = (blob: Blob = recordedBlob!) => {
@@ -67,7 +72,6 @@ const VideoPlayback = () => {
     document.body.appendChild(a);
     a.click();
     
-    // Clean up
     setTimeout(() => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
@@ -81,7 +85,6 @@ const VideoPlayback = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Back button */}
       <Button
         variant="ghost"
         className="absolute top-4 left-4 p-2"
@@ -90,7 +93,6 @@ const VideoPlayback = () => {
         <ArrowLeft className="h-6 w-6" />
       </Button>
 
-      {/* Main content */}
       <div className={cn(
         "flex-1 p-6 transition-all duration-300",
         showSidebar ? "mr-[400px]" : "mr-0"
@@ -110,7 +112,7 @@ const VideoPlayback = () => {
           />
           <div className="flex gap-4">
             <Button 
-              onClick={handleEditClick}
+              onClick={() => navigate('/edit', { state: { recordedBlob } })}
               className="flex-1 items-center justify-center"
             >
               <Scissors className="h-4 w-4 mr-2" />
@@ -136,7 +138,7 @@ const VideoPlayback = () => {
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">
-                          {format(recording.timestamp, 'PPpp')}
+                          {format(new Date(recording.timestamp), 'PPpp')}
                         </span>
                       </div>
                       <Button
@@ -156,13 +158,11 @@ const VideoPlayback = () => {
         </div>
       </div>
 
-      {/* Right sidebar */}
       <div className={cn(
         "fixed right-0 top-0 h-full w-[400px] border-l border-border bg-card transition-transform duration-300",
         showSidebar ? "translate-x-0" : "translate-x-full"
       )}>
         <div className="flex flex-col h-full">
-          {/* Sidebar Header */}
           <div className="flex items-center justify-between p-6 border-b">
             <h2 className="text-lg font-semibold">Options</h2>
             <Button variant="ghost" size="icon" onClick={() => setShowSidebar(false)}>
@@ -170,7 +170,6 @@ const VideoPlayback = () => {
             </Button>
           </div>
 
-          {/* Options */}
           <div className="p-6 space-y-6 flex-1 overflow-y-auto">
             <div className="flex items-center justify-between space-x-4">
               <div className="space-y-0.5">
@@ -201,7 +200,6 @@ const VideoPlayback = () => {
         </div>
       </div>
 
-      {/* Toggle sidebar button when closed */}
       {!showSidebar && (
         <Button
           className="fixed right-6 top-6"
