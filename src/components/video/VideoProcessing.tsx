@@ -12,7 +12,7 @@ interface VideoProcessingProps {
   timestamps: Array<{ time: number; label: string }>;
 }
 
-export const processVideoFrame = ({
+export const processVideoFrame = async ({
   videoRef,
   blurRegions,
   watermark,
@@ -60,51 +60,46 @@ export const processVideoFrame = ({
 
   // Apply watermark
   if (watermark && watermark.image) {
-    const watermarkImage = new Image();
-    watermarkImage.crossOrigin = "anonymous"; // Add this line to handle CORS
-    watermarkImage.src = watermark.image;
-    
-    // Create a promise to handle the image loading
-    const loadImage = new Promise((resolve) => {
-      watermarkImage.onload = () => {
-        outputCtx.save();
-        outputCtx.globalAlpha = watermark.opacity;
-        
-        const maxWidth = canvas.width * (watermark.size / 100);
-        const scaleFactor = maxWidth / watermarkImage.width;
-        const watermarkWidth = watermarkImage.width * scaleFactor;
-        const watermarkHeight = watermarkImage.height * scaleFactor;
-        
-        const padding = Math.floor(canvas.width * 0.02);
-        
-        let x = padding;
-        let y = padding;
-        
-        switch (watermark.position) {
-          case 'top-right':
-            x = canvas.width - watermarkWidth - padding;
-            break;
-          case 'bottom-left':
-            y = canvas.height - watermarkHeight - padding;
-            break;
-          case 'bottom-right':
-            x = canvas.width - watermarkWidth - padding;
-            y = canvas.height - watermarkHeight - padding;
-            break;
-        }
-        
-        outputCtx.drawImage(watermarkImage, x, y, watermarkWidth, watermarkHeight);
-        outputCtx.restore();
-        resolve(true);
-      };
+    try {
+      const watermarkImage = new Image();
+      watermarkImage.crossOrigin = "anonymous";
+      
+      await new Promise((resolve, reject) => {
+        watermarkImage.onload = resolve;
+        watermarkImage.onerror = reject;
+        watermarkImage.src = watermark.image;
+      });
 
-      watermarkImage.onerror = () => {
-        console.error('Error loading watermark image');
-        resolve(false);
-      };
-    });
-
-    // Wait for the image to load before proceeding
-    return loadImage;
+      outputCtx.save();
+      outputCtx.globalAlpha = watermark.opacity;
+      
+      const maxWidth = canvas.width * (watermark.size / 100);
+      const scaleFactor = maxWidth / watermarkImage.width;
+      const watermarkWidth = watermarkImage.width * scaleFactor;
+      const watermarkHeight = watermarkImage.height * scaleFactor;
+      
+      const padding = Math.floor(canvas.width * 0.02);
+      
+      let x = padding;
+      let y = padding;
+      
+      switch (watermark.position) {
+        case 'top-right':
+          x = canvas.width - watermarkWidth - padding;
+          break;
+        case 'bottom-left':
+          y = canvas.height - watermarkHeight - padding;
+          break;
+        case 'bottom-right':
+          x = canvas.width - watermarkWidth - padding;
+          y = canvas.height - watermarkHeight - padding;
+          break;
+      }
+      
+      outputCtx.drawImage(watermarkImage, x, y, watermarkWidth, watermarkHeight);
+      outputCtx.restore();
+    } catch (error) {
+      console.error('Error applying watermark:', error);
+    }
   }
 };

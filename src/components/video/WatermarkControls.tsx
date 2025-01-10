@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { ImageIcon } from 'lucide-react';
+import { toast } from "@/hooks/use-toast";
 
 export interface Watermark {
   image: string;
@@ -24,16 +24,31 @@ export const WatermarkControls = ({ watermark, onWatermarkChange }: WatermarkCon
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an image file",
+          variant: "destructive"
+        });
+        return;
+      }
+
       setSelectedFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         const image = e.target?.result as string;
-        onWatermarkChange({
-          image,
-          position: 'bottom-right',
-          opacity: 0.8,
-          size: 20
-        });
+        if (image) {
+          onWatermarkChange({
+            image,
+            position: 'bottom-right',
+            opacity: 0.8,
+            size: 20
+          });
+          toast({
+            title: "Watermark added",
+            description: "Your logo has been added as a watermark"
+          });
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -49,6 +64,10 @@ export const WatermarkControls = ({ watermark, onWatermarkChange }: WatermarkCon
     setIsEnabled(enabled);
     if (!enabled) {
       onWatermarkChange(null);
+      toast({
+        title: "Watermark disabled",
+        description: "The watermark has been removed"
+      });
     } else if (selectedFile) {
       // Re-trigger file change to restore watermark
       const input = document.getElementById('watermark-upload') as HTMLInputElement;
@@ -82,7 +101,14 @@ export const WatermarkControls = ({ watermark, onWatermarkChange }: WatermarkCon
             {watermark && (
               <Button
                 variant="destructive"
-                onClick={() => onWatermarkChange(null)}
+                onClick={() => {
+                  onWatermarkChange(null);
+                  setSelectedFile(null);
+                  toast({
+                    title: "Watermark removed",
+                    description: "The watermark has been removed"
+                  });
+                }}
               >
                 Remove
               </Button>
