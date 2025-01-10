@@ -29,10 +29,18 @@ const VideoPlayback = () => {
   const [previousRecordings, setPreviousRecordings] = useState<Recording[]>([]);
   const [currentRecordingTime] = useState(new Date());
   const [selectedRecording, setSelectedRecording] = useState<Blob | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const existingRecordings = localStorage.getItem('recordings');
-    const parsedRecordings = existingRecordings ? JSON.parse(existingRecordings) : [];
+    let parsedRecordings: Recording[] = [];
+    
+    try {
+      parsedRecordings = existingRecordings ? JSON.parse(existingRecordings) : [];
+    } catch (error) {
+      console.error('Error parsing recordings:', error);
+    }
+    
     setPreviousRecordings(parsedRecordings);
 
     if (recordedBlob) {
@@ -47,6 +55,19 @@ const VideoPlayback = () => {
       setPreviousRecordings(updatedRecordings);
     }
   }, [recordedBlob, currentRecordingTime]);
+
+  useEffect(() => {
+    // Create and cleanup video URLs
+    if (selectedRecording) {
+      const url = URL.createObjectURL(selectedRecording);
+      setVideoUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else if (recordedBlob) {
+      const url = URL.createObjectURL(recordedBlob);
+      setVideoUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [selectedRecording, recordedBlob]);
 
   const handleBack = () => {
     navigate('/');
@@ -108,16 +129,14 @@ const VideoPlayback = () => {
             </span>
           </div>
           
-          <video
-            src={selectedRecording ? URL.createObjectURL(selectedRecording) : (recordedBlob ? URL.createObjectURL(recordedBlob) : '')}
-            controls
-            className="w-full rounded-lg bg-black mb-6"
-            onEnded={() => {
-              if (selectedRecording) {
-                URL.revokeObjectURL(URL.createObjectURL(selectedRecording));
-              }
-            }}
-          />
+          {videoUrl && (
+            <video
+              src={videoUrl}
+              controls
+              className="w-full rounded-lg bg-black mb-6"
+            />
+          )}
+
           <div className="flex gap-4">
             <Button 
               onClick={() => navigate('/edit', { state: { recordedBlob } })}
