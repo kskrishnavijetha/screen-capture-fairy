@@ -4,7 +4,7 @@ interface VideoProcessingProps {
   videoRef: React.RefObject<HTMLVideoElement>;
   blurRegions: Array<{ x: number; y: number; width: number; height: number }>;
   watermark: {
-    image: HTMLImageElement;
+    image: string;
     position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
     opacity: number;
     size: number;
@@ -45,7 +45,6 @@ export const processVideoFrame = ({
           height: (region.height / videoRef.current!.offsetHeight) * canvas.height
         };
 
-        // Apply stronger blur effect
         tempCtx.filter = 'blur(20px)';
         tempCtx.drawImage(
           canvas,
@@ -60,34 +59,39 @@ export const processVideoFrame = ({
   }
 
   // Apply watermark
-  if (watermark && watermark.image) {
-    outputCtx.save();
-    outputCtx.globalAlpha = watermark.opacity;
+  if (watermark) {
+    const watermarkImage = new Image();
+    watermarkImage.src = watermark.image;
     
-    const maxWidth = canvas.width * (watermark.size / 100);
-    const scaleFactor = maxWidth / watermark.image.width;
-    const watermarkWidth = watermark.image.width * scaleFactor;
-    const watermarkHeight = watermark.image.height * scaleFactor;
-    
-    const padding = Math.floor(canvas.width * 0.02);
-    
-    let x = padding;
-    let y = padding;
-    
-    switch (watermark.position) {
-      case 'top-right':
-        x = canvas.width - watermarkWidth - padding;
-        break;
-      case 'bottom-left':
-        y = canvas.height - watermarkHeight - padding;
-        break;
-      case 'bottom-right':
-        x = canvas.width - watermarkWidth - padding;
-        y = canvas.height - watermarkHeight - padding;
-        break;
-    }
-    
-    outputCtx.drawImage(watermark.image, x, y, watermarkWidth, watermarkHeight);
-    outputCtx.restore();
+    watermarkImage.onload = () => {
+      outputCtx.save();
+      outputCtx.globalAlpha = watermark.opacity;
+      
+      const maxWidth = canvas.width * (watermark.size / 100);
+      const scaleFactor = maxWidth / watermarkImage.width;
+      const watermarkWidth = watermarkImage.width * scaleFactor;
+      const watermarkHeight = watermarkImage.height * scaleFactor;
+      
+      const padding = Math.floor(canvas.width * 0.02);
+      
+      let x = padding;
+      let y = padding;
+      
+      switch (watermark.position) {
+        case 'top-right':
+          x = canvas.width - watermarkWidth - padding;
+          break;
+        case 'bottom-left':
+          y = canvas.height - watermarkHeight - padding;
+          break;
+        case 'bottom-right':
+          x = canvas.width - watermarkWidth - padding;
+          y = canvas.height - watermarkHeight - padding;
+          break;
+      }
+      
+      outputCtx.drawImage(watermarkImage, x, y, watermarkWidth, watermarkHeight);
+      outputCtx.restore();
+    };
   }
 };
