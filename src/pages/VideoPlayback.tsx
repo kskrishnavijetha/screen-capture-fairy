@@ -31,7 +31,6 @@ const VideoPlayback = () => {
 
   useEffect(() => {
     if (recordedBlob) {
-      // Add current recording to previous recordings
       const newRecording: Recording = {
         blob: recordedBlob,
         timestamp: currentRecordingTime,
@@ -46,7 +45,7 @@ const VideoPlayback = () => {
   };
 
   const handleBack = () => {
-    navigate(-1);
+    navigate('/'); // Changed to navigate to home page
   };
 
   const handleDownload = (blob: Blob = recordedBlob!) => {
