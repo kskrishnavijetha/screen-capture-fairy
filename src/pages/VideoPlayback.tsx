@@ -3,9 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { MessageCircle, X, ArrowLeft, Scissors } from 'lucide-react';
+import { MessageCircle, X, ArrowLeft, Scissors, Download } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { VideoEditor } from '@/components/VideoEditor';
+import { toast } from "@/hooks/use-toast";
 
 interface VideoPlaybackProps {
   recordedBlob?: Blob;
@@ -25,6 +26,37 @@ const VideoPlayback = () => {
 
   const handleBack = () => {
     navigate(-1);
+  };
+
+  const handleDownload = () => {
+    if (!recordedBlob) {
+      toast({
+        variant: "destructive",
+        title: "Download error",
+        description: "No recording available to download"
+      });
+      return;
+    }
+
+    const url = URL.createObjectURL(recordedBlob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = `recording-${Date.now()}.webm`;
+    
+    document.body.appendChild(a);
+    a.click();
+    
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+
+    toast({
+      title: "Download started",
+      description: "Your recording is being downloaded"
+    });
   };
 
   return (
@@ -49,13 +81,23 @@ const VideoPlayback = () => {
             controls
             className="w-full rounded-lg bg-black mb-6"
           />
-          <Button 
-            onClick={handleEditClick}
-            className="w-full flex items-center justify-center gap-2"
-          >
-            <Scissors className="h-4 w-4" />
-            Edit Video
-          </Button>
+          <div className="flex gap-4">
+            <Button 
+              onClick={handleEditClick}
+              className="flex-1 items-center justify-center"
+            >
+              <Scissors className="h-4 w-4 mr-2" />
+              Edit Video
+            </Button>
+            <Button
+              onClick={handleDownload}
+              variant="outline"
+              className="flex-1 items-center justify-center bg-green-500 text-white hover:bg-green-600"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download Recording
+            </Button>
+          </div>
         </div>
       </div>
 
