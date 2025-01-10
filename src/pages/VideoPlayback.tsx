@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { MessageCircle, X, ArrowLeft, Scissors, Download } from 'lucide-react';
+import { MessageCircle, X, ArrowLeft, Scissors, Download, Clock } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { VideoEditor } from '@/components/VideoEditor';
 import { toast } from "@/hooks/use-toast";
+import { format } from 'date-fns';
 
 interface VideoPlaybackProps {
   recordedBlob?: Blob;
+}
+
+interface Recording {
+  blob: Blob;
+  timestamp: Date;
+  id: string;
 }
 
 const VideoPlayback = () => {
@@ -19,6 +26,20 @@ const VideoPlayback = () => {
   const [showSidebar, setShowSidebar] = useState(true);
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
+  const [previousRecordings, setPreviousRecordings] = useState<Recording[]>([]);
+  const [currentRecordingTime] = useState(new Date());
+
+  useEffect(() => {
+    if (recordedBlob) {
+      // Add current recording to previous recordings
+      const newRecording: Recording = {
+        blob: recordedBlob,
+        timestamp: currentRecordingTime,
+        id: Date.now().toString()
+      };
+      setPreviousRecordings(prev => [newRecording, ...prev]);
+    }
+  }, [recordedBlob, currentRecordingTime]);
 
   const handleEditClick = () => {
     navigate('/edit', { state: { recordedBlob } });
@@ -28,8 +49,8 @@ const VideoPlayback = () => {
     navigate(-1);
   };
 
-  const handleDownload = () => {
-    if (!recordedBlob) {
+  const handleDownload = (blob: Blob = recordedBlob!) => {
+    if (!blob) {
       toast({
         variant: "destructive",
         title: "Download error",
@@ -38,7 +59,7 @@ const VideoPlayback = () => {
       return;
     }
 
-    const url = URL.createObjectURL(recordedBlob);
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = url;
@@ -76,6 +97,13 @@ const VideoPlayback = () => {
         showSidebar ? "mr-[400px]" : "mr-0"
       )}>
         <div className="max-w-4xl mx-auto space-y-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="h-5 w-5 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              Recorded on {format(currentRecordingTime, 'PPpp')}
+            </span>
+          </div>
+          
           <video
             src={recordedBlob ? URL.createObjectURL(recordedBlob) : ''}
             controls
@@ -90,7 +118,7 @@ const VideoPlayback = () => {
               Edit Video
             </Button>
             <Button
-              onClick={handleDownload}
+              onClick={() => handleDownload()}
               variant="outline"
               className="flex-1 items-center justify-center bg-green-500 text-white hover:bg-green-600"
             >
@@ -98,6 +126,34 @@ const VideoPlayback = () => {
               Download Recording
             </Button>
           </div>
+
+          {previousRecordings.length > 1 && (
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-4">Previous Recordings</h3>
+              <div className="space-y-4">
+                {previousRecordings.slice(1).map((recording) => (
+                  <Card key={recording.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                          {format(recording.timestamp, 'PPpp')}
+                        </span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownload(recording.blob)}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
