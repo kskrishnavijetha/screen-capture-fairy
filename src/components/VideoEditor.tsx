@@ -3,7 +3,6 @@ import { toast } from "@/hooks/use-toast";
 import { ShareControls } from './video/ShareControls';
 import { EmbedControls } from './video/EmbedControls';
 import { ExportControls } from './video/ExportControls';
-import { WatermarkControls } from './video/WatermarkControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
 import { VideoPreviewSection } from './video/preview/VideoPreviewSection';
@@ -20,7 +19,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const previewRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const [watermark, setWatermark] = useState<any>(null);
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
@@ -52,7 +50,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         processedVideoUrl={processedVideoUrl}
         onMetadataLoaded={handleMetadataLoaded}
         onTimeUpdate={handleTimeUpdate}
-        watermark={watermark}
       />
 
       <div className="space-y-4">
@@ -64,11 +61,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         <FillerWordControls
           enabled={removeFillerWords}
           onToggle={setRemoveFillerWords}
-        />
-
-        <WatermarkControls
-          watermark={watermark}
-          onWatermarkChange={setWatermark}
         />
 
         <ShareControls recordedBlob={recordedBlob} />
