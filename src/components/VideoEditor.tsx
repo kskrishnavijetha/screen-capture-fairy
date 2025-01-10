@@ -7,6 +7,7 @@ import { WatermarkControls } from './video/WatermarkControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
 import { VideoPreviewSection } from './video/preview/VideoPreviewSection';
+import { TrimControls } from './video/TrimControls';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
 interface VideoEditorProps {
@@ -24,6 +25,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
+  const [trimRange, setTrimRange] = useState([0, 100]); // Add trim range state
 
   useEffect(() => {
     return () => {
@@ -41,6 +43,10 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     setCurrentTime(time);
   };
 
+  const handleTrimRangeChange = (newRange: number[]) => {
+    setTrimRange(newRange);
+  };
+
   if (!recordedBlob) return null;
 
   return (
@@ -55,6 +61,14 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
       />
 
       <div className="space-y-4">
+        <TrimControls
+          duration={duration}
+          currentTime={currentTime}
+          trimRange={trimRange}
+          onTrimRangeChange={handleTrimRangeChange}
+          videoRef={videoRef}
+        />
+
         <SilenceControls
           enabled={removeSilences}
           onToggle={setRemoveSilences}
