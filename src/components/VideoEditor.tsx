@@ -3,7 +3,6 @@ import { toast } from "@/hooks/use-toast";
 import { ShareControls } from './video/ShareControls';
 import { EmbedControls } from './video/EmbedControls';
 import { ExportControls } from './video/ExportControls';
-import { ProcessControls } from './video/ProcessControls';
 import { WatermarkControls } from './video/WatermarkControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
@@ -25,7 +24,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
-  const { isProcessing, processVideo } = useVideoProcessing();
 
   useEffect(() => {
     return () => {
@@ -41,49 +39,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
 
   const handleTimeUpdate = (time: number) => {
     setCurrentTime(time);
-  };
-
-  const handleProcess = async () => {
-    if (!recordedBlob) {
-      toast({
-        title: "Error",
-        description: "No video to process",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const processedBlob = await processVideo({
-        recordedBlob,
-        videoRef,
-        blurRegions: [],
-        watermark,
-        timestamps,
-        duration,
-        removeSilences,
-        removeFillerWords
-      });
-
-      if (processedVideoUrl) {
-        URL.revokeObjectURL(processedVideoUrl);
-      }
-      const newUrl = URL.createObjectURL(processedBlob);
-      setProcessedVideoUrl(newUrl);
-      
-      onSave(processedBlob);
-      toast({
-        title: "Success",
-        description: "Video processing completed. Preview is now available.",
-      });
-    } catch (error) {
-      console.error('Processing error:', error);
-      toast({
-        title: "Error processing video",
-        description: error instanceof Error ? error.message : "There was an error while processing your video. Please try again.",
-        variant: "destructive",
-      });
-    }
   };
 
   if (!recordedBlob) return null;
@@ -118,11 +73,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         <ShareControls recordedBlob={recordedBlob} />
         <EmbedControls recordedBlob={recordedBlob} />
         <ExportControls recordedBlob={recordedBlob} />
-
-        <ProcessControls 
-          onProcess={handleProcess} 
-          isProcessing={isProcessing}
-        />
       </div>
     </div>
   );
