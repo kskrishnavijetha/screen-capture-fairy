@@ -26,6 +26,8 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
 }) => {
   const videoUrl = recordedBlob ? URL.createObjectURL(recordedBlob) : null;
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number>();
+  const isPlayingRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -46,15 +48,13 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
     watermarkImg.crossOrigin = "anonymous";
     watermarkImg.src = watermark.image;
 
-    let animationFrameId: number;
-    let isPlaying = false;
-
     const updateCanvas = () => {
-      if (!videoRef.current || !canvas || !isPlaying) return;
+      if (!videoRef.current || !canvas || !isPlayingRef.current) return;
 
       canvas.width = videoRef.current.videoWidth || videoRef.current.clientWidth;
       canvas.height = videoRef.current.videoHeight || videoRef.current.clientHeight;
 
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
       const maxWidth = canvas.width * (watermark.size / 100);
@@ -83,43 +83,60 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
       ctx.drawImage(watermarkImg, x, y, watermarkWidth, watermarkHeight);
       ctx.globalAlpha = 1.0;
 
-      animationFrameId = requestAnimationFrame(updateCanvas);
+      animationFrameRef.current = requestAnimationFrame(updateCanvas);
     };
 
     const handlePlay = () => {
-      isPlaying = true;
+      isPlayingRef.current = true;
       updateCanvas();
     };
 
     const handlePause = () => {
-      isPlaying = false;
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
+      isPlayingRef.current = false;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
 
     const handleEnded = () => {
-      isPlaying = false;
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
+      isPlayingRef.current = false;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
 
-    videoRef.current.addEventListener('play', handlePlay);
-    videoRef.current.addEventListener('pause', handlePause);
-    videoRef.current.addEventListener('ended', handleEnded);
+    const handleTimeUpdate = () => {
+      if (onTimeUpdate && videoRef.current) {
+        onTimeUpdate(videoRef.current.currentTime);
+      }
+    };
+
+    const handleLoadedMetadata = () => {
+      if (onMetadataLoaded && videoRef.current) {
+        onMetadataLoaded(videoRef.current.duration);
+      }
+    };
+
+    const video = videoRef.current;
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
+    video.addEventListener('ended', handleEnded);
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
 
     return () => {
-      if (videoRef.current) {
-        videoRef.current.removeEventListener('play', handlePlay);
-        videoRef.current.removeEventListener('pause', handlePause);
-        videoRef.current.removeEventListener('ended', handleEnded);
+      if (video) {
+        video.removeEventListener('play', handlePlay);
+        video.removeEventListener('pause', handlePause);
+        video.removeEventListener('ended', handleEnded);
+        video.removeEventListener('timeupdate', handleTimeUpdate);
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       }
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [watermark]);
+  }, [watermark, onTimeUpdate, onMetadataLoaded]);
 
   if (!videoUrl) return null;
 
@@ -131,8 +148,7 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
           src={videoUrl}
           className="w-full"
           controls
-          onLoadedMetadata={(e) => onMetadataLoaded?.(e.currentTarget.duration)}
-          onTimeUpdate={(e) => onTimeUpdate?.(e.currentTarget.currentTime)}
+          playsInline
         />
         {watermark && (
           <canvas
@@ -151,6 +167,7 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
               src={processedVideoUrl}
               className="w-full"
               controls
+              playsInline
             />
           </div>
         </div>
