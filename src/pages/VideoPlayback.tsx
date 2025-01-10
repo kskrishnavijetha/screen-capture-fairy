@@ -43,10 +43,14 @@ const VideoPlayback = () => {
     try {
       const storedRecordings = existingRecordings ? JSON.parse(existingRecordings) : [];
       // Convert stored data back to Blob objects
-      parsedRecordings = storedRecordings.map((recording: any) => ({
-        ...recording,
-        blob: new Blob([recording.blob], { type: 'video/webm' }),
-        timestamp: new Date(recording.timestamp)
+      parsedRecordings = await Promise.all(storedRecordings.map(async (recording: any) => {
+        const uint8Array = new Uint8Array(recording.blob);
+        const blob = new Blob([uint8Array], { type: 'video/webm' });
+        return {
+          ...recording,
+          blob,
+          timestamp: new Date(recording.timestamp)
+        };
       }));
     } catch (error) {
       console.error('Error parsing recordings:', error);
@@ -64,10 +68,14 @@ const VideoPlayback = () => {
       const updatedRecordings = [newRecording, ...parsedRecordings];
       
       // Store only the necessary data
-      const recordingsToStore = updatedRecordings.map(recording => ({
-        ...recording,
-        blob: Array.from(new Uint8Array(recording.blob.slice(0))),
-        timestamp: recording.timestamp.toISOString()
+      const recordingsToStore = await Promise.all(updatedRecordings.map(async (recording) => {
+        const arrayBuffer = await recording.blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        return {
+          ...recording,
+          blob: Array.from(uint8Array),
+          timestamp: recording.timestamp.toISOString()
+        };
       }));
       
       localStorage.setItem('recordings', JSON.stringify(recordingsToStore));
