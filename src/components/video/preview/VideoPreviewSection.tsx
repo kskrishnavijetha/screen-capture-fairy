@@ -48,8 +48,9 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
       const updateCanvas = () => {
         if (!videoRef.current || !canvas) return;
         
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
+        // Set canvas dimensions to match video
+        canvas.width = videoRef.current.videoWidth || videoRef.current.clientWidth;
+        canvas.height = videoRef.current.videoHeight || videoRef.current.clientHeight;
         
         // Draw the video frame
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
@@ -86,7 +87,10 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
         requestAnimationFrame(updateCanvas);
       };
       
-      updateCanvas();
+      // Start animation when video plays
+      videoRef.current.addEventListener('play', function() {
+        updateCanvas();
+      });
     };
   }, [watermark]);
 
@@ -95,19 +99,18 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
   return (
     <div className="space-y-6">
       <div className="relative rounded-lg overflow-hidden bg-black">
-        {watermark ? (
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          className="w-full"
+          controls
+          onLoadedMetadata={(e) => onMetadataLoaded?.(e.currentTarget.duration)}
+          onTimeUpdate={(e) => onTimeUpdate?.(e.currentTarget.currentTime)}
+        />
+        {watermark && (
           <canvas
             ref={canvasRef}
-            className="w-full"
-          />
-        ) : (
-          <video
-            ref={videoRef}
-            src={videoUrl}
-            className="w-full"
-            controls
-            onLoadedMetadata={(e) => onMetadataLoaded?.(e.currentTarget.duration)}
-            onTimeUpdate={(e) => onTimeUpdate?.(e.currentTarget.currentTime)}
+            className="absolute top-0 left-0 w-full h-full pointer-events-none"
           />
         )}
       </div>
