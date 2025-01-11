@@ -20,7 +20,6 @@ interface SignInDialogProps {
 export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
   const [email, setEmail] = useState("");
   const [isSignUp, setIsSignUp] = useState(true);
-  const [isVerified, setIsVerified] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -29,45 +28,47 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
     console.log("Sign in with Google clicked");
   };
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSignUp) {
-      // Show verification email sent toast
-      toast({
-        title: "Verification Email Sent",
-        description: "Please check your email to verify your account. Click the verification link to complete signup.",
-        duration: 5000,
-      });
-      
-      // In a real implementation, this would be handled by your backend
-      // For demo purposes, we'll simulate clicking the email link after 3 seconds
-      setTimeout(() => {
-        setIsVerified(true);
-        setIsSignUp(false);
+      try {
+        // Here you would typically make an API call to your backend
+        // to handle the signup and send verification email
+        console.log("Sending verification email to:", email);
+        
         toast({
-          title: "Email Verified",
-          description: "Your email has been verified. Please login to continue.",
+          title: "Verification Email Sent",
+          description: "Please check your email inbox to verify your account. You will need to click the verification link to complete signup.",
           duration: 5000,
         });
-      }, 3000);
-    } else {
-      // Handle login
-      if (!isVerified && email) {
+        
+        // Close the dialog after sending verification email
+        onOpenChange(false);
+      } catch (error) {
         toast({
-          title: "Please verify your email",
-          description: "Check your inbox and click the verification link first.",
+          title: "Error",
+          description: "Failed to send verification email. Please try again.",
           variant: "destructive",
         });
-        return;
       }
-      
-      console.log("Logging in with:", email);
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
-      onOpenChange(false);
-      navigate('/recorder');
+    } else {
+      // Handle login
+      try {
+        // Here you would verify the user's credentials with your backend
+        console.log("Attempting login with:", email);
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
+        onOpenChange(false);
+        navigate('/recorder');
+      } catch (error) {
+        toast({
+          title: "Login Failed",
+          description: "Please check your credentials and try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
