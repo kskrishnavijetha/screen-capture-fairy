@@ -8,6 +8,10 @@ interface HomePageProps {
 export const HomePage = ({ setSelectedComponent }: HomePageProps) => {
   const navigate = useNavigate();
 
+  const handleSignUp = () => {
+    navigate('/signup', { replace: true });
+  };
+
   return (
     <div className="space-y-8">
       <div className="text-center space-y-4">
@@ -21,8 +25,8 @@ export const HomePage = ({ setSelectedComponent }: HomePageProps) => {
         <div className="flex justify-center gap-4 pt-4">
           <Button 
             size="lg" 
-            onClick={() => navigate('/signup')}
-            className="h-12 px-8 text-base font-medium"
+            onClick={handleSignUp}
+            className="bg-primary hover:bg-primary/90"
           >
             Sign up for free
           </Button>

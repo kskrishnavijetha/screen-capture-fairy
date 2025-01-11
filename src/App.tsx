@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import VideoPlayback from "./pages/VideoPlayback";
 import VideoEdit from "./pages/VideoEdit";
-import Signup from "./pages/Signup";
+import SignUp from "./pages/SignUp";
 
 const queryClient = new QueryClient();
 
@@ -18,9 +18,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/signup" element={<SignUp />} />
           <Route path="/playback" element={<VideoPlayback />} />
           <Route path="/edit" element={<VideoEdit />} />
-          <Route path="/signup" element={<Signup />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
