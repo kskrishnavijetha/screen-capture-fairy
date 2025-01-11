@@ -12,11 +12,10 @@ import { supabase } from "@/integrations/supabase/client";
 interface SignInDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultIsLogin?: boolean;
 }
 
-export const SignInDialog = ({ open, onOpenChange, defaultIsLogin = true }: SignInDialogProps) => {
-  const [isLogin, setIsLogin] = useState(defaultIsLogin);
+export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
+  const [isLogin, setIsLogin] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
