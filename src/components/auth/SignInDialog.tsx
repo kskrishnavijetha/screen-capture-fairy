@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface SignInDialogProps {
   open: boolean;
@@ -20,6 +20,7 @@ interface SignInDialogProps {
 export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
   const [email, setEmail] = useState("");
   const [isSignUp, setIsSignUp] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -35,11 +36,34 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
       console.log("Verification email sent to:", email);
       toast({
         title: "Verification Email Sent",
-        description: "Please check your email to verify your account.",
+        description: "Please check your email to verify your account. Click the verification link to complete signup.",
+        duration: 5000,
       });
+      
+      // Simulate verification link click (in real app this would be a separate endpoint)
+      // For demo purposes, we'll create a timeout to simulate clicking the email link
+      setTimeout(() => {
+        setIsVerified(true);
+        setIsSignUp(false); // Switch to login view
+        toast({
+          title: "Email Verified",
+          description: "Your email has been verified. Please login to continue.",
+          duration: 5000,
+        });
+      }, 3000);
+      
       onOpenChange(false);
     } else {
-      // Simulating login
+      // Handle login
+      if (!isVerified && email) {
+        toast({
+          title: "Please verify your email",
+          description: "Check your inbox and click the verification link first.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       console.log("Logging in with:", email);
       toast({
         title: "Login Successful",
