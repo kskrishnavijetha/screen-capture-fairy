@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { MessageCircle, X, ArrowLeft, Scissors, Download, Clock } from 'lucide-react';
+import { MessageCircle, X, ArrowLeft, Scissors, Download, Clock, Trash2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { VideoEditor } from '@/components/VideoEditor';
 import { toast } from "@/hooks/use-toast";
@@ -152,7 +152,37 @@ const VideoPlayback = () => {
     setSelectedRecording(recording.blob);
   };
 
-  // ... keep existing code (JSX rendering part remains the same)
+  const handleDeleteRecording = async (recordingId: string) => {
+    try {
+      const updatedRecordings = previousRecordings.filter(rec => rec.id !== recordingId);
+      
+      // Convert and store the updated recordings
+      const recordingsToStore = await Promise.all(updatedRecordings.map(async (recording) => {
+        const arrayBuffer = await recording.blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        return {
+          ...recording,
+          blob: Array.from(uint8Array),
+          timestamp: recording.timestamp.toISOString()
+        };
+      }));
+      
+      localStorage.setItem('recordings', JSON.stringify(recordingsToStore));
+      setPreviousRecordings(updatedRecordings);
+      
+      toast({
+        title: "Recording deleted",
+        description: "The recording has been removed from your history"
+      });
+    } catch (error) {
+      console.error('Error deleting recording:', error);
+      toast({
+        variant: "destructive",
+        title: "Error deleting recording",
+        description: "Failed to delete the recording"
+      });
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -230,6 +260,13 @@ const VideoPlayback = () => {
                         >
                           <Download className="h-4 w-4 mr-2" />
                           Download
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteRecording(recording.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
