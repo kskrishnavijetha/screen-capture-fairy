@@ -1,13 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { SignInDialog } from "./auth/SignInDialog";
+import { useNavigate } from "react-router-dom";
 
 interface HomePageProps {
   setSelectedComponent: (id: string) => void;
 }
 
 export const HomePage = ({ setSelectedComponent }: HomePageProps) => {
-  const [showSignIn, setShowSignIn] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-8">
@@ -20,13 +19,11 @@ export const HomePage = ({ setSelectedComponent }: HomePageProps) => {
           story and drive seamless collaboration
         </p>
         <div className="flex justify-center gap-4 pt-4">
-          <Button size="lg" onClick={() => setShowSignIn(true)}>
+          <Button size="lg" onClick={() => navigate('/signup')}>
             Sign up for free
           </Button>
         </div>
       </div>
-
-      <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
     </div>
   );
 };
