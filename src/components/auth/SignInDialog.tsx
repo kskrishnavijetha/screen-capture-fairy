@@ -2,12 +2,9 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -19,7 +16,6 @@ interface SignInDialogProps {
 
 export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
   const [email, setEmail] = useState("");
-  const [isSignUp, setIsSignUp] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -30,66 +26,40 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSignUp) {
-      try {
-        // Here you would typically make an API call to your backend
-        // to handle the signup and send verification email
-        console.log("Sending verification email to:", email);
-        
-        toast({
-          title: "Verification Email Sent",
-          description: "Please check your email inbox to verify your account. You will need to click the verification link to complete signup.",
-          duration: 5000,
-        });
-        
-        // Close the dialog after sending verification email
-        onOpenChange(false);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to send verification email. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } else {
-      // Handle login
-      try {
-        // Here you would verify the user's credentials with your backend
-        console.log("Attempting login with:", email);
-        toast({
-          title: "Login Successful",
-          description: "Welcome back!",
-        });
-        onOpenChange(false);
-        navigate('/recorder');
-      } catch (error) {
-        toast({
-          title: "Login Failed",
-          description: "Please check your credentials and try again.",
-          variant: "destructive",
-        });
-      }
+    try {
+      console.log("Attempting login with:", email);
+      toast({
+        title: "Verification Email Sent",
+        description: "Please check your email to continue sign up.",
+      });
+      onOpenChange(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send verification email. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
-            {isSignUp ? "Sign up for free" : "Login"}
-          </DialogTitle>
-          <DialogDescription>
-            {isSignUp ? "Create your account" : "Welcome back"}
-          </DialogDescription>
+      <DialogContent className="sm:max-w-[400px] p-0 bg-white rounded-3xl">
+        <DialogHeader className="p-6 space-y-6">
+          <div className="space-y-2 text-center">
+            <h2 className="text-2xl font-bold tracking-tight">
+              Record your first Loom video in seconds
+            </h2>
+          </div>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+
+        <div className="px-6 pb-6 space-y-4">
           <Button
-            className="w-full"
+            className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 h-12 text-base font-medium"
             variant="outline"
             onClick={handleGoogleSignIn}
           >
-            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+            <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                 fill="#4285F4"
@@ -107,45 +77,41 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
                 fill="#EA4335"
               />
             </svg>
-            Sign in with Google
+            Sign up with Google
           </Button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
+              <span className="bg-white px-4 text-gray-500 font-medium">
+                OR
               </span>
             </div>
           </div>
 
           <form onSubmit={handleEmailSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <label className="text-sm font-medium text-gray-700">
+                Work email
+              </label>
               <Input
-                id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="h-12 px-4 border-gray-200"
               />
             </div>
-            <Button type="submit" className="w-full">
-              {isSignUp ? "Sign up with Email" : "Login with Email"}
+            <Button 
+              type="submit" 
+              className="w-full h-12 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium text-base"
+              variant="secondary"
+            >
+              Continue
             </Button>
           </form>
-
-          <div className="text-center text-sm">
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-primary hover:underline"
-            >
-              {isSignUp ? "Already have an account? Login" : "Need an account? Sign up"}
-            </button>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

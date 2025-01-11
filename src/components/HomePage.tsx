@@ -20,7 +20,11 @@ export const HomePage = ({ setSelectedComponent }: HomePageProps) => {
           story and drive seamless collaboration
         </p>
         <div className="flex justify-center gap-4 pt-4">
-          <Button size="lg" onClick={() => setShowSignIn(true)}>
+          <Button 
+            size="lg" 
+            onClick={() => setShowSignIn(true)}
+            className="h-12 px-8 text-base font-medium"
+          >
             Sign up for free
           </Button>
         </div>
