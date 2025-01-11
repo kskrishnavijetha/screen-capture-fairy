@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, FileText, Video, MonitorPlay, Calendar, ChartBar, DollarSign, Home } from 'lucide-react';
+import { Menu, MonitorPlay } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -9,13 +9,7 @@ import {
 } from "@/components/ui/sheet";
 
 export const MENU_ITEMS = [
-  { id: 'home', label: 'Home', icon: Home },
-  { id: 'content', label: 'AI Content Generator', icon: FileText },
-  { id: 'video', label: 'AI Short Video Generator', icon: Video },
   { id: 'recorder', label: 'Screen Recorder', icon: MonitorPlay },
-  { id: 'calendar', label: 'Content Calendar', icon: Calendar },
-  { id: 'analytics', label: 'Social Media Analytics', icon: ChartBar },
-  { id: 'monetization', label: 'Monetization Hub', icon: DollarSign },
 ];
 
 interface MainMenuProps {
