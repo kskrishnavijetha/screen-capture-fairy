@@ -32,19 +32,18 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isSignUp) {
-      // Simulating email verification send
-      console.log("Verification email sent to:", email);
+      // Show verification email sent toast
       toast({
         title: "Verification Email Sent",
         description: "Please check your email to verify your account. Click the verification link to complete signup.",
         duration: 5000,
       });
       
-      // Simulate verification link click (in real app this would be a separate endpoint)
-      // For demo purposes, we'll create a timeout to simulate clicking the email link
+      // In a real implementation, this would be handled by your backend
+      // For demo purposes, we'll simulate clicking the email link after 3 seconds
       setTimeout(() => {
         setIsVerified(true);
-        setIsSignUp(false); // Switch to login view
+        setIsSignUp(false);
         toast({
           title: "Email Verified",
           description: "Your email has been verified. Please login to continue.",
