@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SignInDialogProps {
   open: boolean;
@@ -16,29 +17,66 @@ interface SignInDialogProps {
 
 export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
   const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleGoogleSignIn = () => {
-    // Google sign-in logic would go here
-    console.log("Sign in with Google clicked");
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Google sign in error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to sign in with Google. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      console.log("Attempting login with:", email);
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Verification Email Sent",
         description: "Please check your email to continue sign up.",
       });
       onOpenChange(false);
     } catch (error) {
+      console.error("Email sign in error:", error);
       toast({
         title: "Error",
         description: "Failed to send verification email. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -58,6 +96,7 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
             className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 h-12 text-base font-medium"
             variant="outline"
             onClick={handleGoogleSignIn}
+            disabled={isLoading}
           >
             <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
               <path
@@ -102,12 +141,14 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-12 px-4 border-gray-200"
+                disabled={isLoading}
               />
             </div>
             <Button 
               type="submit" 
               className="w-full h-12 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium text-base"
               variant="secondary"
+              disabled={isLoading}
             >
               Continue
             </Button>
