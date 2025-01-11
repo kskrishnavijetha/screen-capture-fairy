@@ -14,16 +14,22 @@ const Index = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (!session) {
+        navigate('/signup');
+      }
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (!session) {
+        navigate('/signup');
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   if (!session) {
     return <HomePage setSelectedComponent={setSelectedComponent} />;
