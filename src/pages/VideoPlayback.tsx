@@ -43,7 +43,6 @@ const VideoPlayback = () => {
       
       try {
         const storedRecordings = existingRecordings ? JSON.parse(existingRecordings) : [];
-        // Convert stored data back to Blob objects
         parsedRecordings = await Promise.all(storedRecordings.map(async (recording: any) => {
           const uint8Array = new Uint8Array(recording.blob);
           const blob = new Blob([uint8Array], { type: 'video/webm' });
@@ -69,7 +68,6 @@ const VideoPlayback = () => {
         const updatedRecordings = [newRecording, ...parsedRecordings];
         
         try {
-          // Store only the necessary data
           const recordingsToStore = await Promise.all(updatedRecordings.map(async (recording) => {
             const arrayBuffer = await recording.blob.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
@@ -148,15 +146,37 @@ const VideoPlayback = () => {
     });
   };
 
-  const handleRecordingClick = (recording: Recording) => {
-    setSelectedRecording(recording.blob);
+  const handlePreview = (recording: Recording) => {
+    const url = URL.createObjectURL(recording.blob);
+    const newWindow = window.open(url, '_blank');
+    if (newWindow) {
+      newWindow.document.write(`
+        <html>
+          <head>
+            <title>Recording Preview</title>
+            <style>
+              body { margin: 0; background: black; display: flex; justify-content: center; align-items: center; height: 100vh; }
+              video { max-width: 100%; max-height: 100vh; }
+            </style>
+          </head>
+          <body>
+            <video src="${url}" controls autoplay></video>
+          </body>
+        </html>
+      `);
+      newWindow.document.close();
+      
+      // Clean up the URL when the window is closed
+      newWindow.onunload = () => {
+        URL.revokeObjectURL(url);
+      };
+    }
   };
 
   const handleDeleteRecording = async (recordingId: string) => {
     try {
       const updatedRecordings = previousRecordings.filter(rec => rec.id !== recordingId);
       
-      // Convert and store the updated recordings
       const recordingsToStore = await Promise.all(updatedRecordings.map(async (recording) => {
         const arrayBuffer = await recording.blob.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
@@ -249,7 +269,7 @@ const VideoPlayback = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleRecordingClick(recording)}
+                          onClick={() => handlePreview(recording)}
                         >
                           Preview
                         </Button>
