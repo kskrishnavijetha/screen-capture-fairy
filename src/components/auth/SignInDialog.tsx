@@ -51,8 +51,6 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
           duration: 5000,
         });
       }, 3000);
-      
-      onOpenChange(false);
     } else {
       // Handle login
       if (!isVerified && email) {
