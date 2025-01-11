@@ -4,9 +4,11 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SignInDialogProps {
   open: boolean;
@@ -19,51 +21,77 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
   const [name, setName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN') {
+        navigate('/recorder');
+        onOpenChange(false);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate, onOpenChange]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSignUp) {
-      if (password !== confirmPassword) {
-        toast({
-          title: "Error",
-          description: "Passwords do not match",
-          variant: "destructive",
+    setIsLoading(true);
+
+    try {
+      if (isSignUp) {
+        if (password !== confirmPassword) {
+          toast({
+            title: "Error",
+            description: "Passwords do not match",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name,
+            },
+            emailRedirectTo: `${window.location.origin}/recorder`,
+          },
         });
-        return;
-      }
-      try {
-        console.log("Signing up with:", { name, email, password });
+
+        if (error) throw error;
+
         toast({
-          title: "Account created",
-          description: "Welcome to our platform!",
+          title: "Verification email sent",
+          description: "Please check your email to verify your account.",
         });
         onOpenChange(false);
-        navigate('/recorder');
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to create account. Please try again.",
-          variant: "destructive",
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
         });
-      }
-    } else {
-      try {
-        console.log("Logging in with:", { email, password });
+
+        if (error) throw error;
+
         toast({
           title: "Login Successful",
           description: "Welcome back!",
         });
-        onOpenChange(false);
-        navigate('/recorder');
-      } catch (error) {
-        toast({
-          title: "Login Failed",
-          description: "Please check your credentials and try again.",
-          variant: "destructive",
-        });
       }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -87,6 +115,7 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                disabled={isLoading}
               />
             )}
             <Input
@@ -95,6 +124,7 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={isLoading}
             />
             <Input
               type="password"
@@ -102,6 +132,7 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={isLoading}
             />
             {isSignUp && (
               <Input
@@ -110,10 +141,15 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                disabled={isLoading}
               />
             )}
-            <Button type="submit" className="w-full bg-[#6C5CE7] hover:bg-[#5A4ED1]">
-              {isSignUp ? "Signup" : "Login"}
+            <Button 
+              type="submit" 
+              className="w-full bg-[#6C5CE7] hover:bg-[#5A4ED1]"
+              disabled={isLoading}
+            >
+              {isLoading ? "Processing..." : (isSignUp ? "Signup" : "Login")}
             </Button>
           </form>
 
@@ -122,6 +158,7 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
               type="button"
               onClick={() => setIsSignUp(!isSignUp)}
               className="text-[#6C5CE7] hover:underline"
+              disabled={isLoading}
             >
               {isSignUp ? "Already a member? Login Here" : "Not a member? Signup Here"}
             </button>
