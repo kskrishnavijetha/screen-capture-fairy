@@ -26,7 +26,6 @@ export const RecordingComponent = () => {
 
   const handleRecordingStop = (blob: Blob) => {
     setRecordedBlob(blob);
-    // Navigate to the playback page with the recorded blob
     navigate('/playback', { state: { recordedBlob: blob } });
   };
 
@@ -43,6 +42,16 @@ export const RecordingComponent = () => {
     setShowCountdown(false);
     const startButton = document.getElementById('start-recording') as HTMLButtonElement;
     if (startButton) startButton.click();
+  };
+
+  const handlePause = () => {
+    const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
+    if (pauseButton) pauseButton.click();
+  };
+
+  const handleResume = () => {
+    const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
+    if (pauseButton) pauseButton.click();
   };
 
   useEffect(() => {
@@ -82,14 +91,8 @@ export const RecordingComponent = () => {
       {isRecording && (
         <RecordingControls
           isPaused={isPaused}
-          onPause={() => {
-            const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
-            if (pauseButton) pauseButton.click();
-          }}
-          onResume={() => {
-            const resumeButton = document.getElementById('resume-recording') as HTMLButtonElement;
-            if (resumeButton) resumeButton.click();
-          }}
+          onPause={handlePause}
+          onResume={handleResume}
           onStop={() => {
             const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
             if (stopButton) stopButton.click();
@@ -112,13 +115,11 @@ export const RecordingComponent = () => {
       )}
 
       {recordedBlob && !isRecording && (
-        <>
-          <DownloadRecording
-            recordedBlob={recordedBlob}
-            filename={filename}
-            onFilenameChange={setFilename}
-          />
-        </>
+        <DownloadRecording
+          recordedBlob={recordedBlob}
+          filename={filename}
+          onFilenameChange={setFilename}
+        />
       )}
     </div>
   );
