@@ -9,6 +9,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 
 interface SignInDialogProps {
   open: boolean;
@@ -17,25 +19,46 @@ interface SignInDialogProps {
 
 export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
   const [email, setEmail] = useState("");
+  const [isSignUp, setIsSignUp] = useState(true);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleGoogleSignIn = () => {
     // Google sign-in logic would go here
     console.log("Sign in with Google clicked");
   };
 
-  const handleEmailSignIn = (e: React.FormEvent) => {
+  const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Email sign-in logic would go here
-    console.log("Sign in with email:", email);
+    if (isSignUp) {
+      // Simulating email verification send
+      console.log("Verification email sent to:", email);
+      toast({
+        title: "Verification Email Sent",
+        description: "Please check your email to verify your account.",
+      });
+      onOpenChange(false);
+    } else {
+      // Simulating login
+      console.log("Logging in with:", email);
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
+      });
+      onOpenChange(false);
+      navigate('/recorder');
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Sign up free</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">
+            {isSignUp ? "Sign up for free" : "Login"}
+          </DialogTitle>
           <DialogDescription>
-            Choose your preferred way to sign in
+            {isSignUp ? "Create your account" : "Welcome back"}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -76,7 +99,7 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
             </div>
           </div>
 
-          <form onSubmit={handleEmailSignIn} className="space-y-4">
+          <form onSubmit={handleEmailSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -88,9 +111,19 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
               />
             </div>
             <Button type="submit" className="w-full">
-              Continue with Email
+              {isSignUp ? "Sign up with Email" : "Login with Email"}
             </Button>
           </form>
+
+          <div className="text-center text-sm">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-primary hover:underline"
+            >
+              {isSignUp ? "Already have an account? Login" : "Need an account? Sign up"}
+            </button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
