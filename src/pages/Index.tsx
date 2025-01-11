@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MainMenu } from "@/components/MainMenu";
 import { HomePage } from "@/components/HomePage";
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { RecordingComponent } from '@/components/RecordingComponent';
+import { supabase } from "@/integrations/supabase/client";
+import { SignInDialog } from "@/components/auth/SignInDialog";
 
 const getThemeClasses = (themeName: string) => {
   switch (themeName) {
@@ -22,8 +24,30 @@ const getThemeClasses = (themeName: string) => {
 const Index = () => {
   const [selectedComponent, setSelectedComponent] = useState('home');
   const [currentTheme, setCurrentTheme] = useState('Default Dark');
+  const [session, setSession] = useState<any>(null);
+  const [showSignIn, setShowSignIn] = useState(false);
+
+  useEffect(() => {
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const renderComponent = () => {
+    if (!session) {
+      return <HomePage setSelectedComponent={setSelectedComponent} />;
+    }
+
     switch (selectedComponent) {
       case 'home':
         return <HomePage setSelectedComponent={setSelectedComponent} />;
@@ -61,6 +85,8 @@ const Index = () => {
           {renderComponent()}
         </div>
       </div>
+
+      <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
     </div>
   );
 };
