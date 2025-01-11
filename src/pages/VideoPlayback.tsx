@@ -44,22 +44,33 @@ const VideoPlayback = () => {
       try {
         if (existingRecordings) {
           const storedRecordings = JSON.parse(existingRecordings);
-          parsedRecordings = await Promise.all(storedRecordings.map(async (recording: any) => {
+          const parsePromises = storedRecordings.map(async (recording: any) => {
             try {
-              const uint8Array = new Uint8Array(recording.blob);
-              const blob = new Blob([uint8Array], { type: 'video/webm' });
+              // Handle both array and Uint8Array formats for backward compatibility
+              const blobData = Array.isArray(recording.blob) 
+                ? new Uint8Array(recording.blob)
+                : recording.blob;
+              
+              const blob = new Blob([blobData], { type: 'video/webm' });
+              
+              // Verify blob is valid
+              if (blob.size === 0) {
+                console.error('Invalid blob size');
+                return null;
+              }
+
               return {
                 ...recording,
                 blob,
                 timestamp: new Date(recording.timestamp)
               };
             } catch (error) {
-              console.error('Error parsing recording:', error);
+              console.error('Error parsing individual recording:', error);
               return null;
             }
-          }));
-          // Filter out any null values from failed parsing
-          parsedRecordings = parsedRecordings.filter(Boolean) as Recording[];
+          });
+
+          parsedRecordings = (await Promise.all(parsePromises)).filter(Boolean) as Recording[];
         }
       } catch (error) {
         console.error('Error parsing recordings:', error);
@@ -73,60 +84,61 @@ const VideoPlayback = () => {
       setPreviousRecordings(parsedRecordings);
 
       if (recordedBlob) {
-        const newRecording: Recording = {
-          blob: recordedBlob,
-          timestamp: currentRecordingTime,
-          id: Date.now().toString()
-        };
-
-        const updatedRecordings = [newRecording, ...parsedRecordings];
-        
         try {
-          // Convert blobs to array buffers in smaller chunks
-          const recordingsToStore = await Promise.all(updatedRecordings.map(async (recording) => {
-            try {
-              const chunks: number[] = [];
-              const chunkSize = 1024 * 1024; // 1MB chunks
-              const arrayBuffer = await recording.blob.arrayBuffer();
-              const uint8Array = new Uint8Array(arrayBuffer);
-              
-              for (let i = 0; i < uint8Array.length; i += chunkSize) {
-                const chunk = uint8Array.slice(i, i + chunkSize);
-                chunks.push(...Array.from(chunk));
-              }
-              
-              return {
-                ...recording,
-                blob: chunks,
-                timestamp: recording.timestamp.toISOString()
-              };
-            } catch (error) {
-              console.error('Error processing recording:', error);
-              throw new Error('Failed to process recording for storage');
-            }
-          }));
-          
-          // Store with a try-catch to handle quota exceeded errors
-          try {
-            localStorage.setItem('recordings', JSON.stringify(recordingsToStore));
-          } catch (storageError) {
-            if (storageError.name === 'QuotaExceededError') {
-              throw new Error('Storage quota exceeded. Please delete some recordings first.');
-            }
-            throw storageError;
+          // Verify the new recording blob is valid
+          if (!(recordedBlob instanceof Blob) || recordedBlob.size === 0) {
+            throw new Error('Invalid recording data');
           }
+
+          const newRecording: Recording = {
+            blob: recordedBlob,
+            timestamp: currentRecordingTime,
+            id: Date.now().toString()
+          };
+
+          const updatedRecordings = [newRecording, ...parsedRecordings];
           
+          // Convert blob to array buffer in smaller chunks
+          const processedRecordings = await Promise.all(updatedRecordings.map(async (recording) => {
+            const arrayBuffer = await recording.blob.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+            const chunks: number[] = [];
+            
+            // Process in 512KB chunks
+            const chunkSize = 512 * 1024;
+            for (let i = 0; i < uint8Array.length; i += chunkSize) {
+              const chunk = Array.from(uint8Array.slice(i, i + chunkSize));
+              chunks.push(...chunk);
+            }
+            
+            return {
+              ...recording,
+              blob: chunks,
+              timestamp: recording.timestamp.toISOString()
+            };
+          }));
+
+          // Clear some space if needed
+          if (previousRecordings.length > 10) {
+            const oldRecordings = JSON.parse(localStorage.getItem('recordings') || '[]');
+            oldRecordings.pop(); // Remove oldest recording
+            localStorage.setItem('recordings', JSON.stringify(oldRecordings));
+          }
+
+          // Store new recordings
+          localStorage.setItem('recordings', JSON.stringify(processedRecordings));
           setPreviousRecordings(updatedRecordings);
+          
           toast({
             title: "Recording saved",
             description: "Your recording has been saved successfully"
           });
         } catch (error) {
-          console.error('Error storing recordings:', error);
+          console.error('Storage error:', error);
           toast({
             variant: "destructive",
-            title: "Error saving recording",
-            description: error.message || "Failed to save the recording to storage"
+            title: "Storage error",
+            description: error instanceof Error ? error.message : "Failed to save recording"
           });
         }
       }
