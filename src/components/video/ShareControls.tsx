@@ -65,13 +65,6 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
         return;
       }
 
-      if (selectedPlatform === 'email') {
-        const subject = encodeURIComponent('Check out this video');
-        const body = encodeURIComponent('I wanted to share this video with you: ' + window.location.href);
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
-        return;
-      }
-
       setShowAuthDialog(true);
     } catch (error) {
       toast({
