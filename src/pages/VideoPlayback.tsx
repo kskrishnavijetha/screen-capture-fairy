@@ -42,18 +42,32 @@ const VideoPlayback = () => {
       let parsedRecordings: Recording[] = [];
       
       try {
-        const storedRecordings = existingRecordings ? JSON.parse(existingRecordings) : [];
-        parsedRecordings = await Promise.all(storedRecordings.map(async (recording: any) => {
-          const uint8Array = new Uint8Array(recording.blob);
-          const blob = new Blob([uint8Array], { type: 'video/webm' });
-          return {
-            ...recording,
-            blob,
-            timestamp: new Date(recording.timestamp)
-          };
-        }));
+        if (existingRecordings) {
+          const storedRecordings = JSON.parse(existingRecordings);
+          parsedRecordings = await Promise.all(storedRecordings.map(async (recording: any) => {
+            try {
+              const uint8Array = new Uint8Array(recording.blob);
+              const blob = new Blob([uint8Array], { type: 'video/webm' });
+              return {
+                ...recording,
+                blob,
+                timestamp: new Date(recording.timestamp)
+              };
+            } catch (error) {
+              console.error('Error parsing recording:', error);
+              return null;
+            }
+          }));
+          // Filter out any null values from failed parsing
+          parsedRecordings = parsedRecordings.filter(Boolean) as Recording[];
+        }
       } catch (error) {
         console.error('Error parsing recordings:', error);
+        toast({
+          variant: "destructive",
+          title: "Error loading recordings",
+          description: "Failed to load previous recordings"
+        });
       }
       
       setPreviousRecordings(parsedRecordings);
@@ -68,24 +82,51 @@ const VideoPlayback = () => {
         const updatedRecordings = [newRecording, ...parsedRecordings];
         
         try {
+          // Convert blobs to array buffers in smaller chunks
           const recordingsToStore = await Promise.all(updatedRecordings.map(async (recording) => {
-            const arrayBuffer = await recording.blob.arrayBuffer();
-            const uint8Array = new Uint8Array(arrayBuffer);
-            return {
-              ...recording,
-              blob: Array.from(uint8Array),
-              timestamp: recording.timestamp.toISOString()
-            };
+            try {
+              const chunks: number[] = [];
+              const chunkSize = 1024 * 1024; // 1MB chunks
+              const arrayBuffer = await recording.blob.arrayBuffer();
+              const uint8Array = new Uint8Array(arrayBuffer);
+              
+              for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                const chunk = uint8Array.slice(i, i + chunkSize);
+                chunks.push(...Array.from(chunk));
+              }
+              
+              return {
+                ...recording,
+                blob: chunks,
+                timestamp: recording.timestamp.toISOString()
+              };
+            } catch (error) {
+              console.error('Error processing recording:', error);
+              throw new Error('Failed to process recording for storage');
+            }
           }));
           
-          localStorage.setItem('recordings', JSON.stringify(recordingsToStore));
+          // Store with a try-catch to handle quota exceeded errors
+          try {
+            localStorage.setItem('recordings', JSON.stringify(recordingsToStore));
+          } catch (storageError) {
+            if (storageError.name === 'QuotaExceededError') {
+              throw new Error('Storage quota exceeded. Please delete some recordings first.');
+            }
+            throw storageError;
+          }
+          
           setPreviousRecordings(updatedRecordings);
+          toast({
+            title: "Recording saved",
+            description: "Your recording has been saved successfully"
+          });
         } catch (error) {
           console.error('Error storing recordings:', error);
           toast({
             variant: "destructive",
             title: "Error saving recording",
-            description: "Failed to save the recording to storage"
+            description: error.message || "Failed to save the recording to storage"
           });
         }
       }
