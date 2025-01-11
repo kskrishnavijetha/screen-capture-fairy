@@ -5,6 +5,8 @@ import { ThemeSelector } from '@/components/ThemeSelector';
 import { RecordingComponent } from '@/components/RecordingComponent';
 import { supabase } from "@/integrations/supabase/client";
 import { SignInDialog } from "@/components/auth/SignInDialog";
+import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { ProfileSection } from "@/components/ProfileSection";
 
 const getThemeClasses = (themeName: string) => {
   switch (themeName) {
@@ -50,7 +52,7 @@ const Index = () => {
 
     switch (selectedComponent) {
       case 'home':
-        return <HomePage setSelectedComponent={setSelectedComponent} />;
+        return <RecordingComponent />;
       case 'recorder':
         return <RecordingComponent />;
       case 'content':
@@ -64,27 +66,43 @@ const Index = () => {
       case 'monetization':
         return <div className="text-center">Monetization Hub Coming Soon</div>;
       default:
-        return <HomePage setSelectedComponent={setSelectedComponent} />;
+        return <RecordingComponent />;
     }
   };
 
   return (
-    <div className={`min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
-      <div className="absolute top-4 left-4">
-        <MainMenu
-          selectedComponent={selectedComponent}
-          setSelectedComponent={setSelectedComponent}
-        />
-      </div>
-      
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="text-center space-y-6 w-full max-w-7xl">
-          <div className="flex flex-col items-center mb-8 space-y-4">
-            <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
+    <div className={`min-h-screen transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
+      {session ? (
+        <div className="flex">
+          <DashboardSidebar />
+          <div className="flex-1 relative">
+            <ProfileSection />
+            <div className="p-4">
+              <div className="flex justify-end mb-4">
+                <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
+              </div>
+              {renderComponent()}
+            </div>
           </div>
-          {renderComponent()}
         </div>
-      </div>
+      ) : (
+        <div className="p-4">
+          <div className="absolute top-4 left-4">
+            <MainMenu
+              selectedComponent={selectedComponent}
+              setSelectedComponent={setSelectedComponent}
+            />
+          </div>
+          <div className="flex flex-col items-center justify-center min-h-screen">
+            <div className="text-center space-y-6 w-full max-w-7xl">
+              <div className="flex flex-col items-center mb-8 space-y-4">
+                <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
+              </div>
+              {renderComponent()}
+            </div>
+          </div>
+        </div>
+      )}
 
       <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
     </div>
