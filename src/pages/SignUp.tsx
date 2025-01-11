@@ -3,13 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { createClient } from '@supabase/supabase-js';
 import { useNavigate } from "react-router-dom";
-
-const supabase = createClient(
-  'https://gbhbdmfonutgdgoubczs.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiaGJkbWZvbnV0Z2Rnb3ViY3pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDQ5NTg5NDgsImV4cCI6MjAyMDUzNDk0OH0.XDS2zXzNn3yvMcOXgfJNhQDGykTvHwwRz1s-R1JqG0E'
-);
+import { supabase } from "@/integrations/supabase/client";
 
 const SignUp = () => {
   const [email, setEmail] = useState("");
