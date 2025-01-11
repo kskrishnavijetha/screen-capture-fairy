@@ -46,14 +46,12 @@ const VideoPlayback = () => {
           const storedRecordings = JSON.parse(existingRecordings);
           const parsePromises = storedRecordings.map(async (recording: any) => {
             try {
-              // Handle both array and Uint8Array formats for backward compatibility
               const blobData = Array.isArray(recording.blob) 
                 ? new Uint8Array(recording.blob)
                 : recording.blob;
               
               const blob = new Blob([blobData], { type: 'video/webm' });
               
-              // Verify blob is valid
               if (blob.size === 0) {
                 console.error('Invalid blob size');
                 return null;
@@ -85,7 +83,6 @@ const VideoPlayback = () => {
 
       if (recordedBlob) {
         try {
-          // Verify the new recording blob is valid
           if (!(recordedBlob instanceof Blob) || recordedBlob.size === 0) {
             throw new Error('Invalid recording data');
           }
@@ -98,13 +95,11 @@ const VideoPlayback = () => {
 
           const updatedRecordings = [newRecording, ...parsedRecordings];
           
-          // Convert blob to array buffer in smaller chunks
           const processedRecordings = await Promise.all(updatedRecordings.map(async (recording) => {
             const arrayBuffer = await recording.blob.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
             const chunks: number[] = [];
             
-            // Process in 512KB chunks
             const chunkSize = 512 * 1024;
             for (let i = 0; i < uint8Array.length; i += chunkSize) {
               const chunk = Array.from(uint8Array.slice(i, i + chunkSize));
@@ -118,14 +113,12 @@ const VideoPlayback = () => {
             };
           }));
 
-          // Clear some space if needed
           if (previousRecordings.length > 10) {
             const oldRecordings = JSON.parse(localStorage.getItem('recordings') || '[]');
-            oldRecordings.pop(); // Remove oldest recording
+            oldRecordings.pop();
             localStorage.setItem('recordings', JSON.stringify(oldRecordings));
           }
 
-          // Store new recordings
           localStorage.setItem('recordings', JSON.stringify(processedRecordings));
           setPreviousRecordings(updatedRecordings);
           
@@ -200,29 +193,52 @@ const VideoPlayback = () => {
   };
 
   const handlePreview = (recording: Recording) => {
-    const url = URL.createObjectURL(recording.blob);
-    const newWindow = window.open(url, '_blank');
-    if (newWindow) {
-      newWindow.document.write(`
-        <html>
-          <head>
-            <title>Recording Preview</title>
-            <style>
-              body { margin: 0; background: black; display: flex; justify-content: center; align-items: center; height: 100vh; }
-              video { max-width: 100%; max-height: 100vh; }
-            </style>
-          </head>
-          <body>
-            <video src="${url}" controls autoplay></video>
-          </body>
-        </html>
-      `);
-      newWindow.document.close();
-      
-      // Clean up the URL when the window is closed
-      newWindow.onunload = () => {
-        URL.revokeObjectURL(url);
-      };
+    try {
+      const url = URL.createObjectURL(recording.blob);
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Recording Preview</title>
+              <style>
+                body { 
+                  margin: 0; 
+                  background: black; 
+                  display: flex; 
+                  justify-content: center; 
+                  align-items: center; 
+                  height: 100vh; 
+                }
+                video { 
+                  max-width: 100%; 
+                  max-height: 100vh; 
+                }
+              </style>
+            </head>
+            <body>
+              <video controls autoplay>
+                <source src="${url}" type="video/webm">
+                Your browser does not support the video tag.
+              </video>
+              <script>
+                window.onunload = function() {
+                  URL.revokeObjectURL("${url}");
+                };
+              </script>
+            </body>
+          </html>
+        `);
+        newWindow.document.close();
+      }
+    } catch (error) {
+      console.error('Error previewing recording:', error);
+      toast({
+        variant: "destructive",
+        title: "Preview error",
+        description: "Failed to preview the recording"
+      });
     }
   };
 
