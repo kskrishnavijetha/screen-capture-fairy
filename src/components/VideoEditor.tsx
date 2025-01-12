@@ -5,6 +5,7 @@ import { EmbedControls } from './video/EmbedControls';
 import { ExportControls } from './video/ExportControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
+import { TrimControls } from './video/TrimControls';
 import { VideoPreviewSection } from './video/preview/VideoPreviewSection';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
@@ -19,6 +20,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const previewRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [trimRange, setTrimRange] = useState([0, 100]); // Percentage values
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
@@ -53,6 +55,10 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     setCurrentTime(time);
   };
 
+  const handleTrimRangeChange = (newRange: number[]) => {
+    setTrimRange(newRange);
+  };
+
   if (!recordedBlob) return null;
 
   return (
@@ -64,6 +70,14 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         processedVideoUrl={processedVideoUrl}
         onMetadataLoaded={handleMetadataLoaded}
         onTimeUpdate={handleTimeUpdate}
+      />
+
+      <TrimControls
+        duration={duration}
+        currentTime={currentTime}
+        trimRange={trimRange}
+        onTrimRangeChange={handleTrimRangeChange}
+        videoRef={videoRef}
       />
 
       <div className="space-y-4">

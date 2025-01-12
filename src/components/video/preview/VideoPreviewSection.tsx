@@ -17,15 +17,15 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
   onMetadataLoaded,
   onTimeUpdate,
 }) => {
-  const handleTimeUpdate = () => {
-    if (onTimeUpdate && videoRef.current) {
-      onTimeUpdate(videoRef.current.currentTime);
+  const handleMetadataLoaded = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    if (onMetadataLoaded) {
+      onMetadataLoaded(e.currentTarget.duration);
     }
   };
 
-  const handleLoadedMetadata = () => {
-    if (onMetadataLoaded && videoRef.current) {
-      onMetadataLoaded(videoRef.current.duration);
+  const handleTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    if (onTimeUpdate) {
+      onTimeUpdate(e.currentTarget.currentTime);
     }
   };
 
@@ -39,9 +39,8 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
           src={videoUrl}
           className="w-full"
           controls
-          playsInline
+          onLoadedMetadata={handleMetadataLoaded}
           onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleLoadedMetadata}
         />
       </div>
 
@@ -54,7 +53,6 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
               src={processedVideoUrl}
               className="w-full"
               controls
-              playsInline
             />
           </div>
         </div>
