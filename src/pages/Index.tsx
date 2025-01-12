@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MainMenu } from "@/components/MainMenu";
 import { HomePage } from "@/components/HomePage";
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { RecordingComponent } from '@/components/RecordingComponent';
+import { supabase } from '@/integrations/supabase/client';
 
 const getThemeClasses = (themeName: string) => {
   switch (themeName) {
@@ -23,10 +24,29 @@ const Index = () => {
   const [selectedComponent, setSelectedComponent] = useState('home');
   const [currentTheme, setCurrentTheme] = useState('Default Dark');
 
+  const handleSignUp = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Show success message
+      alert('Check your email for the confirmation link');
+    } catch (error) {
+      console.error('Error signing up:', error);
+      alert(error.message);
+    }
+  };
+
   const renderComponent = () => {
     switch (selectedComponent) {
       case 'home':
-        return <HomePage setSelectedComponent={setSelectedComponent} />;
+        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
       case 'recorder':
         return <RecordingComponent />;
       case 'content':
@@ -40,7 +60,7 @@ const Index = () => {
       case 'monetization':
         return <div className="text-center">Monetization Hub Coming Soon</div>;
       default:
-        return <HomePage setSelectedComponent={setSelectedComponent} />;
+        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
     }
   };
 
