@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Share2, Linkedin } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { LinkShareControls } from './LinkShareControls';
 import {
@@ -47,26 +47,28 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
 
     setIsSharing(true);
     try {
-      // Create a temporary URL for the video blob
-      const videoUrl = URL.createObjectURL(recordedBlob);
+      // Create a blob URL and store it in a variable
+      const blobUrl = URL.createObjectURL(recordedBlob);
+      
+      // Create a shareable URL that includes the video data
+      const shareableUrl = `${window.location.origin}/playback?video=${encodeURIComponent(blobUrl)}`;
       
       if (selectedPlatform === 'email') {
         const emailSubject = encodeURIComponent('Check out this video');
-        const emailBody = encodeURIComponent('I wanted to share this video with you.\n\nView the video here: ' + videoUrl);
+        const emailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
         window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
         return;
       }
 
       if (selectedPlatform === 'gmail') {
         const emailSubject = encodeURIComponent('Check out this video');
-        const emailBody = encodeURIComponent('I wanted to share this video with you.\n\nView the video here: ' + videoUrl);
+        const emailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
         window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${emailSubject}&body=${emailBody}`, '_blank');
         return;
       }
 
       if (selectedPlatform === 'facebook') {
-        const shareUrl = window.location.origin + '/share?video=' + encodeURIComponent(videoUrl);
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400');
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
         return;
       }
       
@@ -79,8 +81,7 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
       }
 
       if (selectedPlatform === 'linkedin') {
-        const shareUrl = window.location.origin + '/share?video=' + encodeURIComponent(videoUrl);
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400');
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
         return;
       }
 
