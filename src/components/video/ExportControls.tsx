@@ -48,14 +48,32 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
       await simulateConversion();
       
       if (isPasswordProtected) {
-        const key = await generateEncryptionKey(password);
-        const { encryptedData, iv } = await encryptBlob(recordedBlob, key);
-        await saveEncryptedRecording(encryptedData, iv, filename);
-        
-        toast({
-          title: "Recording encrypted and saved",
-          description: "Your recording has been securely stored with password protection",
-        });
+        try {
+          // Create a copy of the blob to ensure it's valid
+          const blobCopy = new Blob([await recordedBlob.arrayBuffer()], { type: recordedBlob.type });
+          
+          if (blobCopy.size === 0) {
+            throw new Error('Invalid blob data');
+          }
+
+          const key = await generateEncryptionKey(password);
+          const { encryptedData, iv } = await encryptBlob(blobCopy, key);
+          
+          // Ensure the encrypted data is valid
+          if (!encryptedData || encryptedData.byteLength === 0) {
+            throw new Error('Encryption failed - invalid data');
+          }
+          
+          await saveEncryptedRecording(encryptedData, iv, filename);
+          
+          toast({
+            title: "Recording encrypted and saved",
+            description: "Your recording has been securely stored with password protection",
+          });
+        } catch (error) {
+          console.error('Encryption error:', error);
+          throw new Error('Failed to encrypt and save recording');
+        }
       } else {
         // Create a copy of the blob to ensure it's valid
         const blobCopy = new Blob([await recordedBlob.arrayBuffer()], { type: recordedBlob.type });
