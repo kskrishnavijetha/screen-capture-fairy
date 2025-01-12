@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Share2 } from 'lucide-react';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { LinkShareControls } from './LinkShareControls';
 import {
   Select,
@@ -47,45 +47,52 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
 
     setIsSharing(true);
     try {
-      // Create a blob URL and store it in a variable
-      const blobUrl = URL.createObjectURL(recordedBlob);
+      // Create a data URL from the blob
+      const reader = new FileReader();
+      reader.readAsDataURL(recordedBlob);
       
-      // Create a shareable URL that includes the video data
-      const shareableUrl = `${window.location.origin}/playback?video=${encodeURIComponent(blobUrl)}`;
-      
-      if (selectedPlatform === 'email') {
-        const emailSubject = encodeURIComponent('Check out this video');
-        const emailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
-        window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-        return;
-      }
+      reader.onloadend = () => {
+        const base64data = reader.result as string;
+        const shareableUrl = `${window.location.origin}/playback?video=${encodeURIComponent(base64data)}`;
+        
+        if (selectedPlatform === 'email') {
+          const emailSubject = encodeURIComponent('Check out this video');
+          const emailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
+          window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+          return;
+        }
 
-      if (selectedPlatform === 'gmail') {
-        const emailSubject = encodeURIComponent('Check out this video');
-        const emailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
-        window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${emailSubject}&body=${emailBody}`, '_blank');
-        return;
-      }
+        if (selectedPlatform === 'gmail') {
+          const emailSubject = encodeURIComponent('Check out this video');
+          const emailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
+          window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${emailSubject}&body=${emailBody}`, '_blank');
+          return;
+        }
 
-      if (selectedPlatform === 'facebook') {
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
-        return;
-      }
-      
-      if (selectedPlatform === 'instagram') {
-        toast({
-          title: "Instagram Sharing",
-          description: "To share on Instagram, download the video and upload it through the Instagram app or website.",
-        });
-        return;
-      }
+        if (selectedPlatform === 'facebook') {
+          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
+          return;
+        }
+        
+        if (selectedPlatform === 'instagram') {
+          toast({
+            title: "Instagram Sharing",
+            description: "To share on Instagram, download the video and upload it through the Instagram app or website.",
+          });
+          return;
+        }
 
-      if (selectedPlatform === 'linkedin') {
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
-        return;
-      }
+        if (selectedPlatform === 'linkedin') {
+          window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
+          return;
+        }
 
-      setShowAuthDialog(true);
+        setShowAuthDialog(true);
+      };
+
+      reader.onerror = () => {
+        throw new Error('Error reading video file');
+      };
     } catch (error) {
       toast({
         variant: "destructive",
