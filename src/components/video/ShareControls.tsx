@@ -24,17 +24,6 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
-  const handleAuthenticate = async () => {
-    const platform = platformConfigs[selectedPlatform];
-    
-    toast({
-      title: "Authentication Required",
-      description: `Please set up your ${platform.name} API credentials in the project settings to enable sharing.`,
-    });
-
-    setShowAuthDialog(false);
-  };
-
   const createShareableVideoUrl = async (blob: Blob): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -62,40 +51,52 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
     try {
       const shareableUrl = await createShareableVideoUrl(recordedBlob);
       
-      if (selectedPlatform === 'email') {
-        const emailSubject = encodeURIComponent('Check out this video');
-        const emailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
-        window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-        return;
+      switch (selectedPlatform) {
+        case 'email':
+          const emailSubject = encodeURIComponent('Check out this video');
+          const emailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
+          window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+          break;
+
+        case 'gmail':
+          const gmailSubject = encodeURIComponent('Check out this video');
+          const gmailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
+          window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${gmailSubject}&body=${gmailBody}`, '_blank');
+          break;
+
+        case 'facebook':
+          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
+          break;
+        
+        case 'instagram':
+          navigator.clipboard.writeText(shareableUrl).then(() => {
+            toast({
+              title: "Link copied for Instagram",
+              description: "The video link has been copied. You can now paste it in your Instagram bio or story.",
+            });
+          });
+          break;
+
+        case 'linkedin':
+          window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
+          break;
+
+        case 'twitter':
+          const tweetText = encodeURIComponent('Check out this video!');
+          window.open(`https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
+          break;
+
+        default:
+          setShowAuthDialog(true);
+          break;
       }
 
-      if (selectedPlatform === 'gmail') {
-        const emailSubject = encodeURIComponent('Check out this video');
-        const emailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
-        window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${emailSubject}&body=${emailBody}`, '_blank');
-        return;
-      }
-
-      if (selectedPlatform === 'facebook') {
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
-        return;
-      }
-      
-      if (selectedPlatform === 'instagram') {
-        toast({
-          title: "Instagram Sharing",
-          description: "To share on Instagram, download the video and upload it through the Instagram app or website.",
-        });
-        return;
-      }
-
-      if (selectedPlatform === 'linkedin') {
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
-        return;
-      }
-
-      setShowAuthDialog(true);
+      toast({
+        title: "Share initiated",
+        description: `Sharing to ${platformConfigs[selectedPlatform].name} has been initiated.`,
+      });
     } catch (error) {
+      console.error('Sharing error:', error);
       toast({
         variant: "destructive",
         title: "Sharing failed",
@@ -143,7 +144,13 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
         description={description}
         onTitleChange={setTitle}
         onDescriptionChange={setDescription}
-        onAuthenticate={handleAuthenticate}
+        onAuthenticate={() => {
+          toast({
+            title: "Authentication Required",
+            description: `Please set up your ${platformConfigs[selectedPlatform].name} API credentials in the project settings to enable sharing.`,
+          });
+          setShowAuthDialog(false);
+        }}
       />
 
       <Button
