@@ -23,6 +23,15 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
   const [filename, setFilename] = useState(`recording-${Date.now()}`);
 
   const handleExport = async () => {
+    if (!recordedBlob || recordedBlob.size === 0) {
+      toast({
+        variant: "destructive",
+        title: "Export failed",
+        description: "Invalid recording data. Please try recording again.",
+      });
+      return;
+    }
+
     if (isPasswordProtected && !password) {
       toast({
         variant: "destructive",
@@ -41,34 +50,46 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
       if (isPasswordProtected) {
         const key = await generateEncryptionKey(password);
         const { encryptedData, iv } = await encryptBlob(recordedBlob, key);
-        saveEncryptedRecording(encryptedData, iv, filename);
+        await saveEncryptedRecording(encryptedData, iv, filename);
         
         toast({
           title: "Recording encrypted and saved",
           description: "Your recording has been securely stored with password protection",
         });
       } else {
-        const url = URL.createObjectURL(recordedBlob);
+        // Create a copy of the blob to ensure it's valid
+        const blobCopy = new Blob([await recordedBlob.arrayBuffer()], { type: recordedBlob.type });
+        
+        if (blobCopy.size === 0) {
+          throw new Error('Invalid blob data');
+        }
+
+        const url = URL.createObjectURL(blobCopy);
         const a = document.createElement('a');
         document.body.appendChild(a);
         a.style.display = 'none';
         a.href = url;
         a.download = `${filename}.${selectedFormat}`;
-        a.click();
-        URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        
+        try {
+          await a.click();
+          URL.revokeObjectURL(url);
+          document.body.removeChild(a);
 
-        toast({
-          title: "Export successful",
-          description: `Your recording has been exported as ${selectedFormat.toUpperCase()}`,
-        });
+          toast({
+            title: "Export successful",
+            description: `Your recording has been exported as ${selectedFormat.toUpperCase()}`,
+          });
+        } catch (error) {
+          throw new Error('Failed to trigger download');
+        }
       }
     } catch (error) {
       console.error('Export error:', error);
       toast({
         variant: "destructive",
         title: "Export failed",
-        description: "There was an error exporting your recording.",
+        description: "There was an error exporting your recording. Please try again.",
       });
     } finally {
       setIsExporting(false);
