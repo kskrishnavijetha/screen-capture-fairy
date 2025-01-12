@@ -3,9 +3,10 @@ import { MENU_ITEMS } from "./MainMenu";
 
 interface HomePageProps {
   setSelectedComponent: (id: string) => void;
+  onSignUp: (email: string) => Promise<void>;
 }
 
-export const HomePage = ({ setSelectedComponent }: HomePageProps) => {
+export const HomePage = ({ setSelectedComponent, onSignUp }: HomePageProps) => {
   return (
     <div className="space-y-8">
       <div className="text-center space-y-4">
