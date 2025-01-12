@@ -11,7 +11,20 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
   const [isCopied, setIsCopied] = useState(false);
   const [shareableLink, setShareableLink] = useState<string>('');
 
-  const generateShareableLink = () => {
+  const createShareableVideoUrl = async (blob: Blob): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Data = reader.result as string;
+        const videoData = encodeURIComponent(base64Data);
+        const shareableUrl = `${window.location.origin}/playback?video=${videoData}`;
+        resolve(shareableUrl);
+      };
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const generateShareableLink = async () => {
     if (!recordedBlob) {
       toast({
         variant: "destructive",
@@ -21,16 +34,20 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
       return;
     }
 
-    // Generate a link using the current window location as base
-    const baseUrl = window.location.origin;
-    const uniqueId = Math.random().toString(36).substring(7);
-    const simulatedLink = `${baseUrl}/share/${uniqueId}`;
-    
-    setShareableLink(simulatedLink);
-    toast({
-      title: "Link Generated",
-      description: "Shareable link has been generated successfully.",
-    });
+    try {
+      const shareableUrl = await createShareableVideoUrl(recordedBlob);
+      setShareableLink(shareableUrl);
+      toast({
+        title: "Link Generated",
+        description: "Shareable link has been generated successfully.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error generating link",
+        description: "Failed to generate shareable link.",
+      });
+    }
   };
 
   const copyToClipboard = async () => {
@@ -60,31 +77,33 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
     }
   };
 
-  const shareToSocialMedia = (platform: 'facebook' | 'instagram') => {
-    if (!shareableLink) {
+  const shareToSocialMedia = async (platform: 'facebook' | 'instagram') => {
+    if (!recordedBlob) {
       toast({
         variant: "destructive",
-        title: "No link to share",
-        description: "Please generate a shareable link first.",
+        title: "No video to share",
+        description: "Please record or process a video first.",
       });
       return;
     }
 
-    let shareUrl = '';
-    switch (platform) {
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableLink)}`;
-        break;
-      case 'instagram':
+    try {
+      const shareableUrl = await createShareableVideoUrl(recordedBlob);
+      
+      if (platform === 'facebook') {
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=600');
+      } else if (platform === 'instagram') {
         toast({
           title: "Instagram Sharing",
           description: "Copy the link and share it in your Instagram bio or story.",
         });
-        return;
-    }
-
-    if (shareUrl) {
-      window.open(shareUrl, '_blank', 'width=600,height=600');
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Share failed",
+        description: "Failed to share the video.",
+      });
     }
   };
 

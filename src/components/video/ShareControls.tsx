@@ -35,6 +35,19 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
     setShowAuthDialog(false);
   };
 
+  const createShareableVideoUrl = async (blob: Blob): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Data = reader.result as string;
+        const videoData = encodeURIComponent(base64Data);
+        const shareableUrl = `${window.location.origin}/playback?video=${videoData}`;
+        resolve(shareableUrl);
+      };
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const handleShare = async () => {
     if (!recordedBlob) {
       toast({
@@ -47,11 +60,7 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
 
     setIsSharing(true);
     try {
-      // Create a blob URL and store it in a variable
-      const blobUrl = URL.createObjectURL(recordedBlob);
-      
-      // Create a shareable URL that includes the video data
-      const shareableUrl = `${window.location.origin}/playback?video=${encodeURIComponent(blobUrl)}`;
+      const shareableUrl = await createShareableVideoUrl(recordedBlob);
       
       if (selectedPlatform === 'email') {
         const emailSubject = encodeURIComponent('Check out this video');
