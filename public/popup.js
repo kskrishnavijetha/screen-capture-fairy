@@ -48,6 +48,19 @@ async function startRecording(scheduled = false) {
 
     mediaRecorder.onstop = () => {
       const blob = new Blob(recordedChunks, { type: 'video/webm' });
+      // Send message to the main app with the recorded video
+      chrome.runtime.sendMessage({
+        type: 'videoRecorded',
+        data: blob
+      }, (response) => {
+        if (response && response.status === 'success') {
+          console.log('Video data successfully sent to main app');
+        } else {
+          console.error('Failed to send video data to main app');
+        }
+      });
+      
+      // Also save the recording
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
