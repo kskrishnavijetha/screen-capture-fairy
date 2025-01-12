@@ -54,6 +54,13 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
         return;
       }
 
+      if (selectedPlatform === 'gmail') {
+        const emailSubject = encodeURIComponent('Check out this video');
+        const emailBody = encodeURIComponent('I wanted to share this video with you: ' + window.location.href);
+        window.location.href = `https://mail.google.com/mail/?view=cm&fs=1&su=${emailSubject}&body=${emailBody}`;
+        return;
+      }
+
       if (selectedPlatform === 'facebook') {
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank', 'width=600,height=400');
         return;

@@ -1,7 +1,7 @@
 import { Youtube, Video, Twitter, Facebook, Instagram, Linkedin, Mail } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
-export type Platform = 'youtube' | 'vimeo' | 'twitter' | 'facebook' | 'instagram' | 'linkedin' | 'email';
+export type Platform = 'youtube' | 'vimeo' | 'twitter' | 'facebook' | 'instagram' | 'linkedin' | 'email' | 'gmail';
 
 export interface PlatformConfig {
   name: string;
@@ -19,6 +19,16 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
     name: 'Email',
     icon: Mail,
     description: 'Share your video via email',
+    authUrl: '',
+    scope: '',
+    secretKeyName: '',
+    redirectUri: '',
+    developerConsoleUrl: ''
+  },
+  gmail: {
+    name: 'Gmail',
+    icon: Mail,
+    description: 'Share your video via Gmail',
     authUrl: '',
     scope: '',
     secretKeyName: '',
