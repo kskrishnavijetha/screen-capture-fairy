@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Share2 } from 'lucide-react';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { LinkShareControls } from './LinkShareControls';
 import {
   Select,
@@ -57,7 +57,6 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
           const emailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
           const mailtoLink = document.createElement('a');
           mailtoLink.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-          mailtoLink.target = '_blank';
           mailtoLink.click();
           break;
         }
@@ -65,7 +64,7 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
         case 'gmail': {
           const gmailSubject = encodeURIComponent('Check out this video');
           const gmailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
-          window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${gmailSubject}&body=${gmailBody}`, '_blank');
+          window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${gmailSubject}&body=${gmailBody}`, '_blank', 'width=600,height=400');
           break;
         }
 
@@ -74,11 +73,10 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
           break;
         
         case 'instagram':
-          navigator.clipboard.writeText(shareableUrl).then(() => {
-            toast({
-              title: "Link copied for Instagram",
-              description: "The video link has been copied. You can now paste it in your Instagram bio or story.",
-            });
+          await navigator.clipboard.writeText(shareableUrl);
+          toast({
+            title: "Link copied for Instagram",
+            description: "The video link has been copied. You can now paste it in your Instagram bio or story.",
           });
           break;
 
