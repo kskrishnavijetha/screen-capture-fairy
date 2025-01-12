@@ -1,7 +1,7 @@
-import { Youtube, Video, Twitter, Facebook, Instagram, Linkedin } from 'lucide-react';
+import { Youtube, Video, Twitter, Facebook, Instagram, Linkedin, Mail } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
-export type Platform = 'youtube' | 'vimeo' | 'twitter' | 'facebook' | 'instagram' | 'linkedin';
+export type Platform = 'youtube' | 'vimeo' | 'twitter' | 'facebook' | 'instagram' | 'linkedin' | 'email';
 
 export interface PlatformConfig {
   name: string;
@@ -15,6 +15,16 @@ export interface PlatformConfig {
 }
 
 export const platformConfigs: Record<Platform, PlatformConfig> = {
+  email: {
+    name: 'Email',
+    icon: Mail,
+    description: 'Share your video via email',
+    authUrl: '',
+    scope: '',
+    secretKeyName: '',
+    redirectUri: '',
+    developerConsoleUrl: ''
+  },
   youtube: {
     name: 'YouTube',
     icon: Youtube,
