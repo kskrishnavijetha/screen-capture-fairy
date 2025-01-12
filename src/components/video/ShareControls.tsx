@@ -52,17 +52,22 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
       const shareableUrl = await createShareableVideoUrl(recordedBlob);
       
       switch (selectedPlatform) {
-        case 'email':
+        case 'email': {
           const emailSubject = encodeURIComponent('Check out this video');
           const emailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
-          window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+          const mailtoLink = document.createElement('a');
+          mailtoLink.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+          mailtoLink.target = '_blank';
+          mailtoLink.click();
           break;
+        }
 
-        case 'gmail':
+        case 'gmail': {
           const gmailSubject = encodeURIComponent('Check out this video');
           const gmailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
           window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${gmailSubject}&body=${gmailBody}`, '_blank');
           break;
+        }
 
         case 'facebook':
           window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
