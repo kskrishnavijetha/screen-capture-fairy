@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, X, ArrowLeft, Download, Clock, Trash2, Share2 } from 'lucide-react';
+import { MessageCircle, X, ArrowLeft, Download, Clock, Trash2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { VideoEditor } from '@/components/VideoEditor';
 import { toast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
-import { ShareControls } from '@/components/video/ShareControls';
 
 interface VideoPlaybackProps {
   recordedBlob?: Blob;
@@ -28,7 +27,6 @@ const VideoPlayback = () => {
   const [currentRecordingTime] = useState(new Date());
   const [selectedRecording, setSelectedRecording] = useState<Blob | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [showShareControls, setShowShareControls] = useState(false);
 
   useEffect(() => {
     const loadRecordings = async () => {
@@ -191,10 +189,6 @@ const VideoPlayback = () => {
     });
   };
 
-  const handleEditVideo = () => {
-    setShowShareControls(true);
-  };
-
   const handlePreview = (recording: Recording) => {
     try {
       const url = URL.createObjectURL(recording.blob);
@@ -308,10 +302,9 @@ const VideoPlayback = () => {
 
           <div className="flex gap-4">
             <Button 
-              onClick={handleEditVideo}
+              onClick={() => navigate('/edit', { state: { recordedBlob: selectedRecording || recordedBlob } })}
               className="flex-1 items-center justify-center"
             >
-              <Share2 className="h-4 w-4 mr-2" />
               Edit Video
             </Button>
             <Button
@@ -323,12 +316,6 @@ const VideoPlayback = () => {
               Download Recording
             </Button>
           </div>
-
-          {showShareControls && (
-            <Card className="p-4 mt-4">
-              <ShareControls recordedBlob={selectedRecording || recordedBlob} />
-            </Card>
-          )}
 
           {previousRecordings.length > 1 && (
             <div className="mt-8">
