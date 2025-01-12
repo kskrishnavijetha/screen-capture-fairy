@@ -55,38 +55,57 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
         case 'email': {
           const emailSubject = encodeURIComponent('Check out this video');
           const emailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
-          const mailtoLink = document.createElement('a');
-          mailtoLink.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-          mailtoLink.click();
+          window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
           break;
         }
 
         case 'gmail': {
           const gmailSubject = encodeURIComponent('Check out this video');
           const gmailBody = encodeURIComponent(`I wanted to share this video with you.\n\nView the video here: ${shareableUrl}`);
-          window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${gmailSubject}&body=${gmailBody}`, '_blank', 'width=600,height=400');
+          const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${gmailSubject}&body=${gmailBody}`;
+          window.open(gmailUrl, '_blank', 'width=600,height=400,noopener,noreferrer');
           break;
         }
 
         case 'facebook':
-          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
+          window.open(
+            `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`,
+            '_blank',
+            'width=600,height=400,noopener,noreferrer'
+          );
           break;
         
         case 'instagram':
-          await navigator.clipboard.writeText(shareableUrl);
-          toast({
-            title: "Link copied for Instagram",
-            description: "The video link has been copied. You can now paste it in your Instagram bio or story.",
-          });
+          try {
+            await navigator.clipboard.writeText(shareableUrl);
+            toast({
+              title: "Link copied for Instagram",
+              description: "The video link has been copied. You can now paste it in your Instagram bio or story.",
+            });
+          } catch (error) {
+            toast({
+              variant: "destructive",
+              title: "Copy failed",
+              description: "Failed to copy link to clipboard.",
+            });
+          }
           break;
 
         case 'linkedin':
-          window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
+          window.open(
+            `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}`,
+            '_blank',
+            'width=600,height=400,noopener,noreferrer'
+          );
           break;
 
         case 'twitter':
           const tweetText = encodeURIComponent('Check out this video!');
-          window.open(`https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=400');
+          window.open(
+            `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(shareableUrl)}`,
+            '_blank',
+            'width=600,height=400,noopener,noreferrer'
+          );
           break;
 
         default:

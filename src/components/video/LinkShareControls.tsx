@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Link2, Copy, Check, Facebook, Instagram } from 'lucide-react';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 interface LinkShareControlsProps {
   recordedBlob: Blob | null;
@@ -91,12 +91,25 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
       const shareableUrl = await createShareableVideoUrl(recordedBlob);
       
       if (platform === 'facebook') {
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`, '_blank', 'width=600,height=600');
+        window.open(
+          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`,
+          '_blank',
+          'width=600,height=400,noopener,noreferrer'
+        );
       } else if (platform === 'instagram') {
-        toast({
-          title: "Instagram Sharing",
-          description: "Copy the link and share it in your Instagram bio or story.",
-        });
+        try {
+          await navigator.clipboard.writeText(shareableUrl);
+          toast({
+            title: "Instagram Sharing",
+            description: "Copy the link and share it in your Instagram bio or story.",
+          });
+        } catch (error) {
+          toast({
+            variant: "destructive",
+            title: "Copy failed",
+            description: "Failed to copy link to clipboard.",
+          });
+        }
       }
     } catch (error) {
       toast({
