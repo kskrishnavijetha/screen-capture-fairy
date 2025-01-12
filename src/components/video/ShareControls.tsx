@@ -47,22 +47,25 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
 
     setIsSharing(true);
     try {
+      // Create a shareable URL from the blob
+      const videoUrl = URL.createObjectURL(recordedBlob);
+      
       if (selectedPlatform === 'email') {
         const emailSubject = encodeURIComponent('Check out this video');
-        const emailBody = encodeURIComponent('I wanted to share this video with you: ' + window.location.href);
+        const emailBody = encodeURIComponent('I wanted to share this video with you: ' + videoUrl);
         window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
         return;
       }
 
       if (selectedPlatform === 'gmail') {
         const emailSubject = encodeURIComponent('Check out this video');
-        const emailBody = encodeURIComponent('I wanted to share this video with you: ' + window.location.href);
+        const emailBody = encodeURIComponent('I wanted to share this video with you: ' + videoUrl);
         window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${emailSubject}&body=${emailBody}`, '_blank');
         return;
       }
 
       if (selectedPlatform === 'facebook') {
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank', 'width=600,height=400');
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoUrl)}`, '_blank', 'width=600,height=400');
         return;
       }
       
@@ -75,7 +78,7 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
       }
 
       if (selectedPlatform === 'linkedin') {
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`, '_blank', 'width=600,height=400');
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(videoUrl)}`, '_blank', 'width=600,height=400');
         return;
       }
 
