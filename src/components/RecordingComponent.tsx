@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { MonitorPlay } from 'lucide-react';
-import { toast } from "@/hooks/use-toast";
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
 import { RecordingControls } from '@/components/RecordingControls';
 import { DownloadRecording } from '@/components/DownloadRecording';
@@ -19,33 +18,6 @@ export const RecordingComponent = () => {
   const [captureMode, setCaptureMode] = useState<CaptureMode>('screen');
   const [showCountdown, setShowCountdown] = useState(false);
   const [filename, setFilename] = useState('recording');
-
-  useEffect(() => {
-    // Listen for messages from the Chrome extension
-    const messageListener = (message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
-      if (message.type === 'videoRecorded' && message.data) {
-        console.log('Received video data from extension');
-        const blob = new Blob([message.data], { type: 'video/webm' });
-        setRecordedBlob(blob);
-        navigate('/playback', { state: { recordedBlob: blob } });
-        sendResponse({ status: 'success' });
-        return true; // Keep the message channel open for the async response
-      }
-    };
-
-    // Add the listener if we're in a Chrome extension environment
-    if (chrome?.runtime?.onMessage) {
-      chrome.runtime.onMessage.addListener(messageListener);
-      console.log('Chrome extension message listener added');
-    }
-
-    // Cleanup
-    return () => {
-      if (chrome?.runtime?.onMessage) {
-        chrome.runtime.onMessage.removeListener(messageListener);
-      }
-    };
-  }, [navigate]);
 
   const handleRecordingStart = () => {
     setDuration(0);

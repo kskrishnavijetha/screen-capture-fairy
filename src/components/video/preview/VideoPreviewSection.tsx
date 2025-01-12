@@ -17,15 +17,15 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
   onMetadataLoaded,
   onTimeUpdate,
 }) => {
-  const handleMetadataLoaded = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    if (onMetadataLoaded) {
-      onMetadataLoaded(e.currentTarget.duration);
+  const handleTimeUpdate = () => {
+    if (onTimeUpdate && videoRef.current) {
+      onTimeUpdate(videoRef.current.currentTime);
     }
   };
 
-  const handleTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    if (onTimeUpdate) {
-      onTimeUpdate(e.currentTarget.currentTime);
+  const handleLoadedMetadata = () => {
+    if (onMetadataLoaded && videoRef.current) {
+      onMetadataLoaded(videoRef.current.duration);
     }
   };
 
@@ -33,26 +33,28 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
+      <div className="relative rounded-lg overflow-hidden bg-black">
         <video
           ref={videoRef}
           src={videoUrl}
-          className="w-full h-full object-contain"
+          className="w-full"
           controls
-          onLoadedMetadata={handleMetadataLoaded}
+          playsInline
           onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
         />
       </div>
 
       {processedVideoUrl && (
         <div className="mt-6">
           <h3 className="text-lg font-semibold mb-2">Processed Video Preview</h3>
-          <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
+          <div className="relative rounded-lg overflow-hidden bg-black">
             <video
               ref={previewRef}
               src={processedVideoUrl}
-              className="w-full h-full object-contain"
+              className="w-full"
               controls
+              playsInline
             />
           </div>
         </div>

@@ -1,8 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Play, Pause, SkipBack, SkipForward } from 'lucide-react';
-import { cn } from "@/lib/utils";
 
 interface TrimControlsProps {
   duration: number;
@@ -20,7 +19,6 @@ export const TrimControls = ({
   videoRef
 }: TrimControlsProps) => {
   const [isPlaying, setIsPlaying] = React.useState(false);
-  const timelineRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -36,12 +34,6 @@ export const TrimControls = ({
         video.pause();
         setIsPlaying(false);
         video.currentTime = startTime;
-      }
-
-      // Update timeline marker
-      if (timelineRef.current) {
-        const progress = (video.currentTime / duration) * 100;
-        timelineRef.current.style.setProperty('--progress', `${progress}%`);
       }
     };
 
@@ -125,27 +117,7 @@ export const TrimControls = ({
         </Button>
       </div>
 
-      <div className="space-y-6">
-        <div 
-          ref={timelineRef}
-          className="relative w-full h-16 bg-secondary rounded-lg overflow-hidden"
-          style={{
-            '--progress': `${(currentTime / duration) * 100}%`
-          } as React.CSSProperties}
-        >
-          <div 
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/20 to-transparent"
-            style={{
-              clipPath: `inset(0 ${100 - trimRange[1]}% 0 ${trimRange[0]}%)`
-            }}
-          />
-          <div 
-            className="absolute top-0 bottom-0 w-0.5 bg-primary"
-            style={{ left: 'var(--progress)' }}
-          />
-          <div className="absolute inset-x-0 bottom-0 h-1 bg-muted-foreground/20" />
-        </div>
-
+      <div className="space-y-2">
         <Slider
           value={trimRange}
           onValueChange={handleSliderChange}
@@ -156,12 +128,7 @@ export const TrimControls = ({
 
         <div className="flex justify-between text-sm text-muted-foreground">
           <span>{formatTime((trimRange[0] / 100) * duration)}</span>
-          <span className={cn(
-            "transition-colors",
-            currentTime >= (trimRange[0] / 100) * duration && 
-            currentTime <= (trimRange[1] / 100) * duration && 
-            "text-primary"
-          )}>{formatTime(currentTime)}</span>
+          <span>{formatTime(currentTime)}</span>
           <span>{formatTime((trimRange[1] / 100) * duration)}</span>
         </div>
       </div>
