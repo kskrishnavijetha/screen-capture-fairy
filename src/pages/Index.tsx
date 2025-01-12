@@ -3,7 +3,7 @@ import { MainMenu } from "@/components/MainMenu";
 import { HomePage } from "@/components/HomePage";
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { RecordingComponent } from '@/components/RecordingComponent';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client';
 
 const getThemeClasses = (themeName: string) => {
   switch (themeName) {
@@ -28,6 +28,7 @@ const Index = () => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
+        password: crypto.randomUUID(), // Generate a random password
         options: {
           emailRedirectTo: window.location.origin
         }
