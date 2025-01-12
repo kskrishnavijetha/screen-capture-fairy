@@ -47,42 +47,51 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
 
     setIsSharing(true);
     try {
-      // Create a shareable URL from the blob
-      const videoUrl = URL.createObjectURL(recordedBlob);
+      // Create a data URL from the blob for sharing
+      const reader = new FileReader();
+      reader.readAsDataURL(recordedBlob);
       
-      if (selectedPlatform === 'email') {
-        const emailSubject = encodeURIComponent('Check out this video');
-        const emailBody = encodeURIComponent('I wanted to share this video with you: ' + videoUrl);
-        window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-        return;
-      }
+      reader.onloadend = () => {
+        const videoDataUrl = reader.result as string;
+        
+        if (selectedPlatform === 'email') {
+          const emailSubject = encodeURIComponent('Check out this video');
+          const emailBody = encodeURIComponent('I wanted to share this video with you: ' + videoDataUrl);
+          window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+          return;
+        }
 
-      if (selectedPlatform === 'gmail') {
-        const emailSubject = encodeURIComponent('Check out this video');
-        const emailBody = encodeURIComponent('I wanted to share this video with you: ' + videoUrl);
-        window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${emailSubject}&body=${emailBody}`, '_blank');
-        return;
-      }
+        if (selectedPlatform === 'gmail') {
+          const emailSubject = encodeURIComponent('Check out this video');
+          const emailBody = encodeURIComponent('I wanted to share this video with you: ' + videoDataUrl);
+          window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${emailSubject}&body=${emailBody}`, '_blank');
+          return;
+        }
 
-      if (selectedPlatform === 'facebook') {
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoUrl)}`, '_blank', 'width=600,height=400');
-        return;
-      }
-      
-      if (selectedPlatform === 'instagram') {
-        toast({
-          title: "Instagram Sharing",
-          description: "To share on Instagram, download the video and upload it through the Instagram app or website.",
-        });
-        return;
-      }
+        if (selectedPlatform === 'facebook') {
+          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoDataUrl)}`, '_blank', 'width=600,height=400');
+          return;
+        }
+        
+        if (selectedPlatform === 'instagram') {
+          toast({
+            title: "Instagram Sharing",
+            description: "To share on Instagram, download the video and upload it through the Instagram app or website.",
+          });
+          return;
+        }
 
-      if (selectedPlatform === 'linkedin') {
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(videoUrl)}`, '_blank', 'width=600,height=400');
-        return;
-      }
+        if (selectedPlatform === 'linkedin') {
+          window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(videoDataUrl)}`, '_blank', 'width=600,height=400');
+          return;
+        }
 
-      setShowAuthDialog(true);
+        setShowAuthDialog(true);
+      };
+
+      reader.onerror = () => {
+        throw new Error('Error reading video file');
+      };
     } catch (error) {
       toast({
         variant: "destructive",
