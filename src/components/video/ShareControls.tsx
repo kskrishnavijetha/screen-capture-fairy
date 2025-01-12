@@ -57,7 +57,7 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
       if (selectedPlatform === 'gmail') {
         const emailSubject = encodeURIComponent('Check out this video');
         const emailBody = encodeURIComponent('I wanted to share this video with you: ' + window.location.href);
-        window.location.href = `https://mail.google.com/mail/?view=cm&fs=1&su=${emailSubject}&body=${emailBody}`;
+        window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${emailSubject}&body=${emailBody}`, '_blank');
         return;
       }
 
