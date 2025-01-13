@@ -1,98 +1,114 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Share2, Loader2 } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Platform, platformConfigs } from './sharing/platformConfigs';
 
 interface ShareControlsProps {
   recordedBlob: Blob | null;
 }
 
 export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('');
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform>('email');
   const [isSharing, setIsSharing] = useState(false);
 
   const handleShare = async () => {
     if (!recordedBlob) {
       toast({
         variant: "destructive",
-        title: "Share failed",
-        description: "No video available to share. Please record or process a video first.",
+        title: "No video to share",
+        description: "Please record or process a video first.",
       });
       return;
     }
 
     setIsSharing(true);
-
     try {
-      // Create a File object from the Blob
-      const videoFile = new File([recordedBlob], 'recorded-video.webm', {
-        type: recordedBlob.type,
-        lastModified: Date.now(),
-      });
+      // Create a File from the Blob for sharing
+      const videoFile = new File([recordedBlob], 'recorded-video.webm', { type: recordedBlob.type });
+      const videoUrl = URL.createObjectURL(recordedBlob);
 
       switch (selectedPlatform) {
         case 'youtube': {
-          try {
-            if (navigator.share && navigator.canShare({ files: [videoFile] })) {
-              await navigator.share({
-                files: [videoFile],
-                title: 'My Recorded Video',
-                text: 'Check out this video I recorded!'
-              });
-              toast({
-                title: "Share successful",
-                description: "Your video has been shared successfully.",
-              });
-            } else {
-              // Fallback to YouTube Studio
-              const youtubeUploadUrl = 'https://studio.youtube.com/channel/upload';
-              const newWindow = window.open(youtubeUploadUrl, '_blank');
-              
-              if (newWindow) {
-                toast({
-                  title: "YouTube Upload",
-                  description: "Please upload your video through YouTube Studio.",
-                });
-              } else {
-                throw new Error('Popup blocked. Please allow popups and try again.');
-              }
-            }
-          } catch (error) {
-            throw new Error('Failed to share to YouTube. Please try again.');
+          // Check if the browser supports the Web Share API for files
+          if (navigator.share && navigator.canShare({ files: [videoFile] })) {
+            await navigator.share({
+              files: [videoFile],
+              title: 'My Recorded Video',
+              text: 'Check out this video I recorded!'
+            });
+          } else {
+            // Fallback to YouTube Studio upload page
+            const youtubeUploadUrl = 'https://studio.youtube.com/channel/upload';
+            window.open(youtubeUploadUrl, '_blank', 'noopener,noreferrer');
+            toast({
+              title: "YouTube Upload",
+              description: "Please upload your video through YouTube Studio. The video file has been prepared for upload.",
+            });
           }
           break;
         }
+
+        case 'email': {
+          if (navigator.share) {
+            await navigator.share({
+              files: [videoFile],
+              title: 'Check out my video',
+              text: 'I recorded this video and wanted to share it with you.'
+            });
+          } else {
+            const emailSubject = encodeURIComponent('Check out my video');
+            const emailBody = encodeURIComponent(`I recorded this video and wanted to share it with you.\n\nView the video here: ${videoUrl}`);
+            window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+          }
+          break;
+        }
+
         case 'facebook': {
-          const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
-          window.open(facebookShareUrl, '_blank', 'width=600,height=400');
+          const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoUrl)}`;
+          window.open(shareUrl, '_blank', 'width=600,height=400,noopener,noreferrer');
           break;
         }
+        
         case 'twitter': {
-          const tweetText = 'Check out my video!';
-          const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(window.location.href)}`;
-          window.open(twitterShareUrl, '_blank', 'width=600,height=400');
+          const tweetText = encodeURIComponent('Check out my video!');
+          const shareUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(videoUrl)}`;
+          window.open(shareUrl, '_blank', 'width=600,height=400,noopener,noreferrer');
           break;
         }
+
         case 'linkedin': {
-          const linkedinShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`;
-          window.open(linkedinShareUrl, '_blank', 'width=600,height=400');
+          const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(videoUrl)}`;
+          window.open(shareUrl, '_blank', 'width=600,height=400,noopener,noreferrer');
           break;
         }
+
         default:
           toast({
             variant: "destructive",
-            title: "Share failed",
-            description: "Please select a platform to share to.",
+            title: "Platform not supported",
+            description: "This sharing platform is not yet supported.",
           });
           break;
       }
+
+      toast({
+        title: "Share initiated",
+        description: `Sharing to ${platformConfigs[selectedPlatform].name} has been initiated.`,
+      });
     } catch (error) {
-      console.error('Share error:', error);
+      console.error('Sharing error:', error);
       toast({
         variant: "destructive",
-        title: "Share failed",
-        description: error instanceof Error ? error.message : "There was an error sharing your video. Please try again.",
+        title: "Sharing failed",
+        description: "There was an error sharing your video.",
       });
     } finally {
       setIsSharing(false);
@@ -101,36 +117,43 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
 
   return (
     <div className="space-y-4">
-      <Select
-        value={selectedPlatform}
-        onValueChange={setSelectedPlatform}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Select platform to share" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="youtube">YouTube</SelectItem>
-          <SelectItem value="facebook">Facebook</SelectItem>
-          <SelectItem value="twitter">Twitter</SelectItem>
-          <SelectItem value="linkedin">LinkedIn</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Share to Platform</label>
+        <Select
+          value={selectedPlatform}
+          onValueChange={(value: Platform) => setSelectedPlatform(value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select platform" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(platformConfigs).map(([key, config]) => {
+              const Icon = config.icon;
+              return (
+                <SelectItem key={key} value={key}>
+                  <div className="flex items-center">
+                    <Icon className="w-4 h-4 mr-2" />
+                    {config.name}
+                  </div>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
 
       <Button
         onClick={handleShare}
-        disabled={isSharing || !selectedPlatform}
+        disabled={isSharing || !recordedBlob}
         className="w-full"
         variant="outline"
       >
         {isSharing ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Sharing...
-          </>
+          "Sharing..."
         ) : (
           <>
             <Share2 className="w-4 h-4 mr-2" />
-            Share Recording
+            Share to {platformConfigs[selectedPlatform].name}
           </>
         )}
       </Button>
