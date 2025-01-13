@@ -22,6 +22,12 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
   const [password, setPassword] = useState('');
   const [filename, setFilename] = useState(`recording-${Date.now()}`);
 
+  const validatePassword = (pwd: string) => {
+    if (pwd.length < 6) {
+      throw new Error('Password must be at least 6 characters long');
+    }
+  };
+
   const handleExport = async () => {
     if (!recordedBlob || recordedBlob.size === 0) {
       toast({
@@ -32,75 +38,66 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
       return;
     }
 
-    if (isPasswordProtected && !password) {
-      toast({
-        variant: "destructive",
-        title: "Password required",
-        description: "Please enter a password to protect your recording",
-      });
-      return;
+    if (isPasswordProtected) {
+      try {
+        validatePassword(password);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Invalid password",
+          description: error instanceof Error ? error.message : "Please enter a valid password",
+        });
+        return;
+      }
     }
 
     setIsExporting(true);
     setProgress(0);
     
     try {
-      await simulateConversion();
+      // Simulate processing progress
+      for (let i = 0; i <= 100; i += 10) {
+        setProgress(i);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
       
       if (isPasswordProtected) {
-        try {
-          // Create a copy of the blob to ensure it's valid
-          const blobCopy = new Blob([await recordedBlob.arrayBuffer()], { type: recordedBlob.type });
-          
-          if (blobCopy.size === 0) {
-            throw new Error('Invalid blob data');
-          }
-
-          const key = await generateEncryptionKey(password);
-          const { encryptedData, iv } = await encryptBlob(blobCopy, key);
-          
-          // Ensure the encrypted data is valid
-          if (!encryptedData || encryptedData.byteLength === 0) {
-            throw new Error('Encryption failed - invalid data');
-          }
-          
-          await saveEncryptedRecording(encryptedData, iv, filename);
-          
-          toast({
-            title: "Recording encrypted and saved",
-            description: "Your recording has been securely stored with password protection",
-          });
-        } catch (error) {
-          console.error('Encryption error:', error);
-          throw new Error('Failed to encrypt and save recording');
-        }
-      } else {
-        // Create a copy of the blob to ensure it's valid
+        // Create a copy of the blob
         const blobCopy = new Blob([await recordedBlob.arrayBuffer()], { type: recordedBlob.type });
         
         if (blobCopy.size === 0) {
           throw new Error('Invalid blob data');
         }
 
-        const url = URL.createObjectURL(blobCopy);
+        const key = await generateEncryptionKey(password);
+        const { encryptedData, iv } = await encryptBlob(blobCopy, key);
+        
+        if (!encryptedData || encryptedData.byteLength === 0) {
+          throw new Error('Encryption failed - invalid data');
+        }
+        
+        await saveEncryptedRecording(encryptedData, iv, filename);
+        
+        toast({
+          title: "Recording encrypted and saved",
+          description: "Your recording has been securely stored with password protection",
+        });
+      } else {
+        const url = URL.createObjectURL(recordedBlob);
         const a = document.createElement('a');
         document.body.appendChild(a);
         a.style.display = 'none';
         a.href = url;
         a.download = `${filename}.${selectedFormat}`;
         
-        try {
-          await a.click();
-          URL.revokeObjectURL(url);
-          document.body.removeChild(a);
+        await a.click();
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
 
-          toast({
-            title: "Export successful",
-            description: `Your recording has been exported as ${selectedFormat.toUpperCase()}`,
-          });
-        } catch (error) {
-          throw new Error('Failed to trigger download');
-        }
+        toast({
+          title: "Export successful",
+          description: `Your recording has been exported as ${selectedFormat.toUpperCase()}`,
+        });
       }
     } catch (error) {
       console.error('Export error:', error);
@@ -112,13 +109,6 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
     } finally {
       setIsExporting(false);
       setProgress(0);
-    }
-  };
-
-  const simulateConversion = async () => {
-    for (let i = 0; i <= 100; i += 10) {
-      setProgress(i);
-      await new Promise(resolve => setTimeout(resolve, 200));
     }
   };
 
@@ -140,7 +130,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
         <Select
           value={selectedFormat}
           onValueChange={(value: ExportFormat) => setSelectedFormat(value)}
-          disabled={isExporting}
+          disabled={isExporting || isPasswordProtected}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select export format" />
@@ -155,7 +145,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
       </div>
 
       <div className="flex items-center justify-between space-x-2">
-        <label className="text-sm font-medium">Password Protection & Encrypted Storage</label>
+        <label className="text-sm font-medium">Password Protection</label>
         <Switch
           checked={isPasswordProtected}
           onCheckedChange={setIsPasswordProtected}
@@ -168,7 +158,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
           <label className="text-sm font-medium">Password</label>
           <Input
             type="password"
-            placeholder="Enter password"
+            placeholder="Enter password (min. 6 characters)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={isExporting}
@@ -187,7 +177,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
 
       <Button
         onClick={handleExport}
-        disabled={isExporting}
+        disabled={isExporting || (isPasswordProtected && !password)}
         className="w-full"
         variant="outline"
       >
@@ -198,7 +188,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
           </>
         ) : (
           <>
-            {isPasswordProtected ? <Save className="w-4 h-4 mr-2" /> : <FileDown className="w-4 h-4 mr-2" />}
+            {isPasswordProtected ? <Lock className="w-4 h-4 mr-2" /> : <FileDown className="w-4 h-4 mr-2" />}
             {isPasswordProtected ? 'Save Encrypted Recording' : 'Export Recording'}
           </>
         )}
