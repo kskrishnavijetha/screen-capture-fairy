@@ -3,6 +3,7 @@ import { MainMenu } from "@/components/MainMenu";
 import { HomePage } from "@/components/HomePage";
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { RecordingComponent } from '@/components/RecordingComponent';
+import { AIContentGenerator } from '@/components/AIContentGenerator';
 import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "@/components/ui/use-toast";
@@ -85,7 +86,16 @@ const Index = () => {
         }
         return <RecordingComponent />;
       case 'content':
-        return <div className="text-center">AI Content Generator Coming Soon</div>;
+        if (!isAuthenticated) {
+          toast({
+            title: "Authentication Required",
+            description: "Please sign in to access the AI Content Generator",
+            variant: "destructive"
+          });
+          navigate('/signin');
+          return null;
+        }
+        return <AIContentGenerator />;
       case 'video':
         return <div className="text-center">AI Short Video Generator Coming Soon</div>;
       case 'calendar':
