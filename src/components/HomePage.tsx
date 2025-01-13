@@ -1,5 +1,5 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MENU_ITEMS } from "./MainMenu";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface HomePageProps {
   setSelectedComponent: (id: string) => void;
@@ -7,6 +7,8 @@ interface HomePageProps {
 }
 
 export const HomePage = ({ setSelectedComponent, onSignUp }: HomePageProps) => {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-8">
       <div className="text-center space-y-4">
@@ -16,6 +18,14 @@ export const HomePage = ({ setSelectedComponent, onSignUp }: HomePageProps) => {
         <p className="text-lg text-muted-foreground">
           Easily create and share AI-enhanced video messages that tell the whole story and drive seamless collaboration
         </p>
+        <div className="flex justify-center gap-4 mt-8">
+          <Button size="lg" onClick={() => navigate('/signin')}>
+            Sign In
+          </Button>
+          <Button size="lg" variant="outline" onClick={() => navigate('/signup')}>
+            Sign Up Free
+          </Button>
+        </div>
       </div>
     </div>
   );
