@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, MonitorPlay, Home, User } from 'lucide-react';
+import { Menu, MonitorPlay, Home } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/sheet";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 export const MENU_ITEMS = [
   { id: 'home', label: 'Home', icon: Home },
@@ -23,7 +22,6 @@ interface MainMenuProps {
 
 export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -37,6 +35,14 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
     return () => subscription.unsubscribe();
   }, []);
 
+  const handleRecorderClick = () => {
+    if (isAuthenticated) {
+      window.open('/recorder', '_blank');
+    } else {
+      setSelectedComponent('recorder');
+    }
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -49,27 +55,22 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
           <SheetTitle>Menu</SheetTitle>
         </SheetHeader>
         <div className="mt-4 space-y-2">
-          {MENU_ITEMS.map((item) => (
-            <Button
-              key={item.id}
-              variant={selectedComponent === item.id ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => setSelectedComponent(item.id)}
-            >
-              <item.icon className="mr-2 h-4 w-4" />
-              {item.label}
-            </Button>
-          ))}
-          {isAuthenticated && (
-            <Button
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={() => navigate('/user')}
-            >
-              <User className="mr-2 h-4 w-4" />
-              User Profile
-            </Button>
-          )}
+          <Button
+            variant={selectedComponent === 'home' ? "default" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setSelectedComponent('home')}
+          >
+            <Home className="mr-2 h-4 w-4" />
+            Home
+          </Button>
+          <Button
+            variant={selectedComponent === 'recorder' ? "default" : "ghost"}
+            className="w-full justify-start"
+            onClick={handleRecorderClick}
+          >
+            <MonitorPlay className="mr-2 h-4 w-4" />
+            Screen Recorder
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

@@ -1,16 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { MonitorPlay } from 'lucide-react';
+import { MonitorPlay, LogOut, User } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
 import { RecordingControls } from '@/components/RecordingControls';
 import { DownloadRecording } from '@/components/DownloadRecording';
 import { CameraPreview } from '@/components/CameraPreview';
 import { RecordingManager } from '@/components/RecordingManager';
 import { CountdownTimer } from '@/components/CountdownTimer';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from "@/components/ui/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const RecordingComponent = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -18,6 +27,34 @@ export const RecordingComponent = () => {
   const [captureMode, setCaptureMode] = useState<CaptureMode>('screen');
   const [showCountdown, setShowCountdown] = useState(false);
   const [filename, setFilename] = useState('recording');
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUserEmail = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUserEmail(session.user.email);
+      }
+    };
+    getUserEmail();
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/');
+      toast({
+        title: "Signed out successfully",
+        description: "You have been signed out of your account",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error signing out",
+        description: "There was a problem signing out",
+      });
+    }
+  };
 
   const handleRecordingStart = () => {
     setDuration(0);
@@ -66,6 +103,26 @@ export const RecordingComponent = () => {
 
   return (
     <div className="text-center space-y-6 w-full max-w-md mx-auto">
+      <div className="flex justify-end mb-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon">
+              <User className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem disabled>
+              <User className="mr-2 h-4 w-4" />
+              {userEmail}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <CaptureModeSelector mode={captureMode} onChange={setCaptureMode} />
 
       <RecordingManager
