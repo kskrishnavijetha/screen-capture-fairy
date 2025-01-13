@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Card,
   CardContent,
@@ -36,22 +37,17 @@ export const AIContentGenerator = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('https://gbhbdmfonutgdgoubczs.supabase.co/functions/v1/generate-content', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: {
           prompt,
           contentType,
           tone,
           title
-        }),
+        }
       });
 
-      if (!response.ok) throw new Error('Failed to generate content');
+      if (error) throw error;
 
-      const data = await response.json();
       setGeneratedContent(data.generatedText);
       toast.success("Content generated successfully!");
     } catch (error) {
