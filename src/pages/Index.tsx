@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MainMenu } from "@/components/MainMenu";
 import { HomePage } from "@/components/HomePage";
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { RecordingComponent } from '@/components/RecordingComponent';
 import { supabase } from '../integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { toast } from "@/components/ui/use-toast";
 
 const getThemeClasses = (themeName: string) => {
   switch (themeName) {
@@ -23,12 +25,29 @@ const getThemeClasses = (themeName: string) => {
 const Index = () => {
   const [selectedComponent, setSelectedComponent] = useState('home');
   const [currentTheme, setCurrentTheme] = useState('Default Dark');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleSignUp = async (email: string) => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
-        password: crypto.randomUUID(), // Generate a random password
+        password: crypto.randomUUID(),
         options: {
           emailRedirectTo: window.location.origin
         }
@@ -36,11 +55,17 @@ const Index = () => {
       
       if (error) throw error;
       
-      // Show success message
-      alert('Check your email for the confirmation link');
+      toast({
+        title: "Success",
+        description: "Check your email for the confirmation link"
+      });
     } catch (error) {
       console.error('Error signing up:', error);
-      alert(error.message);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message
+      });
     }
   };
 
@@ -49,6 +74,15 @@ const Index = () => {
       case 'home':
         return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
       case 'recorder':
+        if (!isAuthenticated) {
+          toast({
+            title: "Authentication Required",
+            description: "Please sign in to access the screen recorder",
+            variant: "destructive"
+          });
+          navigate('/signin');
+          return null;
+        }
         return <RecordingComponent />;
       case 'content':
         return <div className="text-center">AI Content Generator Coming Soon</div>;
