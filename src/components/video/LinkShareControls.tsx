@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Link2, Copy, Check, Facebook, Instagram } from 'lucide-react';
+import { Link2, Copy, Check } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 
 interface LinkShareControlsProps {
@@ -10,19 +10,6 @@ interface LinkShareControlsProps {
 export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
   const [isCopied, setIsCopied] = useState(false);
   const [shareableLink, setShareableLink] = useState<string>('');
-
-  const createShareableVideoUrl = async (blob: Blob): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64Data = reader.result as string;
-        const videoData = encodeURIComponent(base64Data);
-        const shareableUrl = `${window.location.origin}/playback?video=${videoData}`;
-        resolve(shareableUrl);
-      };
-      reader.readAsDataURL(blob);
-    });
-  };
 
   const generateShareableLink = async () => {
     if (!recordedBlob) {
@@ -35,13 +22,14 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
     }
 
     try {
-      const shareableUrl = await createShareableVideoUrl(recordedBlob);
-      setShareableLink(shareableUrl);
+      const url = window.URL.createObjectURL(recordedBlob);
+      setShareableLink(url);
       toast({
         title: "Link Generated",
         description: "Shareable link has been generated successfully.",
       });
     } catch (error) {
+      console.error('Error generating link:', error);
       toast({
         variant: "destructive",
         title: "Error generating link",
@@ -69,53 +57,11 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
       });
       setTimeout(() => setIsCopied(false), 2000);
     } catch (error) {
+      console.error('Error copying to clipboard:', error);
       toast({
         variant: "destructive",
         title: "Copy failed",
         description: "Failed to copy link to clipboard.",
-      });
-    }
-  };
-
-  const shareToSocialMedia = async (platform: 'facebook' | 'instagram') => {
-    if (!recordedBlob) {
-      toast({
-        variant: "destructive",
-        title: "No video to share",
-        description: "Please record or process a video first.",
-      });
-      return;
-    }
-
-    try {
-      const shareableUrl = await createShareableVideoUrl(recordedBlob);
-      
-      if (platform === 'facebook') {
-        window.open(
-          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`,
-          '_blank',
-          'width=600,height=400,noopener,noreferrer'
-        );
-      } else if (platform === 'instagram') {
-        try {
-          await navigator.clipboard.writeText(shareableUrl);
-          toast({
-            title: "Instagram Sharing",
-            description: "Copy the link and share it in your Instagram bio or story.",
-          });
-        } catch (error) {
-          toast({
-            variant: "destructive",
-            title: "Copy failed",
-            description: "Failed to copy link to clipboard.",
-          });
-        }
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Share failed",
-        description: "Failed to share the video.",
       });
     }
   };
@@ -133,46 +79,25 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
       </Button>
 
       {shareableLink && (
-        <>
-          <div className="flex items-center space-x-2">
-            <input
-              type="text"
-              value={shareableLink}
-              readOnly
-              className="flex-1 px-3 py-2 border rounded-md text-sm"
-            />
-            <Button
-              onClick={copyToClipboard}
-              variant="outline"
-              size="icon"
-            >
-              {isCopied ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-          
-          <div className="flex space-x-2">
-            <Button
-              onClick={() => shareToSocialMedia('facebook')}
-              variant="outline"
-              className="flex-1"
-            >
-              <Facebook className="w-4 h-4 mr-2" />
-              Share to Facebook
-            </Button>
-            <Button
-              onClick={() => shareToSocialMedia('instagram')}
-              variant="outline"
-              className="flex-1"
-            >
-              <Instagram className="w-4 h-4 mr-2" />
-              Share to Instagram
-            </Button>
-          </div>
-        </>
+        <div className="flex items-center space-x-2">
+          <input
+            type="text"
+            value={shareableLink}
+            readOnly
+            className="flex-1 px-3 py-2 border rounded-md text-sm"
+          />
+          <Button
+            onClick={copyToClipboard}
+            variant="outline"
+            size="icon"
+          >
+            {isCopied ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       )}
     </div>
   );
