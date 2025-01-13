@@ -9,6 +9,7 @@ import VideoPlayback from "./pages/VideoPlayback";
 import VideoEdit from "./pages/VideoEdit";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import UserPage from "./pages/UserPage";
 import { supabase } from './integrations/supabase/client';
 
 const queryClient = new QueryClient();
@@ -51,6 +52,14 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route
+              path="/user"
+              element={
+                <ProtectedRoute>
+                  <UserPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/playback"
               element={

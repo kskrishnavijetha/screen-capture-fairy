@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, MonitorPlay, Home } from 'lucide-react';
+import { Menu, MonitorPlay, Home, User } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -7,6 +7,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 export const MENU_ITEMS = [
   { id: 'home', label: 'Home', icon: Home },
@@ -19,6 +22,21 @@ interface MainMenuProps {
 }
 
 export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuProps) => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -42,6 +60,16 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
               {item.label}
             </Button>
           ))}
+          {isAuthenticated && (
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => navigate('/user')}
+            >
+              <User className="mr-2 h-4 w-4" />
+              User Profile
+            </Button>
+          )}
         </div>
       </SheetContent>
     </Sheet>
