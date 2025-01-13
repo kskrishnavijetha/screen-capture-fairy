@@ -22,7 +22,8 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
     }
 
     try {
-      const url = window.URL.createObjectURL(recordedBlob);
+      // Create a temporary URL for the video blob
+      const url = URL.createObjectURL(recordedBlob);
       setShareableLink(url);
       toast({
         title: "Link Generated",
