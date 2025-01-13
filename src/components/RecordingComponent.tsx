@@ -29,15 +29,7 @@ export const RecordingComponent = () => {
   const [filename, setFilename] = useState('recording');
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  const [isMobile, setIsMobile] = useState(false);
-
   useEffect(() => {
-    const checkMobile = () => {
-      const userAgent = navigator.userAgent || navigator.vendor;
-      return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
-    };
-    setIsMobile(checkMobile());
-
     const getUserEmail = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
@@ -110,21 +102,20 @@ export const RecordingComponent = () => {
   }, [isRecording, isPaused]);
 
   return (
-    <div className={`text-center space-y-6 w-full ${isMobile ? 'px-4' : 'max-w-md mx-auto'}`}>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-semibold">Screen Recorder</h1>
+    <div className="text-center space-y-6 w-full max-w-md mx-auto">
+      <div className="flex justify-end mb-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon">
               <User className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem disabled className="flex items-center">
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem disabled>
               <User className="mr-2 h-4 w-4" />
-              <span className="truncate">{userEmail}</span>
+              {userEmail}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSignOut} className="text-red-500">
+            <DropdownMenuItem onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
             </DropdownMenuItem>
@@ -132,66 +123,61 @@ export const RecordingComponent = () => {
         </DropdownMenu>
       </div>
 
-      <div className={`space-y-6 ${isMobile ? 'mt-4' : ''}`}>
-        <CaptureModeSelector mode={captureMode} onChange={setCaptureMode} />
+      <CaptureModeSelector mode={captureMode} onChange={setCaptureMode} />
 
-        <RecordingManager
-          captureMode={captureMode}
-          frameRate={30}
-          resolution={{ width: 1920, height: 1080, label: "1080p" }}
-          onRecordingStart={handleRecordingStart}
-          onRecordingStop={handleRecordingStop}
-          isRecording={isRecording}
-          setIsRecording={setIsRecording}
-          setIsPaused={setIsPaused}
-          isPaused={isPaused}
+      <RecordingManager
+        captureMode={captureMode}
+        frameRate={30}
+        resolution={{ width: 1920, height: 1080, label: "1080p" }}
+        onRecordingStart={handleRecordingStart}
+        onRecordingStop={handleRecordingStop}
+        isRecording={isRecording}
+        setIsRecording={setIsRecording}
+        setIsPaused={setIsPaused}
+        isPaused={isPaused}
+      />
+
+      {showCountdown && (
+        <CountdownTimer
+          seconds={5}
+          onComplete={handleCountdownComplete}
+          onCancel={() => setShowCountdown(false)}
         />
+      )}
 
-        {showCountdown && (
-          <CountdownTimer
-            seconds={5}
-            onComplete={handleCountdownComplete}
-            onCancel={() => setShowCountdown(false)}
-          />
-        )}
+      {isRecording && (
+        <RecordingControls
+          isPaused={isPaused}
+          onPause={handlePause}
+          onResume={handleResume}
+          onStop={() => {
+            const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
+            if (stopButton) stopButton.click();
+          }}
+          duration={duration}
+          onMaxDurationReached={handleMaxDurationReached}
+        />
+      )}
 
-        {isRecording && (
-          <RecordingControls
-            isPaused={isPaused}
-            onPause={handlePause}
-            onResume={handleResume}
-            onStop={() => {
-              const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
-              if (stopButton) stopButton.click();
-            }}
-            duration={duration}
-            onMaxDurationReached={handleMaxDurationReached}
-          />
-        )}
+      <CameraPreview isRecording={isRecording} captureMode={captureMode} />
 
-        <CameraPreview isRecording={isRecording} captureMode={captureMode} />
+      {!isRecording && !showCountdown && (
+        <Button 
+          onClick={startRecordingWithCountdown}
+          className="w-full bg-primary hover:bg-primary/90"
+        >
+          <MonitorPlay className="mr-2 h-5 w-5" />
+          Start Recording
+        </Button>
+      )}
 
-        {!isRecording && !showCountdown && (
-          <Button 
-            onClick={startRecordingWithCountdown}
-            className="w-full bg-primary hover:bg-primary/90"
-            disabled={isMobile && captureMode === 'screen'}
-          >
-            <MonitorPlay className="mr-2 h-5 w-5" />
-            {isMobile && captureMode === 'screen' 
-              ? 'Screen recording not available on mobile'
-              : 'Start Recording'}
-          </Button>
-        )}
-
-        {recordedBlob && !isRecording && (
-          <DownloadRecording
-            recordedBlob={recordedBlob}
-            filename={filename}
-            onFilenameChange={setFilename}
-          />
-        )}
-      </div>
+      {recordedBlob && !isRecording && (
+        <DownloadRecording
+          recordedBlob={recordedBlob}
+          filename={filename}
+          onFilenameChange={setFilename}
+        />
+      )}
     </div>
   );
 };
