@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,6 +29,7 @@ export const AIContentGenerator = () => {
   const [loading, setLoading] = useState(false);
   const [generatedContent, setGeneratedContent] = useState('');
   const [title, setTitle] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -36,6 +38,7 @@ export const AIContentGenerator = () => {
     }
 
     setLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase.functions.invoke('generate-content', {
         body: {
@@ -48,11 +51,17 @@ export const AIContentGenerator = () => {
 
       if (error) throw error;
 
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
       setGeneratedContent(data.generatedText);
       toast.success("Content generated successfully!");
     } catch (error) {
       console.error('Error generating content:', error);
-      toast.error("Failed to generate content. Please try again.");
+      const errorMessage = error.message || "Failed to generate content. Please try again.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -68,6 +77,12 @@ export const AIContentGenerator = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="title">Content Title</Label>
             <Input

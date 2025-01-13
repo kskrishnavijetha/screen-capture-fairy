@@ -17,6 +17,11 @@ serve(async (req) => {
   try {
     const { prompt, contentType, tone, title } = await req.json();
 
+    // Validate OpenAI API key
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key is not configured');
+    }
+
     const systemPrompt = `You are an expert content creator. Generate ${contentType} content with a ${tone} tone.
     If a title is provided, use it as the main topic. Make the content engaging and well-structured.
     For blog posts, include an introduction, main points, and conclusion.
@@ -33,18 +38,26 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo', // Using a more cost-effective model
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Title: ${title}\nTopic: ${prompt}\nGenerate content in ${tone} tone for ${contentType} format.` }
         ],
+        max_tokens: 1000, // Limiting token usage
+        temperature: 0.7,
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      
+      // Check for specific error types
+      if (errorData.error?.type === 'insufficient_quota') {
+        throw new Error('OpenAI API quota exceeded. Please check your billing details.');
+      }
+      
+      throw new Error(errorData.error?.message || 'Failed to generate content');
     }
 
     const data = await response.json();
@@ -57,7 +70,13 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in generate-content function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    
+    // Return a more user-friendly error message
+    const errorMessage = error.message.includes('OpenAI API') 
+      ? error.message 
+      : 'Failed to generate content. Please try again later.';
+    
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
