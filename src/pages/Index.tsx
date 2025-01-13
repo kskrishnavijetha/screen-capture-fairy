@@ -1,43 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { MainMenu } from "@/components/MainMenu";
-import { HomePage } from "@/components/HomePage";
-import { ThemeSelector } from '@/components/ThemeSelector';
-import { RecordingComponent } from '@/components/RecordingComponent';
-import { AIContentGenerator } from '@/components/AIContentGenerator';
-import { supabase } from '../integrations/supabase/client';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from "@/components/ui/use-toast";
-
-const getThemeClasses = (themeName: string) => {
-  switch (themeName) {
-    case 'Ocean':
-      return 'bg-[#222222] accent-[#0EA5E9]';
-    case 'Forest':
-      return 'bg-[#221F26] accent-[#22C55E]';
-    case 'Sunset':
-      return 'bg-[#403E43] accent-[#F97316]';
-    case 'Berry':
-      return 'bg-[#1A1F2C] accent-[#D946EF]';
-    default:
-      return 'bg-[#1A1F2C] accent-[#9b87f5]';
-  }
-};
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Index = () => {
-  const [selectedComponent, setSelectedComponent] = useState('home');
-  const [currentTheme, setCurrentTheme] = useState('Default Dark');
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // Check if device is mobile
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor;
+      return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+    };
+    setIsMobile(checkMobile());
+
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
       if (session) {
-        // Automatically redirect to recorder if user is authenticated
-        window.open('/recorder', '_blank');
-        // Close the current window/tab
-        window.close();
+        // Handle redirection based on platform
+        if (isMobile) {
+          // On mobile, just navigate to the recorder page
+          navigate('/recorder');
+        } else {
+          try {
+            // Try to open in new tab
+            const newWindow = window.open('/recorder', '_blank');
+            if (newWindow) {
+              window.close();
+            } else {
+              // If popup blocked, fallback to regular navigation
+              navigate('/recorder');
+            }
+          } catch (error) {
+            // Fallback for any errors
+            navigate('/recorder');
+          }
+        }
       }
     };
 
@@ -46,98 +52,96 @@ const Index = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
       if (session) {
-        // Automatically redirect to recorder when user signs in
-        window.open('/recorder', '_blank');
-        // Close the current window/tab
-        window.close();
+        if (isMobile) {
+          navigate('/recorder');
+        } else {
+          try {
+            const newWindow = window.open('/recorder', '_blank');
+            if (newWindow) {
+              window.close();
+            } else {
+              navigate('/recorder');
+            }
+          } catch (error) {
+            navigate('/recorder');
+          }
+        }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, isMobile]);
 
   const handleSignUp = async (email: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signInWithOtp({
         email,
-        password: crypto.randomUUID(),
         options: {
-          emailRedirectTo: window.location.origin
-        }
+          emailRedirectTo: `${window.location.origin}/recorder`,
+        },
       });
-      
+
       if (error) throw error;
-      
+
       toast({
-        title: "Success",
-        description: "Check your email for the confirmation link"
+        title: "Check your email",
+        description: "We sent you a login link. Be sure to check your spam folder.",
       });
     } catch (error) {
-      console.error('Error signing up:', error);
+      console.error('Error:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message
+        description: "An error occurred while sending the login link.",
       });
     }
   };
 
-  const renderComponent = () => {
-    switch (selectedComponent) {
-      case 'home':
-        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
-      case 'recorder':
-        if (!isAuthenticated) {
-          toast({
-            title: "Authentication Required",
-            description: "Please sign in to access the screen recorder",
-            variant: "destructive"
-          });
-          navigate('/signin');
-          return null;
-        }
-        return <RecordingComponent />;
-      case 'content':
-        if (!isAuthenticated) {
-          toast({
-            title: "Authentication Required",
-            description: "Please sign in to access the AI Content Generator",
-            variant: "destructive"
-          });
-          navigate('/signin');
-          return null;
-        }
-        return <AIContentGenerator />;
-      case 'video':
-        return <div className="text-center">AI Short Video Generator Coming Soon</div>;
-      case 'calendar':
-        return <div className="text-center">Content Calendar Coming Soon</div>;
-      case 'analytics':
-        return <div className="text-center">Social Media Analytics Coming Soon</div>;
-      case 'monetization':
-        return <div className="text-center">Monetization Hub Coming Soon</div>;
-      default:
-        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSignUp(email);
   };
 
+  if (isAuthenticated === null) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className={`min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
-      <div className="absolute top-4 left-4">
-        <MainMenu
-          selectedComponent={selectedComponent}
-          setSelectedComponent={setSelectedComponent}
-        />
-      </div>
-      
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="text-center space-y-6 w-full max-w-7xl">
-          <div className="flex flex-col items-center mb-8 space-y-4">
-            <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
-          </div>
-          {renderComponent()}
-        </div>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center">
+            ScreenCraft Fairy ✨
+          </CardTitle>
+          <CardDescription className="text-center">
+            Capture your screen with magic
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full"
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full">
+              Get Magic Link
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="flex justify-center text-sm text-muted-foreground">
+          No account needed - just enter your email
+        </CardFooter>
+      </Card>
     </div>
   );
 };
