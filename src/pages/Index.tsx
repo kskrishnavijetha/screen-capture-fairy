@@ -33,16 +33,28 @@ const Index = () => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
+      if (session) {
+        // Automatically redirect to recorder if user is authenticated
+        window.open('/recorder', '_blank');
+        // Close the current window/tab
+        window.close();
+      }
     };
 
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      if (session) {
+        // Automatically redirect to recorder when user signs in
+        window.open('/recorder', '_blank');
+        // Close the current window/tab
+        window.close();
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const handleSignUp = async (email: string) => {
     try {
