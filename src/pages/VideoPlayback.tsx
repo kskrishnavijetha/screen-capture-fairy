@@ -156,7 +156,7 @@ const VideoPlayback = () => {
   }, [selectedRecording, recordedBlob]);
 
   const handleBack = () => {
-    navigate('/');
+    navigate('/recorder'); // Navigate back to the recorder page instead of the main page
   };
 
   const handleDownload = (blob: Blob = recordedBlob!) => {
