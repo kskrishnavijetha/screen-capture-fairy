@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Share2 } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
-import { LinkShareControls } from './LinkShareControls';
 import {
   Select,
   SelectContent,
@@ -32,11 +31,9 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
 
     setIsSharing(true);
     try {
-      // Create a temporary URL for the video blob
-      const videoUrl = URL.createObjectURL(recordedBlob);
-
       // Create a File from the Blob for sharing
       const videoFile = new File([recordedBlob], 'recorded-video.webm', { type: recordedBlob.type });
+      const videoUrl = URL.createObjectURL(recordedBlob);
 
       switch (selectedPlatform) {
         case 'email': {
@@ -48,36 +45,27 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
             });
           } else {
             const emailSubject = encodeURIComponent('Check out my video');
-            const emailBody = encodeURIComponent('I recorded this video and wanted to share it with you.');
+            const emailBody = encodeURIComponent(`I recorded this video and wanted to share it with you.\n\nView the video here: ${videoUrl}`);
             window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-            // Attach the video file to the email if supported
-            if (videoFile) {
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(videoFile);
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.files = dataTransfer.files;
-              input.click();
-            }
           }
           break;
         }
 
         case 'facebook': {
-          const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
+          const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoUrl)}`;
           window.open(shareUrl, '_blank', 'width=600,height=400,noopener,noreferrer');
           break;
         }
         
         case 'twitter': {
           const tweetText = encodeURIComponent('Check out my video!');
-          const shareUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(window.location.href)}`;
+          const shareUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(videoUrl)}`;
           window.open(shareUrl, '_blank', 'width=600,height=400,noopener,noreferrer');
           break;
         }
 
         case 'linkedin': {
-          const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`;
+          const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(videoUrl)}`;
           window.open(shareUrl, '_blank', 'width=600,height=400,noopener,noreferrer');
           break;
         }
@@ -149,8 +137,6 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
           </>
         )}
       </Button>
-
-      <LinkShareControls recordedBlob={recordedBlob} />
     </div>
   );
 };
