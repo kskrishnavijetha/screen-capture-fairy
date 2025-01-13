@@ -1,7 +1,7 @@
-import { Youtube, Video, Twitter, Facebook, Instagram, Linkedin, Mail } from 'lucide-react';
+import { Youtube, Twitter, Facebook, Linkedin, Mail } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
-export type Platform = 'youtube' | 'vimeo' | 'twitter' | 'facebook' | 'instagram' | 'linkedin' | 'email' | 'gmail';
+export type Platform = 'youtube' | 'twitter' | 'facebook' | 'linkedin' | 'email';
 
 export interface PlatformConfig {
   name: string;
@@ -19,16 +19,6 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
     name: 'Email',
     icon: Mail,
     description: 'Share your video via email',
-    authUrl: '',
-    scope: '',
-    secretKeyName: '',
-    redirectUri: '',
-    developerConsoleUrl: ''
-  },
-  gmail: {
-    name: 'Gmail',
-    icon: Mail,
-    description: 'Share your video via Gmail',
     authUrl: '',
     scope: '',
     secretKeyName: '',
@@ -55,16 +45,6 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
     redirectUri: `${window.location.origin}/auth/facebook/callback`,
     developerConsoleUrl: 'https://developers.facebook.com/'
   },
-  instagram: {
-    name: 'Instagram',
-    icon: Instagram,
-    description: 'Share your video on Instagram',
-    authUrl: 'https://api.instagram.com/oauth/authorize',
-    scope: 'basic',
-    secretKeyName: 'INSTAGRAM_API_KEY',
-    redirectUri: `${window.location.origin}/auth/instagram/callback`,
-    developerConsoleUrl: 'https://developers.facebook.com/'
-  },
   linkedin: {
     name: 'LinkedIn',
     icon: Linkedin,
@@ -74,16 +54,6 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
     secretKeyName: 'LINKEDIN_API_KEY',
     redirectUri: `${window.location.origin}/auth/linkedin/callback`,
     developerConsoleUrl: 'https://www.linkedin.com/developers/'
-  },
-  vimeo: {
-    name: 'Vimeo',
-    icon: Video,
-    description: 'Upload your video to Vimeo',
-    authUrl: 'https://api.vimeo.com/oauth/authorize',
-    scope: 'upload',
-    secretKeyName: 'VIMEO_API_KEY',
-    redirectUri: `${window.location.origin}/auth/vimeo/callback`,
-    developerConsoleUrl: 'https://developer.vimeo.com/'
   },
   twitter: {
     name: 'Twitter',
