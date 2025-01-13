@@ -36,6 +36,26 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
       const videoUrl = URL.createObjectURL(recordedBlob);
 
       switch (selectedPlatform) {
+        case 'youtube': {
+          // Check if the browser supports the Web Share API for files
+          if (navigator.share && navigator.canShare({ files: [videoFile] })) {
+            await navigator.share({
+              files: [videoFile],
+              title: 'My Recorded Video',
+              text: 'Check out this video I recorded!'
+            });
+          } else {
+            // Fallback to YouTube Studio upload page
+            const youtubeUploadUrl = 'https://studio.youtube.com/channel/upload';
+            window.open(youtubeUploadUrl, '_blank', 'noopener,noreferrer');
+            toast({
+              title: "YouTube Upload",
+              description: "Please upload your video through YouTube Studio. The video file has been prepared for upload.",
+            });
+          }
+          break;
+        }
+
         case 'email': {
           if (navigator.share) {
             await navigator.share({
