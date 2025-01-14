@@ -72,7 +72,7 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
             Screen Recorder
           </Button>
           <a 
-            href="https://twitter.com/softwave" 
+            href="https://x.com/softwave1116" 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors"
