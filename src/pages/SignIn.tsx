@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { AuthError } from "@supabase/supabase-js";
+import { AuthError } from '@supabase/supabase-js';
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -17,10 +17,10 @@ const SignIn = () => {
 
   const getErrorMessage = (error: AuthError) => {
     switch (error.message) {
-      case "Email not confirmed":
-        return "Please check your email and click the confirmation link before signing in.";
       case "Invalid login credentials":
-        return "Invalid email or password. Please try again.";
+        return "The email or password you entered is incorrect. Please try again.";
+      case "Email not confirmed":
+        return "Please check your email and confirm your account before signing in.";
       default:
         return error.message;
     }
@@ -31,10 +31,12 @@ const SignIn = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: email.trim(),
+        password: password,
       });
+      
       if (error) throw error;
+      
       navigate('/');
     } catch (error) {
       toast({
