@@ -7,6 +7,7 @@ import { AIContentGenerator } from '@/components/AIContentGenerator';
 import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "@/components/ui/use-toast";
+import { Link2 } from 'lucide-react';
 
 const getThemeClasses = (themeName: string) => {
   switch (themeName) {
@@ -130,6 +131,15 @@ const Index = () => {
           className="w-8 h-8"
         />
         <span className="text-lg font-semibold">Softwave</span>
+        <a 
+          href="https://twitter.com/softwave" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-sm text-gray-300 hover:text-white transition-colors"
+        >
+          <Link2 className="h-4 w-4" />
+          <span>Connect on X</span>
+        </a>
       </div>
       
       <div className="flex flex-col items-center justify-center min-h-screen">
