@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, MonitorPlay, Home } from 'lucide-react';
+import { Menu, MonitorPlay, Home, Link2 } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -71,6 +71,15 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
             <MonitorPlay className="mr-2 h-4 w-4" />
             Screen Recorder
           </Button>
+          <a 
+            href="https://twitter.com/softwave" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors"
+          >
+            <Link2 className="h-4 w-4" />
+            <span>Connect on X</span>
+          </a>
         </div>
       </SheetContent>
     </Sheet>
