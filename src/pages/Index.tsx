@@ -119,21 +119,21 @@ const Index = () => {
 
   return (
     <div className={`min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
-      <div className="absolute top-4 left-4">
+      <div className="absolute top-4 left-4 flex items-center gap-4">
         <MainMenu
           selectedComponent={selectedComponent}
           setSelectedComponent={setSelectedComponent}
+        />
+        <img 
+          src="/lovable-uploads/d61c7c4e-e7ad-4177-bfd9-c819f5de7986.png"
+          alt="ScreenCraft Logo"
+          className="w-8 h-8"
         />
       </div>
       
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="text-center space-y-6 w-full max-w-7xl">
           <div className="flex flex-col items-center mb-8 space-y-4">
-            <img 
-              src="/lovable-uploads/d61c7c4e-e7ad-4177-bfd9-c819f5de7986.png"
-              alt="ScreenCraft Logo"
-              className="w-32 h-32 mb-6"
-            />
             <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
           </div>
           {renderComponent()}
