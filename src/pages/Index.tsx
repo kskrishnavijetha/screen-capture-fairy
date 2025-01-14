@@ -129,6 +129,7 @@ const Index = () => {
           alt="ScreenCraft Logo"
           className="w-8 h-8"
         />
+        <span className="text-lg font-semibold">Softwave</span>
       </div>
       
       <div className="flex flex-col items-center justify-center min-h-screen">
