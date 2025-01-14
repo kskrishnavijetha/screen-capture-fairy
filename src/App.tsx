@@ -12,30 +12,40 @@ import SignUp from "./pages/SignUp";
 import UserPage from "./pages/UserPage";
 import { RecordingComponent } from "@/components/RecordingComponent";
 import { supabase } from './integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
 
 const queryClient = new QueryClient();
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
+  const [session, setSession] = React.useState<Session | null>(null);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  if (isAuthenticated === null) {
+  // Show loading state
+  if (loading) {
     return <div>Loading...</div>;
   }
 
-  if (!isAuthenticated) {
+  // Redirect if not authenticated
+  if (!session) {
     return <Navigate to="/signin" replace />;
   }
 
