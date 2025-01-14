@@ -34,9 +34,7 @@ const Index = () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
       if (session) {
-        // Automatically redirect to recorder if user is authenticated
         window.open('/recorder', '_blank');
-        // Close the current window/tab
         window.close();
       }
     };
@@ -46,9 +44,7 @@ const Index = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
       if (session) {
-        // Automatically redirect to recorder when user signs in
         window.open('/recorder', '_blank');
-        // Close the current window/tab
         window.close();
       }
     });
@@ -133,6 +129,11 @@ const Index = () => {
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="text-center space-y-6 w-full max-w-7xl">
           <div className="flex flex-col items-center mb-8 space-y-4">
+            <img 
+              src="/lovable-uploads/d61c7c4e-e7ad-4177-bfd9-c819f5de7986.png"
+              alt="ScreenCraft Logo"
+              className="w-32 h-32 mb-6"
+            />
             <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
           </div>
           {renderComponent()}
