@@ -26,7 +26,9 @@ export const RecordingControls = ({
   const takeScreenshot = async () => {
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ 
-        video: { mediaSource: "screen" } 
+        video: { 
+          displaySurface: 'monitor'
+        } 
       });
       
       const track = stream.getVideoTracks()[0];
