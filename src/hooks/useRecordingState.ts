@@ -11,28 +11,6 @@ export const useRecordingState = () => {
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
-  const isMobileDevice = () => {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  };
-
-  const getMimeType = () => {
-    const types = [
-      'video/webm;codecs=vp8,opus',
-      'video/webm',
-      'video/mp4',
-      'video/x-matroska;codecs=avc1',
-      'video/webm;codecs=h264',
-    ];
-
-    for (const type of types) {
-      if (MediaRecorder.isTypeSupported(type)) {
-        return type;
-      }
-    }
-    
-    return 'video/webm'; // Fallback
-  };
-
   const startRecording = useCallback(async (
     captureMode: CaptureMode,
     frameRate: number,
@@ -62,21 +40,15 @@ export const useRecordingState = () => {
       chunksRef.current = [];
 
       const options = {
-        mimeType: getMimeType(),
-        videoBitsPerSecond: isMobileDevice() ? 1500000 : 2500000 // Lower bitrate for mobile
+        mimeType: 'video/webm;codecs=vp8,opus',
+        videoBitsPerSecond: 2500000
       };
 
       try {
         mediaRecorderRef.current = new MediaRecorder(stream, options);
       } catch (e) {
         console.error('MediaRecorder error:', e);
-        // Try fallback options if initial creation fails
-        try {
-          mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'video/webm' });
-        } catch (fallbackError) {
-          console.error('Fallback MediaRecorder error:', fallbackError);
-          throw new Error('Your browser does not support screen recording. Please try using a different browser.');
-        }
+        throw new Error('Failed to create MediaRecorder. Please try a different browser.');
       }
 
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -86,8 +58,7 @@ export const useRecordingState = () => {
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const mimeType = getMimeType();
-        const blob = new Blob(chunksRef.current, { type: mimeType });
+        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
         chunksRef.current = [];
         onRecordingStop(blob);
         if (streamRef.current) {
@@ -103,9 +74,7 @@ export const useRecordingState = () => {
 
       toast({
         title: "Recording started",
-        description: isMobileDevice() 
-          ? "Recording started. Note: Some mobile devices may have limited screen recording capabilities."
-          : "Your recording has begun"
+        description: "Your recording has begun"
       });
     } catch (error) {
       console.error('Recording error:', error);
