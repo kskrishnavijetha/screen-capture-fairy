@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '../integrations/supabase/client';
+import { ArrowLeft } from 'lucide-react';
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -46,7 +47,17 @@ const SignUp = () => {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Sign Up</CardTitle>
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/')}
+              className="mr-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <CardTitle className="text-2xl">Sign Up</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp} className="space-y-4">
