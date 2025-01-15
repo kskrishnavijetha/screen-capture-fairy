@@ -5,13 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { AuthError } from '@supabase/supabase-js';
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetRequestTime, setResetRequestTime] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -59,20 +60,46 @@ const SignIn = () => {
       return;
     }
 
+    // Check if enough time has passed since the last request (60 seconds)
+    const now = Date.now();
+    const timeSinceLastRequest = now - resetRequestTime;
+    if (timeSinceLastRequest < 60000) {
+      const remainingSeconds = Math.ceil((60000 - timeSinceLastRequest) / 1000);
+      toast({
+        variant: "destructive",
+        title: "Please wait",
+        description: `You can request another reset email in ${remainingSeconds} seconds.`
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
       if (error) throw error;
+      
+      // Update the last request time
+      setResetRequestTime(now);
       
       toast({
         title: "Password reset email sent",
         description: "Check your email for the password reset link"
       });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: (error as AuthError).message
-      });
+      const err = error as AuthError;
+      // Handle rate limit error specifically
+      if (err.message.includes('rate_limit')) {
+        toast({
+          variant: "destructive",
+          title: "Too many requests",
+          description: "Please wait a minute before requesting another password reset."
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: err.message
+        });
+      }
     }
   };
 
