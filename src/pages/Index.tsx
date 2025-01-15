@@ -34,31 +34,8 @@ const Index = () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
       if (session) {
-        // Open recorder in a new window with user interaction
-        const openRecorder = () => {
-          const recorderWindow = window.open('/recorder', '_blank');
-          if (recorderWindow) {
-            recorderWindow.focus();
-          } else {
-            toast({
-              title: "Popup Blocked",
-              description: "Please allow popups to open the recorder",
-              variant: "destructive"
-            });
-          }
-        };
-        
-        // Create a button to open the recorder
-        const button = document.createElement('button');
-        button.innerText = 'Open Recorder';
-        button.className = 'bg-primary text-white px-4 py-2 rounded hover:bg-primary/90';
-        button.onclick = openRecorder;
-        
-        // Add button to the page
-        const container = document.querySelector('.recorder-button-container');
-        if (container) {
-          container.appendChild(button);
-        }
+        window.open('/recorder', '_blank');
+        window.close();
       }
     };
 
@@ -66,6 +43,10 @@ const Index = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      if (session) {
+        window.open('/recorder', '_blank');
+        window.close();
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -156,7 +137,6 @@ const Index = () => {
           <div className="flex flex-col items-center mb-8 space-y-4">
             <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
           </div>
-          <div className="recorder-button-container mb-4"></div>
           {renderComponent()}
         </div>
       </div>
