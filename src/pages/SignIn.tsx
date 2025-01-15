@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { AuthError } from '@supabase/supabase-js';
+import { AuthError, AuthApiError } from '@supabase/supabase-js';
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -17,14 +17,19 @@ const SignIn = () => {
   const { toast } = useToast();
 
   const getErrorMessage = (error: AuthError) => {
-    switch (error.message) {
-      case "Invalid login credentials":
-        return "The email or password you entered is incorrect. Please try again.";
-      case "Email not confirmed":
-        return "Please check your email and confirm your account before signing in.";
-      default:
-        return error.message;
+    if (error instanceof AuthApiError) {
+      switch (error.message) {
+        case "Invalid login credentials":
+          return "The email or password you entered is incorrect. Please try again.";
+        case "Email not confirmed":
+          return "Please verify your email address before signing in.";
+        case "Invalid email or password":
+          return "Please check your email and password and try again.";
+        default:
+          return error.message;
+      }
     }
+    return error.message;
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -60,7 +65,6 @@ const SignIn = () => {
       return;
     }
 
-    // Check if enough time has passed since the last request (60 seconds)
     const now = Date.now();
     const timeSinceLastRequest = now - resetRequestTime;
     if (timeSinceLastRequest < 60000) {
@@ -77,7 +81,6 @@ const SignIn = () => {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
       if (error) throw error;
       
-      // Update the last request time
       setResetRequestTime(now);
       
       toast({
@@ -86,7 +89,6 @@ const SignIn = () => {
       });
     } catch (error) {
       const err = error as AuthError;
-      // Handle rate limit error specifically
       if (err.message.includes('rate_limit')) {
         toast({
           variant: "destructive",
