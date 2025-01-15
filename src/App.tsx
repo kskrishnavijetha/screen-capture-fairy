@@ -10,6 +10,7 @@ import VideoEdit from "./pages/VideoEdit";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import UserPage from "./pages/UserPage";
+import NotFound from "./pages/NotFound";
 import { RecordingComponent } from "@/components/RecordingComponent";
 import { supabase } from './integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
@@ -67,6 +68,7 @@ const App = () => (
             <Route path="/recorder" element={<ProtectedRoute><RecordingComponent /></ProtectedRoute>} />
             <Route path="/playback" element={<ProtectedRoute><VideoPlayback /></ProtectedRoute>} />
             <Route path="/edit" element={<ProtectedRoute><VideoEdit /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
