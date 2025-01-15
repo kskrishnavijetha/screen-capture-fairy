@@ -56,10 +56,15 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
     
     try {
       // Simulate processing progress
-      for (let i = 0; i <= 100; i += 10) {
-        setProgress(i);
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 10;
+        });
+      }, 200);
       
       if (isPasswordProtected) {
         // Create a copy of the blob
@@ -78,6 +83,9 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
         
         await saveEncryptedRecording(encryptedData, iv, filename);
         
+        clearInterval(progressInterval);
+        setProgress(100);
+        
         toast({
           title: "Recording encrypted and saved",
           description: "Your recording has been securely stored with password protection",
@@ -93,6 +101,9 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
         await a.click();
         URL.revokeObjectURL(url);
         document.body.removeChild(a);
+
+        clearInterval(progressInterval);
+        setProgress(100);
 
         toast({
           title: "Export successful",
