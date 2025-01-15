@@ -49,6 +49,33 @@ const SignIn = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter your email address"
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+      if (error) throw error;
+      
+      toast({
+        title: "Password reset email sent",
+        description: "Check your email for the password reset link"
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: (error as AuthError).message
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
@@ -82,7 +109,17 @@ const SignIn = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="password">Password</Label>
+              <Button
+                variant="link"
+                type="button"
+                className="px-0 font-normal"
+                onClick={handleForgotPassword}
+              >
+                Forgot password?
+              </Button>
+            </div>
             <Input
               id="password"
               type="password"

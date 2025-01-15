@@ -23,7 +23,7 @@ export const HomePage = ({ setSelectedComponent, onSignUp }: HomePageProps) => {
             Sign In
           </Button>
           <Button size="lg" variant="outline" onClick={() => navigate('/signup')}>
-            Sign Up Free
+            Sign Up for Free
           </Button>
         </div>
       </div>
