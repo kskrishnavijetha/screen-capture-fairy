@@ -50,8 +50,7 @@ export const getMediaStream = async (
           ...constraints,
           audio: {
             ...constraints.audio,
-            displaySurface: 'monitor',
-            suppressLocalAudioPlayback: false
+            displaySurface: 'monitor'
           }
         });
 
@@ -100,8 +99,7 @@ export const getMediaStream = async (
           ...constraints,
           audio: {
             ...constraints.audio,
-            displaySurface: 'monitor',
-            suppressLocalAudioPlayback: false
+            displaySurface: 'monitor'
           }
         });
         
