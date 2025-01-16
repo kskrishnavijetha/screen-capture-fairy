@@ -13,9 +13,11 @@ const SignUp = () => {
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -30,76 +32,97 @@ const SignUp = () => {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Please check your email to verify your account!",
+        title: "Registration successful",
+        description: "You can now sign in with your credentials",
       });
+      
+      // Automatically redirect to sign in page
       navigate('/signin');
+      
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
         description: error.message,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/')}
-              className="mr-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <CardTitle className="text-2xl">Sign Up</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignUp} className="space-y-4">
-            <div>
-              <Input
-                type="text"
-                placeholder="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full">
-              Sign Up
-            </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Button variant="link" className="p-0" onClick={() => navigate('/signin')}>
-                Sign in
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-8">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            className="mb-4"
+            onClick={() => navigate('/')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Create Account</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSignUp} className="space-y-6">
+              <div className="space-y-2">
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? "Creating account..." : "Sign Up"}
               </Button>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+
+            <div className="text-center mt-4">
+              <Button
+                variant="link"
+                onClick={() => navigate('/signin')}
+              >
+                Already have an account? Sign in
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

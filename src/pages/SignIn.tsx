@@ -17,20 +17,18 @@ const SignIn = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check authentication state when component mounts
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate('/');
+        navigate('/recorder');
       }
     };
     
     checkAuth();
 
-    // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
-        navigate('/');
+        navigate('/recorder');
       }
     });
 
@@ -41,11 +39,11 @@ const SignIn = () => {
     if (error instanceof AuthApiError) {
       switch (error.message) {
         case "Invalid login credentials":
-          return "The email or password you entered is incorrect. Please try again.";
+          return 'Invalid email or password. Please check your credentials and try again.';
         case "Email not confirmed":
-          return "Please verify your email address before signing in.";
+          return 'Please check your email for the confirmation link.';
         case "Invalid email or password":
-          return "Please check your email and password and try again.";
+          return 'Please check your email and password and try again.';
         default:
           return error.message;
       }
