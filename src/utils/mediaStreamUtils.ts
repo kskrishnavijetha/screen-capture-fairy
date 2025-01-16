@@ -76,7 +76,9 @@ export const getMediaStream = async (
         toast({
           variant: "destructive",
           title: "Screen Recording Failed",
-          description: "Please grant screen recording and audio permissions and try again."
+          description: isMobileDevice() 
+            ? "Screen recording is not supported on this mobile device."
+            : "Please grant screen recording and audio permissions and try again."
         });
         return null;
       }
@@ -122,7 +124,9 @@ export const getMediaStream = async (
         toast({
           variant: "destructive",
           title: "Recording Failed",
-          description: "Please grant all necessary permissions and try again."
+          description: isMobileDevice()
+            ? "This recording mode may not be supported on your device."
+            : "Please grant all necessary permissions and try again."
         });
         return null;
       }
