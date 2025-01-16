@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { MainMenu } from "@/components/MainMenu";
 import { HomePage } from "@/components/HomePage";
 import { ThemeSelector } from '@/components/ThemeSelector';
-import { RecordingComponent } from '@/components/RecordingComponent';
 import { AIContentGenerator } from '@/components/AIContentGenerator';
 import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -34,31 +33,7 @@ const Index = () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
       if (session) {
-        // Open recorder in a new window with user interaction
-        const openRecorder = () => {
-          const recorderWindow = window.open('/recorder', '_blank');
-          if (recorderWindow) {
-            recorderWindow.focus();
-          } else {
-            toast({
-              title: "Popup Blocked",
-              description: "Please allow popups to open the recorder",
-              variant: "destructive"
-            });
-          }
-        };
-        
-        // Create a button to open the recorder
-        const button = document.createElement('button');
-        button.innerText = 'Open Recorder';
-        button.className = 'bg-primary text-white px-4 py-2 rounded hover:bg-primary/90';
-        button.onclick = openRecorder;
-        
-        // Add button to the page
-        const container = document.querySelector('.recorder-button-container');
-        if (container) {
-          container.appendChild(button);
-        }
+        navigate('/recorder');
       }
     };
 
@@ -66,10 +41,41 @@ const Index = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      if (session) {
+        navigate('/recorder');
+      }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const renderComponent = () => {
+    switch (selectedComponent) {
+      case 'home':
+        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
+      case 'content':
+        if (!isAuthenticated) {
+          toast({
+            title: "Authentication Required",
+            description: "Please sign in to access the AI Content Generator",
+            variant: "destructive"
+          });
+          navigate('/signin');
+          return null;
+        }
+        return <AIContentGenerator />;
+      case 'video':
+        return <div className="text-center">AI Short Video Generator Coming Soon</div>;
+      case 'calendar':
+        return <div className="text-center">Content Calendar Coming Soon</div>;
+      case 'analytics':
+        return <div className="text-center">Social Media Analytics Coming Soon</div>;
+      case 'monetization':
+        return <div className="text-center">Monetization Hub Coming Soon</div>;
+      default:
+        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
+    }
+  };
 
   const handleSignUp = async (email: string) => {
     try {
@@ -97,45 +103,6 @@ const Index = () => {
     }
   };
 
-  const renderComponent = () => {
-    switch (selectedComponent) {
-      case 'home':
-        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
-      case 'recorder':
-        if (!isAuthenticated) {
-          toast({
-            title: "Authentication Required",
-            description: "Please sign in to access the screen recorder",
-            variant: "destructive"
-          });
-          navigate('/signin');
-          return null;
-        }
-        return <RecordingComponent />;
-      case 'content':
-        if (!isAuthenticated) {
-          toast({
-            title: "Authentication Required",
-            description: "Please sign in to access the AI Content Generator",
-            variant: "destructive"
-          });
-          navigate('/signin');
-          return null;
-        }
-        return <AIContentGenerator />;
-      case 'video':
-        return <div className="text-center">AI Short Video Generator Coming Soon</div>;
-      case 'calendar':
-        return <div className="text-center">Content Calendar Coming Soon</div>;
-      case 'analytics':
-        return <div className="text-center">Social Media Analytics Coming Soon</div>;
-      case 'monetization':
-        return <div className="text-center">Monetization Hub Coming Soon</div>;
-      default:
-        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
-    }
-  };
-
   return (
     <div className={`min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
       <div className="absolute top-4 left-4 flex items-center gap-4">
@@ -156,7 +123,6 @@ const Index = () => {
           <div className="flex flex-col items-center mb-8 space-y-4">
             <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
           </div>
-          <div className="recorder-button-container mb-4"></div>
           {renderComponent()}
         </div>
       </div>
