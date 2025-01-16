@@ -16,19 +16,19 @@ const getSupportedConstraints = (frameRate: number, resolution: Resolution) => {
     audio: {
       echoCancellation: true,
       noiseSuppression: true,
-      sampleRate: 44100
+      sampleRate: 44100,
+      autoGainControl: true
     }
   };
 
   if (isMobileDevice()) {
-    // Adjust constraints for mobile devices
     return {
       ...baseConstraints,
       video: {
         ...baseConstraints.video,
-        width: { ideal: Math.min(resolution.width, 1280) }, // Lower resolution for mobile
+        width: { ideal: Math.min(resolution.width, 1280) },
         height: { ideal: Math.min(resolution.height, 720) },
-        frameRate: { ideal: Math.min(frameRate, 30) } // Lower framerate for mobile
+        frameRate: { ideal: Math.min(frameRate, 30) }
       }
     };
   }
@@ -46,24 +46,38 @@ export const getMediaStream = async (
 
     if (mode === 'screen') {
       try {
-        // For desktop browsers
-        if (!isMobileDevice() && navigator.mediaDevices.getDisplayMedia) {
-          const stream = await navigator.mediaDevices.getDisplayMedia(constraints);
-          return stream;
-        } 
-        // For mobile browsers that support screen sharing
-        else if (navigator.mediaDevices.getDisplayMedia) {
-          const stream = await navigator.mediaDevices.getDisplayMedia(constraints);
-          return stream;
-        } else {
-          throw new Error('Screen recording is not supported on this device/browser');
+        const displayStream = await navigator.mediaDevices.getDisplayMedia({
+          ...constraints,
+          audio: {
+            ...constraints.audio,
+            displaySurface: 'monitor',
+            suppressLocalAudioPlayback: false
+          }
+        });
+
+        // Get system audio if available
+        try {
+          const audioStream = await navigator.mediaDevices.getUserMedia({
+            audio: constraints.audio,
+            video: false
+          });
+          
+          // Combine display and audio streams
+          const tracks = [
+            ...displayStream.getVideoTracks(),
+            ...audioStream.getAudioTracks()
+          ];
+          return new MediaStream(tracks);
+        } catch (audioError) {
+          console.warn('Could not capture system audio:', audioError);
+          return displayStream;
         }
       } catch (error) {
         console.error('Screen capture error:', error);
         toast({
           variant: "destructive",
           title: "Screen Recording Failed",
-          description: "Please grant screen recording permissions and try again. Note: Some mobile browsers may not support screen recording."
+          description: "Please grant screen recording and audio permissions and try again."
         });
         return null;
       }
@@ -82,32 +96,35 @@ export const getMediaStream = async (
       }
     } else if (mode === 'both') {
       try {
-        let screenStream;
-        if (navigator.mediaDevices.getDisplayMedia) {
-          screenStream = await navigator.mediaDevices.getDisplayMedia(constraints);
-        } else {
-          throw new Error('Screen recording is not supported on this device/browser');
-        }
+        const displayStream = await navigator.mediaDevices.getDisplayMedia({
+          ...constraints,
+          audio: {
+            ...constraints.audio,
+            displaySurface: 'monitor',
+            suppressLocalAudioPlayback: false
+          }
+        });
         
         const cameraStream = await navigator.mediaDevices.getUserMedia({
-          ...constraints,
-          audio: false // We don't need audio from camera when capturing both
+          video: constraints.video,
+          audio: constraints.audio
         });
 
-        // Combine the tracks from both streams
-        const combinedStream = new MediaStream();
-        screenStream.getTracks().forEach(track => combinedStream.addTrack(track));
-        cameraStream.getTracks().forEach(track => combinedStream.addTrack(track));
+        // Combine all tracks
+        const tracks = [
+          ...displayStream.getVideoTracks(),
+          ...displayStream.getAudioTracks(),
+          ...cameraStream.getVideoTracks(),
+          ...cameraStream.getAudioTracks()
+        ];
         
-        return combinedStream;
+        return new MediaStream(tracks);
       } catch (error) {
         console.error('Media capture error:', error);
         toast({
           variant: "destructive",
           title: "Recording Failed",
-          description: isMobileDevice() 
-            ? "Combined screen and camera recording might not be supported on your mobile device."
-            : "Please grant all necessary permissions and try again."
+          description: "Please grant all necessary permissions and try again."
         });
         return null;
       }

@@ -11,17 +11,12 @@ export const useRecordingState = () => {
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
-  const isMobileDevice = () => {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  };
-
   const getMimeType = () => {
     const types = [
       'video/webm;codecs=vp8,opus',
+      'video/webm;codecs=h264,opus',
       'video/webm',
       'video/mp4',
-      'video/x-matroska;codecs=avc1',
-      'video/webm;codecs=h264',
     ];
 
     for (const type of types) {
@@ -30,7 +25,7 @@ export const useRecordingState = () => {
       }
     }
     
-    return 'video/webm'; // Fallback
+    return 'video/webm';
   };
 
   const startRecording = useCallback(async (
@@ -41,19 +36,16 @@ export const useRecordingState = () => {
     onRecordingStop: (blob: Blob) => void,
   ) => {
     try {
-      // Clean up any existing streams
       if (streamRef.current) {
         stopMediaStream(streamRef.current);
         streamRef.current = null;
       }
 
-      // Initialize new stream
       const stream = await getMediaStream(captureMode, frameRate, resolution);
       if (!stream) {
         throw new Error('Failed to initialize media stream');
       }
 
-      // Verify we have the necessary tracks
       if (stream.getTracks().length === 0) {
         throw new Error('No media tracks available');
       }
@@ -63,20 +55,15 @@ export const useRecordingState = () => {
 
       const options = {
         mimeType: getMimeType(),
-        videoBitsPerSecond: isMobileDevice() ? 1500000 : 2500000 // Lower bitrate for mobile
+        audioBitsPerSecond: 128000,
+        videoBitsPerSecond: 2500000
       };
 
       try {
         mediaRecorderRef.current = new MediaRecorder(stream, options);
       } catch (e) {
         console.error('MediaRecorder error:', e);
-        // Try fallback options if initial creation fails
-        try {
-          mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'video/webm' });
-        } catch (fallbackError) {
-          console.error('Fallback MediaRecorder error:', fallbackError);
-          throw new Error('Your browser does not support screen recording. Please try using a different browser.');
-        }
+        mediaRecorderRef.current = new MediaRecorder(stream);
       }
 
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -103,9 +90,7 @@ export const useRecordingState = () => {
 
       toast({
         title: "Recording started",
-        description: isMobileDevice() 
-          ? "Recording started. Note: Some mobile devices may have limited screen recording capabilities."
-          : "Your recording has begun"
+        description: "Your recording has begun with audio enabled"
       });
     } catch (error) {
       console.error('Recording error:', error);

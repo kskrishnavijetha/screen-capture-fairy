@@ -42,6 +42,8 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
           playsInline
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
+          autoPlay={false}
+          muted={false}
         />
       </div>
 
@@ -55,6 +57,8 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
               className="w-full"
               controls
               playsInline
+              autoPlay={false}
+              muted={false}
             />
           </div>
         </div>
