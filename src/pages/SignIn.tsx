@@ -60,9 +60,8 @@ const SignIn = () => {
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password,
-      }, {
         options: {
-          persistSession: stayConnected // Use the stayConnected state to determine session persistence
+          persistSession: stayConnected
         }
       });
       
