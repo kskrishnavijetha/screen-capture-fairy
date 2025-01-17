@@ -25,6 +25,7 @@ const SafeShare = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       navigate('/signin');
+      return;
     }
   };
 
@@ -53,6 +54,12 @@ const SafeShare = () => {
     setUploadProgress(0);
 
     try {
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error('User not authenticated');
+      }
+
       // Generate encryption key
       const password = crypto.randomUUID();
       const key = await generateEncryptionKey(password);
@@ -80,6 +87,7 @@ const SafeShare = () => {
           mime_type: file.type,
           encryption_key: password,
           is_encrypted: true,
+          owner_id: session.user.id, // Add owner_id
         });
 
       if (dbError) throw dbError;
@@ -105,13 +113,15 @@ const SafeShare = () => {
   const generateShareLink = async (fileId: string) => {
     try {
       const shareToken = crypto.randomUUID();
+      const expirationDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      
       const { error } = await supabase
         .from('file_shares')
         .insert({
           file_id: fileId,
           access_type: 'view',
           share_token: shareToken,
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+          expires_at: expirationDate.toISOString(), // Convert Date to ISO string
         });
 
       if (error) throw error;
