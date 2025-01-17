@@ -33,7 +33,7 @@ export const RecordingComponent = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate('/signin');
+        cleanupAndNavigateToSignIn();
         return;
       }
       setUserEmail(session.user.email);
@@ -41,46 +41,50 @@ export const RecordingComponent = () => {
 
     checkSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
-        navigate('/signin');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        cleanupAndNavigateToSignIn();
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
-  const handleSignOut = async () => {
+  const cleanupAndNavigateToSignIn = async () => {
+    // Stop any active recordings
+    if (isRecording) {
+      const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
+      if (stopButton) stopButton.click();
+    }
+
+    // Stop any active media tracks
     try {
-      // First stop any active recordings or media
-      if (isRecording) {
-        const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
-        if (stopButton) stopButton.click();
-      }
-
-      // Stop any active media tracks
       const tracks = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       tracks.getTracks().forEach(track => track.stop());
     } catch (error) {
-      console.error('Error stopping media:', error);
+      console.error('Error stopping media tracks:', error);
     }
 
+    // Clear all recording-related state
+    setIsRecording(false);
+    setIsPaused(false);
+    setRecordedBlob(null);
+    setDuration(0);
+    setShowCountdown(false);
+    setUserEmail(null);
+
+    // Navigate to signin page
+    navigate('/signin');
+  };
+
+  const handleSignOut = async () => {
     try {
-      // Clear all recording-related state
-      setIsRecording(false);
-      setIsPaused(false);
-      setRecordedBlob(null);
-      setDuration(0);
-      setShowCountdown(false);
-      setUserEmail(null);
-      
-      // Sign out from Supabase
+      await cleanupAndNavigateToSignIn();
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Error during sign out:', error);
-    } finally {
-      // Always navigate to signin page
-      navigate('/signin');
+      // Even if sign out fails, we still want to clean up and redirect
+      cleanupAndNavigateToSignIn();
     }
   };
 
