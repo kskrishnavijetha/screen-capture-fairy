@@ -33,7 +33,7 @@ export const RecordingComponent = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        cleanupAndNavigateToSignIn();
+        await cleanupAndNavigateToSignIn();
         return;
       }
       setUserEmail(session.user.email);
@@ -41,9 +41,9 @@ export const RecordingComponent = () => {
 
     checkSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!session) {
-        cleanupAndNavigateToSignIn();
+        await cleanupAndNavigateToSignIn();
       }
     });
 
@@ -81,12 +81,16 @@ export const RecordingComponent = () => {
     try {
       // First cleanup and navigate
       await cleanupAndNavigateToSignIn();
+      
       // Then attempt to sign out from Supabase
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.error('Error during sign out:', error);
+        // Even if sign out fails, we've already cleaned up and redirected
+      }
     } catch (error) {
       console.error('Error during sign out:', error);
-      // Even if sign out fails, we've already cleaned up and redirected
+      // Even if there's an error, we've already cleaned up and redirected
     }
   };
 
