@@ -79,12 +79,14 @@ export const RecordingComponent = () => {
 
   const handleSignOut = async () => {
     try {
+      // First cleanup and navigate
       await cleanupAndNavigateToSignIn();
-      await supabase.auth.signOut();
+      // Then attempt to sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
     } catch (error) {
       console.error('Error during sign out:', error);
-      // Even if sign out fails, we still want to clean up and redirect
-      cleanupAndNavigateToSignIn();
+      // Even if sign out fails, we've already cleaned up and redirected
     }
   };
 
