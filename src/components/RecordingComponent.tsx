@@ -30,16 +30,15 @@ export const RecordingComponent = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    const getUserEmail = async () => {
+    const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUserEmail(session.user.email);
-      } else {
-        // If no session, redirect to sign in
+      if (!session) {
         navigate('/');
+        return;
       }
+      setUserEmail(session.user.email);
     };
-    getUserEmail();
+    checkSession();
   }, [navigate]);
 
   const cleanupRecording = () => {
@@ -56,39 +55,23 @@ export const RecordingComponent = () => {
 
   const handleSignOut = async () => {
     try {
-      // First cleanup any active recording
       cleanupRecording();
-
-      // Attempt to sign out
-      const { error } = await supabase.auth.signOut();
       
-      if (error) {
-        console.error('Sign out error:', error);
-        // Even if sign out fails, we'll redirect to home
-        toast({
-          variant: "default",
-          title: "Session ended",
-          description: "You have been signed out.",
-        });
-      } else {
-        toast({
-          title: "Signed out successfully",
-          description: "You have been signed out of your account",
-        });
-      }
-
-      // Always navigate to home page
-      navigate('/');
+      // Clear the session from local storage first
+      localStorage.removeItem('supabase.auth.token');
       
+      // Attempt to sign out from Supabase
+      await supabase.auth.signOut();
+      
+      toast({
+        title: "Signed out successfully",
+        description: "You have been signed out of your account",
+      });
     } catch (error) {
       console.error('Sign out error:', error);
-      // Even if there's an error, navigate to home
+    } finally {
+      // Always navigate to home and show a toast
       navigate('/');
-      toast({
-        variant: "default",
-        title: "Session ended",
-        description: "You have been signed out.",
-      });
     }
   };
 
