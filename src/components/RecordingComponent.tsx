@@ -43,25 +43,21 @@ export const RecordingComponent = () => {
 
   const handleSignOut = async () => {
     try {
-      // Clear any local state before signing out
+      // Clear local state first
       setUserEmail(null);
+      setIsRecording(false);
+      setIsPaused(false);
+      setRecordedBlob(null);
       
-      const { error } = await supabase.auth.signOut();
+      // Attempt to sign out
+      await supabase.auth.signOut();
       
-      // Always navigate to signin page regardless of error
+      // Always navigate to signin page
       navigate('/signin');
       
-      // Only show error toast for non-session related errors
-      if (error && !error.message.includes('session_not_found')) {
-        console.error('Sign out error:', error);
-        toast({
-          variant: "destructive",
-          title: "Error signing out",
-          description: "Please try signing in again",
-        });
-      }
     } catch (error) {
       console.error('Sign out error:', error);
+      // Even if there's an error, redirect to signin
       navigate('/signin');
     }
   };
