@@ -5,10 +5,11 @@ import { ThemeSelector } from '@/components/ThemeSelector';
 import { AIContentGenerator } from '@/components/AIContentGenerator';
 import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AuthError, AuthApiError } from '@supabase/supabase-js';
 
 const getThemeClasses = (themeName: string) => {
   switch (themeName) {
@@ -43,10 +44,41 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Create an async function that returns a Promise
   const handleSignUp = async (email: string): Promise<void> => {
-    // You can implement actual signup logic here if needed
-    await Promise.resolve();
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password: '', // You should implement proper password handling
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Please check your email for verification link"
+      });
+    } catch (error) {
+      const err = error as AuthError;
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err instanceof AuthApiError ? err.message : "An error occurred"
+      });
+    }
+  };
+
+  const getErrorMessage = (error: AuthError) => {
+    if (error instanceof AuthApiError) {
+      switch (error.message) {
+        case "Invalid login credentials":
+          return 'Invalid email or password. Please check your credentials and try again.';
+        case "Email not confirmed":
+          return 'Please check your email for the confirmation link.';
+        default:
+          return error.message;
+      }
+    }
+    return error.message;
   };
 
   const renderComponent = () => {
@@ -54,14 +86,27 @@ const Index = () => {
       return (
         <Card className="w-full max-w-md mx-auto">
           <CardHeader>
-            <CardTitle className="text-2xl text-center">Welcome to SafeShare</CardTitle>
+            <CardTitle className="text-2xl text-center">Welcome to Softwave</CardTitle>
           </CardHeader>
           <CardContent>
             <Auth
               supabaseClient={supabase}
-              appearance={{ theme: ThemeSupa }}
-              theme="light"
+              appearance={{ 
+                theme: ThemeSupa,
+                style: {
+                  button: { background: '#9b87f5', color: 'white' },
+                  anchor: { color: '#9b87f5' }
+                }
+              }}
+              theme="dark"
               providers={[]}
+              onError={(error) => {
+                toast({
+                  variant: "destructive",
+                  title: "Authentication Error",
+                  description: getErrorMessage(error)
+                });
+              }}
             />
           </CardContent>
         </Card>
