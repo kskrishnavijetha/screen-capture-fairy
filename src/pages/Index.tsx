@@ -49,15 +49,6 @@ const Index = () => {
           title: "Signed out",
           description: "Successfully signed out"
         });
-      } else if (_event === 'USER_UPDATED') {
-        const error = session?.error;
-        if (error) {
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: getErrorMessage(error)
-          });
-        }
       }
     });
 
