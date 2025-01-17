@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, MonitorPlay, Home, Link2 } from 'lucide-react';
+import { Menu, MonitorPlay, Home, Link2, FileKey } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const MENU_ITEMS = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'recorder', label: 'Screen Recorder', icon: MonitorPlay },
+  { id: 'safeshare', label: 'SafeShare', icon: FileKey },
 ];
 
 interface MainMenuProps {
@@ -43,6 +44,14 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
     }
   };
 
+  const handleSafeShareClick = () => {
+    if (isAuthenticated) {
+      window.open('/safeshare', '_blank');
+    } else {
+      setSelectedComponent('safeshare');
+    }
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -70,6 +79,14 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
           >
             <MonitorPlay className="mr-2 h-4 w-4" />
             Screen Recorder
+          </Button>
+          <Button
+            variant={selectedComponent === 'safeshare' ? "default" : "ghost"}
+            className="w-full justify-start"
+            onClick={handleSafeShareClick}
+          >
+            <FileKey className="mr-2 h-4 w-4" />
+            SafeShare
           </Button>
           <a 
             href="https://x.com/softwave1116" 
