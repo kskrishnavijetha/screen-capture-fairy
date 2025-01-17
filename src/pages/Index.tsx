@@ -43,6 +43,12 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Create an async function that returns a Promise
+  const handleSignUp = async (email: string): Promise<void> => {
+    // You can implement actual signup logic here if needed
+    await Promise.resolve();
+  };
+
   const renderComponent = () => {
     if (!session) {
       return (
@@ -64,7 +70,7 @@ const Index = () => {
 
     switch (selectedComponent) {
       case 'home':
-        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={() => {}} />;
+        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
       case 'content':
         return <AIContentGenerator />;
       case 'video':
@@ -76,7 +82,7 @@ const Index = () => {
       case 'monetization':
         return <div className="text-center">Monetization Hub Coming Soon</div>;
       default:
-        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={() => {}} />;
+        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
     }
   };
 
