@@ -9,6 +9,62 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      "file sharing": {
+        Row: {
+          created_at: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
+      file_shares: {
+        Row: {
+          access_type: string | null
+          created_at: string
+          expires_at: string | null
+          file_id: string | null
+          id: string
+          share_token: string
+          shared_by: string | null
+          shared_with: string | null
+        }
+        Insert: {
+          access_type?: string | null
+          created_at?: string
+          expires_at?: string | null
+          file_id?: string | null
+          id?: string
+          share_token: string
+          shared_by?: string | null
+          shared_with?: string | null
+        }
+        Update: {
+          access_type?: string | null
+          created_at?: string
+          expires_at?: string | null
+          file_id?: string | null
+          id?: string
+          share_token?: string
+          shared_by?: string | null
+          shared_with?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_shares_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "shared_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -42,6 +98,48 @@ export type Database = {
         Update: {
           created_at?: string
           id?: number
+        }
+        Relationships: []
+      }
+      shared_files: {
+        Row: {
+          access_count: number | null
+          created_at: string
+          encryption_key: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          is_encrypted: boolean | null
+          mime_type: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          access_count?: number | null
+          created_at?: string
+          encryption_key?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          is_encrypted?: boolean | null
+          mime_type: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          access_count?: number | null
+          created_at?: string
+          encryption_key?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          is_encrypted?: boolean | null
+          mime_type?: string
+          owner_id?: string
+          updated_at?: string
         }
         Relationships: []
       }

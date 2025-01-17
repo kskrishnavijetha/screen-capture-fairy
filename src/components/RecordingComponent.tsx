@@ -34,24 +34,60 @@ export const RecordingComponent = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUserEmail(session.user.email);
+      } else {
+        // If no session, redirect to sign in
+        navigate('/');
       }
     };
     getUserEmail();
-  }, []);
+  }, [navigate]);
+
+  const cleanupRecording = () => {
+    if (isRecording) {
+      const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
+      if (stopButton) stopButton.click();
+    }
+    setIsRecording(false);
+    setIsPaused(false);
+    setRecordedBlob(null);
+    setDuration(0);
+    setShowCountdown(false);
+  };
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      // First cleanup any active recording
+      cleanupRecording();
+
+      // Attempt to sign out
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Sign out error:', error);
+        // Even if sign out fails, we'll redirect to home
+        toast({
+          variant: "default",
+          title: "Session ended",
+          description: "You have been signed out.",
+        });
+      } else {
+        toast({
+          title: "Signed out successfully",
+          description: "You have been signed out of your account",
+        });
+      }
+
+      // Always navigate to home page
+      navigate('/');
+      
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Even if there's an error, navigate to home
       navigate('/');
       toast({
-        title: "Signed out successfully",
-        description: "You have been signed out of your account",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error signing out",
-        description: "There was a problem signing out",
+        variant: "default",
+        title: "Session ended",
+        description: "You have been signed out.",
       });
     }
   };
@@ -100,6 +136,20 @@ export const RecordingComponent = () => {
     }
     return () => clearInterval(interval);
   }, [isRecording, isPaused]);
+
+  // Add auth state change listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        cleanupRecording();
+        navigate('/');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   return (
     <div className="text-center space-y-6 w-full max-w-md mx-auto">
