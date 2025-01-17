@@ -35,7 +35,6 @@ export const RecordingComponent = () => {
       if (session?.user) {
         setUserEmail(session.user.email);
       } else {
-        // If no session exists, redirect to sign in
         navigate('/signin');
       }
     };
@@ -46,31 +45,27 @@ export const RecordingComponent = () => {
     try {
       const { error } = await supabase.auth.signOut();
       
-      // If there's an error but it's just that the session wasn't found,
-      // we can still redirect to sign in
-      if (error && error.message.includes('session_not_found')) {
-        navigate('/signin');
-        return;
-      }
-      
       if (error) {
+        // If the error is session_not_found, just redirect to sign in
+        if (error.message.includes('session_not_found')) {
+          navigate('/signin');
+          return;
+        }
+        
+        // For other errors, show error message
         console.error('Sign out error:', error);
         toast({
           variant: "destructive",
           title: "Error signing out",
-          description: "There was a problem signing out. Please try again.",
+          description: "Please try signing in again",
         });
-        return;
       }
 
-      toast({
-        title: "Signed out successfully",
-        description: "You have been signed out of your account",
-      });
+      // Always redirect to sign in page after sign out attempt
       navigate('/signin');
+      
     } catch (error) {
       console.error('Sign out error:', error);
-      // For any unexpected errors, still redirect to sign in
       navigate('/signin');
     }
   };
