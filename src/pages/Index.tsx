@@ -6,6 +6,9 @@ import { AIContentGenerator } from '@/components/AIContentGenerator';
 import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "@/components/ui/use-toast";
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const getThemeClasses = (themeName: string) => {
   switch (themeName) {
@@ -25,44 +28,44 @@ const getThemeClasses = (themeName: string) => {
 const Index = () => {
   const [selectedComponent, setSelectedComponent] = useState('home');
   const [currentTheme, setCurrentTheme] = useState('Default Dark');
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [session, setSession] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-      if (session) {
-        navigate('/recorder');
-      }
-    };
-
-    checkAuth();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
-      if (session) {
-        navigate('/recorder');
-      }
+      setSession(session);
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   const renderComponent = () => {
+    if (!session) {
+      return (
+        <Card className="w-full max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Welcome to SafeShare</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Auth
+              supabaseClient={supabase}
+              appearance={{ theme: ThemeSupa }}
+              theme="light"
+              providers={[]}
+            />
+          </CardContent>
+        </Card>
+      );
+    }
+
     switch (selectedComponent) {
       case 'home':
-        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
+        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={() => {}} />;
       case 'content':
-        if (!isAuthenticated) {
-          toast({
-            title: "Authentication Required",
-            description: "Please sign in to access the AI Content Generator",
-            variant: "destructive"
-          });
-          navigate('/signin');
-          return null;
-        }
         return <AIContentGenerator />;
       case 'video':
         return <div className="text-center">AI Short Video Generator Coming Soon</div>;
@@ -73,33 +76,7 @@ const Index = () => {
       case 'monetization':
         return <div className="text-center">Monetization Hub Coming Soon</div>;
       default:
-        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
-    }
-  };
-
-  const handleSignUp = async (email: string) => {
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password: crypto.randomUUID(),
-        options: {
-          emailRedirectTo: window.location.origin
-        }
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Check your email for the confirmation link"
-      });
-    } catch (error) {
-      console.error('Error signing up:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message
-      });
+        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={() => {}} />;
     }
   };
 

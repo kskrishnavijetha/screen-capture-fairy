@@ -6,7 +6,7 @@ interface HomePageProps {
   onSignUp: (email: string) => Promise<void>;
 }
 
-export const HomePage = ({ setSelectedComponent, onSignUp }: HomePageProps) => {
+export const HomePage = ({ setSelectedComponent }: HomePageProps) => {
   const navigate = useNavigate();
 
   return (
@@ -22,16 +22,16 @@ export const HomePage = ({ setSelectedComponent, onSignUp }: HomePageProps) => {
           <Button 
             size="lg" 
             className="bg-primary hover:bg-primary/90"
-            onClick={() => navigate('/signin')}
+            onClick={() => navigate('/recorder')}
           >
             Start Recording Now
           </Button>
           <Button 
             size="lg" 
             variant="outline" 
-            onClick={() => navigate('/signup')}
+            onClick={() => navigate('/safeshare')}
           >
-            Create Free Account
+            SafeShare
           </Button>
         </div>
       </div>
