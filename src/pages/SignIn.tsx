@@ -59,15 +59,11 @@ const SignIn = () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
-        password: password,
-        options: {
-          staySignedIn: stayConnected // Changed from persistSession to staySignedIn
-        }
+        password: password
       });
       
       if (error) throw error;
       
-      // Navigation will be handled by the auth state change listener
     } catch (error) {
       toast({
         variant: "destructive",
