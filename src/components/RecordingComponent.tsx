@@ -32,16 +32,39 @@ export const RecordingComponent = () => {
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUserEmail(session.user.email);
-      } else {
+      if (!session) {
+        navigate('/signin');
+        return;
+      }
+      setUserEmail(session.user.email);
+    };
+
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
         navigate('/signin');
       }
-    };
-    checkSession();
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleSignOut = async () => {
+    try {
+      // First stop any active recordings or media
+      if (isRecording) {
+        const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
+        if (stopButton) stopButton.click();
+      }
+
+      // Stop any active media tracks
+      const tracks = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      tracks.getTracks().forEach(track => track.stop());
+    } catch (error) {
+      console.error('Error stopping media:', error);
+    }
+
     try {
       // Clear all recording-related state
       setIsRecording(false);
@@ -49,22 +72,14 @@ export const RecordingComponent = () => {
       setRecordedBlob(null);
       setDuration(0);
       setShowCountdown(false);
-      
-      // Clear user state
       setUserEmail(null);
-
-      // Stop any active media tracks
-      if (navigator.mediaDevices) {
-        const tracks = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        tracks.getTracks().forEach(track => track.stop());
-      }
       
       // Sign out from Supabase
       await supabase.auth.signOut();
     } catch (error) {
-      console.error('Error during cleanup:', error);
+      console.error('Error during sign out:', error);
     } finally {
-      // Always navigate to signin page, regardless of any errors
+      // Always navigate to signin page
       navigate('/signin');
     }
   };
@@ -176,7 +191,7 @@ export const RecordingComponent = () => {
 
       {!isRecording && !showCountdown && (
         <Button 
-          onClick={startRecordingWithCountdown}
+          onClick={() => setShowCountdown(true)}
           className="w-full bg-primary hover:bg-primary/90"
         >
           <MonitorPlay className="mr-2 h-5 w-5" />
