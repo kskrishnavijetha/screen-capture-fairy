@@ -39,6 +39,26 @@ const Index = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (_event === 'SIGNED_IN') {
+        toast({
+          title: "Success",
+          description: "Successfully signed in"
+        });
+      } else if (_event === 'SIGNED_OUT') {
+        toast({
+          title: "Signed out",
+          description: "Successfully signed out"
+        });
+      } else if (_event === 'USER_UPDATED') {
+        const error = session?.error;
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: getErrorMessage(error)
+          });
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -100,13 +120,6 @@ const Index = () => {
               }}
               theme="dark"
               providers={[]}
-              onError={(error) => {
-                toast({
-                  variant: "destructive",
-                  title: "Authentication Error",
-                  description: getErrorMessage(error)
-                });
-              }}
             />
           </CardContent>
         </Card>
