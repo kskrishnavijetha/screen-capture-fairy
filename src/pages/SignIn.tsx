@@ -13,6 +13,7 @@ const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [stayConnected, setStayConnected] = useState(false);
   const [resetRequestTime, setResetRequestTime] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -58,11 +59,12 @@ const SignIn = () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
-        password: password
+        password: password,
       });
       
       if (error) throw error;
       
+      // Navigation will be handled by the auth state change listener
     } catch (error) {
       toast({
         variant: "destructive",
@@ -176,6 +178,20 @@ const SignIn = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="stayConnected"
+              checked={stayConnected}
+              onCheckedChange={(checked) => setStayConnected(checked as boolean)}
+            />
+            <Label
+              htmlFor="stayConnected"
+              className="text-sm font-normal cursor-pointer"
+            >
+              Stay connected
+            </Label>
           </div>
 
           <Button

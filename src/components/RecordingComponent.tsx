@@ -9,7 +9,7 @@ import { CameraPreview } from '@/components/CameraPreview';
 import { RecordingManager } from '@/components/RecordingManager';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,67 +30,29 @@ export const RecordingComponent = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkSession = async () => {
+    const getUserEmail = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        await cleanupAndNavigateToSignIn();
-        return;
+      if (session?.user) {
+        setUserEmail(session.user.email);
       }
-      setUserEmail(session.user.email);
     };
-
-    checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!session) {
-        await cleanupAndNavigateToSignIn();
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    getUserEmail();
   }, []);
-
-  const cleanupAndNavigateToSignIn = async () => {
-    // Stop any active recordings
-    if (isRecording) {
-      const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
-      if (stopButton) stopButton.click();
-    }
-
-    // Stop any active media tracks
-    try {
-      const tracks = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-      tracks.getTracks().forEach(track => track.stop());
-    } catch (error) {
-      console.error('Error stopping media tracks:', error);
-    }
-
-    // Clear all recording-related state
-    setIsRecording(false);
-    setIsPaused(false);
-    setRecordedBlob(null);
-    setDuration(0);
-    setShowCountdown(false);
-    setUserEmail(null);
-
-    // Navigate to signin page
-    navigate('/signin');
-  };
 
   const handleSignOut = async () => {
     try {
-      // First cleanup and navigate
-      await cleanupAndNavigateToSignIn();
-      
-      // Then attempt to sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error during sign out:', error);
-        // Even if sign out fails, we've already cleaned up and redirected
-      }
+      await supabase.auth.signOut();
+      navigate('/');
+      toast({
+        title: "Signed out successfully",
+        description: "You have been signed out of your account",
+      });
     } catch (error) {
-      console.error('Error during sign out:', error);
-      // Even if there's an error, we've already cleaned up and redirected
+      toast({
+        variant: "destructive",
+        title: "Error signing out",
+        description: "There was a problem signing out",
+      });
     }
   };
 
@@ -201,7 +163,7 @@ export const RecordingComponent = () => {
 
       {!isRecording && !showCountdown && (
         <Button 
-          onClick={() => setShowCountdown(true)}
+          onClick={startRecordingWithCountdown}
           className="w-full bg-primary hover:bg-primary/90"
         >
           <MonitorPlay className="mr-2 h-5 w-5" />
