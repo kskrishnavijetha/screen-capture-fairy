@@ -30,7 +30,7 @@ export const RecordingComponent = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    const getUserEmail = async () => {
+    const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUserEmail(session.user.email);
@@ -38,26 +38,33 @@ export const RecordingComponent = () => {
         navigate('/signin');
       }
     };
-    getUserEmail();
+    checkSession();
   }, [navigate]);
 
   const handleSignOut = async () => {
     try {
-      // Clear local state first
-      setUserEmail(null);
+      // Clear all recording-related state
       setIsRecording(false);
       setIsPaused(false);
       setRecordedBlob(null);
+      setDuration(0);
+      setShowCountdown(false);
       
-      // Attempt to sign out
+      // Clear user state
+      setUserEmail(null);
+
+      // Stop any active media tracks
+      if (navigator.mediaDevices) {
+        const tracks = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        tracks.getTracks().forEach(track => track.stop());
+      }
+      
+      // Sign out from Supabase
       await supabase.auth.signOut();
-      
-      // Always navigate to signin page
-      navigate('/signin');
-      
     } catch (error) {
-      console.error('Sign out error:', error);
-      // Even if there's an error, redirect to signin
+      console.error('Error during cleanup:', error);
+    } finally {
+      // Always navigate to signin page, regardless of any errors
       navigate('/signin');
     }
   };
