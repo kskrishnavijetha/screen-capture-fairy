@@ -61,7 +61,7 @@ const SignIn = () => {
         email: email.trim(),
         password: password,
         options: {
-          persistSession: stayConnected
+          staySignedIn: stayConnected // Changed from persistSession to staySignedIn
         }
       });
       
