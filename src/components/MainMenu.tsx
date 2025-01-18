@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, MonitorPlay, Home, Link2 } from 'lucide-react';
+import { Menu, MonitorPlay, Home, Link2, Share2 } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const MENU_ITEMS = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'recorder', label: 'Screen Recorder', icon: MonitorPlay },
+  { id: 'safeshare', label: 'SafeShare', icon: Share2 },
 ];
 
 interface MainMenuProps {
@@ -70,6 +71,14 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
           >
             <MonitorPlay className="mr-2 h-4 w-4" />
             Screen Recorder
+          </Button>
+          <Button
+            variant={selectedComponent === 'safeshare' ? "default" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setSelectedComponent('safeshare')}
+          >
+            <Share2 className="mr-2 h-4 w-4" />
+            SafeShare
           </Button>
           <a 
             href="https://x.com/softwave1116" 
