@@ -36,11 +36,11 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleRecorderClick = () => {
+  const handleComponentClick = (componentId: string) => {
     if (isAuthenticated) {
-      window.open('/recorder', '_blank');
+      window.open(`/${componentId}`, '_blank');
     } else {
-      setSelectedComponent('recorder');
+      setSelectedComponent(componentId);
     }
   };
 
@@ -67,7 +67,7 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
           <Button
             variant={selectedComponent === 'recorder' ? "default" : "ghost"}
             className="w-full justify-start"
-            onClick={handleRecorderClick}
+            onClick={() => handleComponentClick('recorder')}
           >
             <MonitorPlay className="mr-2 h-4 w-4" />
             Screen Recorder
@@ -75,7 +75,7 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
           <Button
             variant={selectedComponent === 'safeshare' ? "default" : "ghost"}
             className="w-full justify-start"
-            onClick={() => setSelectedComponent('safeshare')}
+            onClick={() => handleComponentClick('safeshare')}
           >
             <Share2 className="mr-2 h-4 w-4" />
             SafeShare
