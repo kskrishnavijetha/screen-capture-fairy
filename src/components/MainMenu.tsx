@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 export const MENU_ITEMS = [
   { id: 'home', label: 'Home', icon: Home },
@@ -23,6 +24,7 @@ interface MainMenuProps {
 
 export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -37,8 +39,22 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
   }, []);
 
   const handleComponentClick = (componentId: string) => {
-    if (isAuthenticated && (componentId === 'recorder' || componentId === 'safeshare')) {
-      window.open(`/${componentId}`, '_blank', 'noopener,noreferrer');
+    if (!isAuthenticated) {
+      navigate('/signin');
+      return;
+    }
+
+    if (componentId === 'recorder' || componentId === 'safeshare') {
+      const width = 1024;
+      const height = 768;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+
+      window.open(
+        `/${componentId}`,
+        componentId,
+        `width=${width},height=${height},top=${top},left=${left},noopener,noreferrer`
+      );
     } else {
       setSelectedComponent(componentId);
     }
