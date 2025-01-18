@@ -12,6 +12,7 @@ import SignUp from "./pages/SignUp";
 import UserPage from "./pages/UserPage";
 import NotFound from "./pages/NotFound";
 import { RecordingComponent } from "@/components/RecordingComponent";
+import { SafeShareComponent } from "@/components/SafeShareComponent";
 import { supabase } from './integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/signup" element={<SignUp />} />
             <Route path="/user" element={<ProtectedRoute><UserPage /></ProtectedRoute>} />
             <Route path="/recorder" element={<ProtectedRoute><RecordingComponent /></ProtectedRoute>} />
+            <Route path="/safeshare" element={<ProtectedRoute><SafeShareComponent /></ProtectedRoute>} />
             <Route path="/playback" element={<ProtectedRoute><VideoPlayback /></ProtectedRoute>} />
             <Route path="/edit" element={<ProtectedRoute><VideoEdit /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
