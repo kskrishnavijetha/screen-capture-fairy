@@ -31,14 +31,31 @@ export const RecordingComponent = () => {
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/');
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        cleanupRecording();
+        navigate('/signin');
         return;
       }
+      
       setUserEmail(session.user.email);
     };
+
     checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        cleanupRecording();
+        navigate('/signin');
+      } else if (session) {
+        setUserEmail(session.user.email);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const cleanupRecording = () => {
@@ -57,21 +74,19 @@ export const RecordingComponent = () => {
     try {
       cleanupRecording();
       
-      // Clear the session from local storage first
-      localStorage.removeItem('supabase.auth.token');
-      
-      // Attempt to sign out from Supabase
-      await supabase.auth.signOut();
+      // First clear all session data
+      await supabase.auth.signOut({ scope: 'local' });
       
       toast({
         title: "Signed out successfully",
         description: "You have been signed out of your account",
       });
+      
+      navigate('/signin');
     } catch (error) {
       console.error('Sign out error:', error);
-    } finally {
-      // Always navigate to home and show a toast
-      navigate('/');
+      // Even if sign out fails, ensure user is redirected
+      navigate('/signin');
     }
   };
 
@@ -119,20 +134,6 @@ export const RecordingComponent = () => {
     }
     return () => clearInterval(interval);
   }, [isRecording, isPaused]);
-
-  // Add auth state change listener
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
-        cleanupRecording();
-        navigate('/');
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
 
   return (
     <div className="text-center space-y-6 w-full max-w-md mx-auto">
