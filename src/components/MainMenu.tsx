@@ -37,8 +37,8 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
   }, []);
 
   const handleComponentClick = (componentId: string) => {
-    if (isAuthenticated) {
-      window.open(`/${componentId}`, '_blank');
+    if (isAuthenticated && (componentId === 'recorder' || componentId === 'safeshare')) {
+      window.open(`/${componentId}`, '_blank', 'noopener,noreferrer');
     } else {
       setSelectedComponent(componentId);
     }
