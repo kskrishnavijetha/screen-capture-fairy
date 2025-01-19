@@ -24,15 +24,15 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
 
     setIsSharing(true);
     try {
-      // Create a temporary URL for the video that will be valid for sharing
+      // Create a temporary URL for the video
       const videoUrl = URL.createObjectURL(recordedBlob);
+      const videoTitle = "My Recorded Video";
+      const videoDescription = "Check out this video I recorded!";
 
       switch (platform) {
         case 'youtube': {
-          const uploadWindow = window.open('https://studio.youtube.com/channel/upload', '_blank');
-          if (uploadWindow) {
-            uploadWindow.focus();
-          }
+          // Open YouTube upload page in a new window
+          window.open('https://studio.youtube.com/channel/upload', '_blank');
           toast({
             title: "YouTube Upload",
             description: "Please upload your video through YouTube Studio.",
@@ -40,24 +40,23 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
           break;
         }
         case 'twitter': {
-          const shareText = encodeURIComponent('Check out my video!');
-          const shareUrl = `https://twitter.com/intent/tweet?text=${shareText}&url=${encodeURIComponent(window.location.href)}`;
-          window.open(shareUrl, '_blank', 'width=550,height=420,noopener,noreferrer');
+          const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(videoDescription)}`;
+          window.open(shareUrl, '_blank', 'width=550,height=420');
           break;
         }
         case 'facebook': {
           const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
-          window.open(shareUrl, '_blank', 'width=550,height=420,noopener,noreferrer');
+          window.open(shareUrl, '_blank', 'width=550,height=420');
           break;
         }
         case 'linkedin': {
           const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`;
-          window.open(shareUrl, '_blank', 'width=550,height=420,noopener,noreferrer');
+          window.open(shareUrl, '_blank', 'width=550,height=420');
           break;
         }
         case 'email': {
-          const subject = encodeURIComponent('Check out my video');
-          const body = encodeURIComponent(`I recorded this video and wanted to share it with you.\n\nView it here: ${window.location.href}`);
+          const subject = encodeURIComponent(videoTitle);
+          const body = encodeURIComponent(`${videoDescription}\n\nView it here: ${window.location.href}`);
           window.location.href = `mailto:?subject=${subject}&body=${body}`;
           break;
         }
@@ -94,9 +93,9 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
               onClick={() => handleShare(key as Platform)}
               disabled={isSharing || !recordedBlob}
               variant="outline"
-              className="w-full justify-start bg-background hover:bg-accent"
+              className="w-full justify-start bg-background hover:bg-accent gap-2"
             >
-              <Icon className="w-4 h-4 mr-2" />
+              <Icon className="w-4 h-4" />
               Share to {config.name}
             </Button>
           );

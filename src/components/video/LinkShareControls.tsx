@@ -25,8 +25,6 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
     try {
       // Create a temporary URL for the video blob
       const url = URL.createObjectURL(recordedBlob);
-      // In a production environment, you would want to upload this to a server
-      // and generate a permanent link instead of using a blob URL
       setShareableLink(url);
       toast({
         title: "Link Generated",
@@ -76,9 +74,9 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
         onClick={generateShareableLink}
         disabled={!recordedBlob}
         variant="outline"
-        className="w-full justify-start bg-background hover:bg-accent"
+        className="w-full justify-start bg-background hover:bg-accent gap-2"
       >
-        <Link2 className="w-4 h-4 mr-2" />
+        <Link2 className="w-4 h-4" />
         Generate Shareable Link
       </Button>
 
