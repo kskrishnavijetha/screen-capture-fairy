@@ -14,6 +14,7 @@ const SignIn = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [stayConnected, setStayConnected] = useState(true); // Default to true for persistent auth
+  const [resetRequestTime, setResetRequestTime] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
