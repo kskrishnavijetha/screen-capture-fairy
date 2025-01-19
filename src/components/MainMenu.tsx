@@ -39,18 +39,21 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
   }, []);
 
   const handleComponentClick = (componentId: string) => {
-    if (!isAuthenticated) {
-      navigate('/signin');
-      return;
-    }
-
     if (componentId === 'recorder') {
       navigate('/recorder');
-    } else if (componentId === 'safeshare') {
-      navigate('/safeshare');
-    } else {
-      setSelectedComponent(componentId);
+      return;
     }
+    
+    if (componentId === 'safeshare') {
+      if (!isAuthenticated) {
+        navigate('/signin');
+        return;
+      }
+      navigate('/safeshare');
+      return;
+    }
+    
+    setSelectedComponent(componentId);
   };
 
   return (
