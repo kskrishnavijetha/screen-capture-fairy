@@ -19,7 +19,7 @@ import { Session } from '@supabase/supabase-js';
 
 const queryClient = new QueryClient();
 
-// Protected Route component
+// Protected Route component with persistent auth check
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = React.useState<Session | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -49,6 +49,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   // Redirect if not authenticated
   if (!session) {
+    // Store the attempted URL to redirect back after login
+    sessionStorage.setItem('redirectUrl', window.location.pathname);
     return <Navigate to="/signin" replace />;
   }
 
