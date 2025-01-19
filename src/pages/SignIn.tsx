@@ -13,7 +13,7 @@ const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [stayConnected, setStayConnected] = useState(true); // Default to true for persistent auth
+  const [stayConnected, setStayConnected] = useState(false);
   const [resetRequestTime, setResetRequestTime] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -22,10 +22,7 @@ const SignIn = () => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Get the stored redirect URL or default to /recorder
-        const redirectUrl = sessionStorage.getItem('redirectUrl') || '/recorder';
-        sessionStorage.removeItem('redirectUrl'); // Clear the stored URL
-        navigate(redirectUrl);
+        navigate('/recorder');
       }
     };
     
@@ -33,9 +30,7 @@ const SignIn = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
-        const redirectUrl = sessionStorage.getItem('redirectUrl') || '/recorder';
-        sessionStorage.removeItem('redirectUrl');
-        navigate(redirectUrl);
+        navigate('/recorder');
       }
     });
 

@@ -13,13 +13,12 @@ import UserPage from "./pages/UserPage";
 import NotFound from "./pages/NotFound";
 import { RecordingComponent } from "@/components/RecordingComponent";
 import { SafeShareComponent } from "@/components/SafeShareComponent";
-import Recorder from "./pages/Recorder";
 import { supabase } from './integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 
 const queryClient = new QueryClient();
 
-// Protected Route component with persistent auth check
+// Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = React.useState<Session | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -49,8 +48,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   // Redirect if not authenticated
   if (!session) {
-    // Store the attempted URL to redirect back after login
-    sessionStorage.setItem('redirectUrl', window.location.pathname);
     return <Navigate to="/signin" replace />;
   }
 
@@ -69,8 +66,7 @@ const App = () => (
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/user" element={<ProtectedRoute><UserPage /></ProtectedRoute>} />
-            <Route path="/recorder" element={<Recorder />} />
-            <Route path="/record" element={<ProtectedRoute><RecordingComponent /></ProtectedRoute>} />
+            <Route path="/recorder" element={<ProtectedRoute><RecordingComponent /></ProtectedRoute>} />
             <Route path="/safeshare" element={<ProtectedRoute><SafeShareComponent /></ProtectedRoute>} />
             <Route path="/playback" element={<ProtectedRoute><VideoPlayback /></ProtectedRoute>} />
             <Route path="/edit" element={<ProtectedRoute><VideoEdit /></ProtectedRoute>} />
