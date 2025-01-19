@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Code, Copy, Check } from 'lucide-react';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 
 interface EmbedControlsProps {
@@ -22,13 +22,12 @@ export const EmbedControls = ({ recordedBlob }: EmbedControlsProps) => {
       return;
     }
 
-    // In a real implementation, this would upload the video to a server
-    // and return a permanent URL. For now, we'll simulate it:
-    const simulatedVideoUrl = `https://example.com/embed/${Math.random().toString(36).substring(7)}`;
+    // Create a temporary URL for the video
+    const videoUrl = URL.createObjectURL(recordedBlob);
     const embedCode = `<iframe 
   width="560" 
   height="315" 
-  src="${simulatedVideoUrl}" 
+  src="${videoUrl}" 
   frameborder="0" 
   allowfullscreen
 ></iframe>`;
@@ -68,12 +67,13 @@ export const EmbedControls = ({ recordedBlob }: EmbedControlsProps) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 bg-card p-4 rounded-lg border border-border">
+      <h3 className="text-lg font-semibold mb-4">Embed Video</h3>
       <Button
         onClick={generateEmbedCode}
         disabled={!recordedBlob}
         variant="outline"
-        className="w-full"
+        className="w-full justify-start bg-background hover:bg-accent"
       >
         <Code className="w-4 h-4 mr-2" />
         Generate Embed Code
@@ -84,13 +84,13 @@ export const EmbedControls = ({ recordedBlob }: EmbedControlsProps) => {
           <Textarea
             value={embedCode}
             readOnly
-            className="font-mono text-sm"
+            className="font-mono text-sm bg-background"
             rows={4}
           />
           <Button
             onClick={copyToClipboard}
             variant="outline"
-            className="w-full"
+            className="w-full justify-start bg-background hover:bg-accent"
           >
             {isCopied ? (
               <Check className="h-4 w-4 mr-2" />

@@ -23,11 +23,16 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
 
     setIsSharing(true);
     try {
+      // Create a temporary URL for the video
       const videoUrl = URL.createObjectURL(recordedBlob);
 
       switch (platform) {
         case 'youtube': {
-          window.open('https://studio.youtube.com/channel/upload', '_blank', 'noopener,noreferrer');
+          // Open YouTube upload in a new window
+          const uploadWindow = window.open('https://studio.youtube.com/channel/upload', '_blank');
+          if (uploadWindow) {
+            uploadWindow.focus();
+          }
           toast({
             title: "YouTube Upload",
             description: "Please upload your video through YouTube Studio.",
@@ -35,7 +40,8 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
           break;
         }
         case 'twitter': {
-          const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent('Check out my video!')}`;
+          const shareText = encodeURIComponent('Check out my video!');
+          const shareUrl = `https://twitter.com/intent/tweet?text=${shareText}`;
           window.open(shareUrl, '_blank', 'width=550,height=420,noopener,noreferrer');
           break;
         }
@@ -50,9 +56,9 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
           break;
         }
         case 'email': {
-          const emailSubject = encodeURIComponent('Check out my video');
-          const emailBody = encodeURIComponent('I recorded this video and wanted to share it with you.');
-          window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+          const subject = encodeURIComponent('Check out my video');
+          const body = encodeURIComponent('I recorded this video and wanted to share it with you.');
+          window.location.href = `mailto:?subject=${subject}&body=${body}`;
           break;
         }
       }
@@ -74,7 +80,8 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 bg-card p-4 rounded-lg border border-border">
+      <h3 className="text-lg font-semibold mb-4">Share Video</h3>
       {Object.entries(platformConfigs).map(([key, config]) => {
         const Icon = config.icon;
         return (
@@ -83,7 +90,7 @@ export const ShareControls = ({ recordedBlob }: ShareControlsProps) => {
             onClick={() => handleShare(key as Platform)}
             disabled={isSharing || !recordedBlob}
             variant="outline"
-            className="w-full justify-start"
+            className="w-full justify-start bg-background hover:bg-accent"
           >
             <Icon className="w-4 h-4 mr-2" />
             Share to {config.name}
