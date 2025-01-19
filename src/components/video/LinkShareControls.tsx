@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Link2, Copy, Check } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 
 interface LinkShareControlsProps {
   recordedBlob: Blob | null;
@@ -24,6 +25,8 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
     try {
       // Create a temporary URL for the video blob
       const url = URL.createObjectURL(recordedBlob);
+      // In a production environment, you would want to upload this to a server
+      // and generate a permanent link instead of using a blob URL
       setShareableLink(url);
       toast({
         title: "Link Generated",
@@ -68,29 +71,29 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
   };
 
   return (
-    <div className="flex flex-col space-y-2">
+    <div className="space-y-2">
       <Button
         onClick={generateShareableLink}
         disabled={!recordedBlob}
         variant="outline"
-        className="w-full"
+        className="w-full justify-start bg-background hover:bg-accent"
       >
         <Link2 className="w-4 h-4 mr-2" />
         Generate Shareable Link
       </Button>
 
       {shareableLink && (
-        <div className="flex items-center space-x-2">
-          <input
-            type="text"
+        <div className="flex gap-2">
+          <Input
             value={shareableLink}
             readOnly
-            className="flex-1 px-3 py-2 border rounded-md text-sm"
+            className="flex-1 font-mono text-sm"
           />
           <Button
             onClick={copyToClipboard}
             variant="outline"
             size="icon"
+            className="shrink-0"
           >
             {isCopied ? (
               <Check className="h-4 w-4" />
