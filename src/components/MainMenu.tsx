@@ -40,10 +40,6 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
 
   const handleComponentClick = (componentId: string) => {
     if (componentId === 'recorder') {
-      if (!isAuthenticated) {
-        navigate('/signin');
-        return;
-      }
       navigate('/recorder');
       return;
     }
