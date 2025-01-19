@@ -44,17 +44,10 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
       return;
     }
 
-    if (componentId === 'recorder' || componentId === 'safeshare') {
-      const width = 1024;
-      const height = 768;
-      const left = window.screen.width / 2 - width / 2;
-      const top = window.screen.height / 2 - height / 2;
-
-      window.open(
-        `/${componentId}`,
-        componentId,
-        `width=${width},height=${height},top=${top},left=${left},noopener,noreferrer`
-      );
+    if (componentId === 'recorder') {
+      navigate('/recorder');
+    } else if (componentId === 'safeshare') {
+      navigate('/safeshare');
     } else {
       setSelectedComponent(componentId);
     }
