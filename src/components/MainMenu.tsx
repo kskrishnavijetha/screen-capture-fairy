@@ -143,19 +143,19 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
       </Sheet>
 
       <Dialog open={showRecorderDialog} onOpenChange={setShowRecorderDialog}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle className="text-3xl font-bold tracking-tight leading-tight text-center">
+        <DialogContent className="sm:max-w-[600px] bg-[#1a1f2c] border-none">
+          <DialogHeader className="space-y-6">
+            <DialogTitle className="text-4xl font-bold tracking-tight text-white text-center">
               Record Your Screen Anywhere, Anytime
             </DialogTitle>
-            <DialogDescription className="text-center mt-4">
+            <DialogDescription className="text-center text-gray-400 text-lg leading-relaxed">
               Easily capture your screen directly from your browser—no downloads or installations required. Whether you're creating tutorials, recording meetings, or sharing gameplay, our free screen recorder is fast, secure, and hassle-free. Start recording in just one click!
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-center gap-4 mt-6">
+          <div className="flex justify-center gap-4 mt-8">
             <Button 
               onClick={handleStartRecording}
-              className="bg-primary hover:bg-primary/90"
+              className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-6 text-lg font-medium rounded-md"
             >
               Start Recording Now
             </Button>
@@ -165,6 +165,7 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
                 setShowRecorderDialog(false);
                 navigate('/signup');
               }}
+              className="bg-transparent border-[#8b5cf6] text-[#8b5cf6] hover:bg-[#8b5cf6] hover:text-white px-8 py-6 text-lg font-medium rounded-md transition-colors"
             >
               Create Free Account
             </Button>
