@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { MonitorPlay, LogOut, User, ArrowLeft } from 'lucide-react';
+import { MonitorPlay, LogOut, User } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
 import { RecordingControls } from '@/components/RecordingControls';
 import { DownloadRecording } from '@/components/DownloadRecording';
@@ -137,15 +137,7 @@ export const RecordingComponent = () => {
 
   return (
     <div className="text-center space-y-6 w-full max-w-md mx-auto">
-      <div className="flex justify-between items-center mb-4">
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={() => navigate('/')}
-          className="hover:bg-accent"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
+      <div className="flex justify-end mb-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon">
