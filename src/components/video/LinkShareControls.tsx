@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link2, Copy, Check, Mail, Youtube, Facebook, Linkedin, Twitter } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LinkShareControlsProps {
   recordedBlob: Blob | null;
@@ -11,6 +12,7 @@ interface LinkShareControlsProps {
 export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
   const [isCopied, setIsCopied] = useState(false);
   const [shareableLink, setShareableLink] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const generateShareableLink = async () => {
     if (!recordedBlob) {
@@ -23,8 +25,28 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
     }
 
     try {
-      const url = URL.createObjectURL(recordedBlob);
-      setShareableLink(url);
+      setIsGenerating(true);
+      
+      // Generate a unique filename
+      const filename = `recording-${Date.now()}.webm`;
+      
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('secure_files')
+        .upload(filename, recordedBlob, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('secure_files')
+        .getPublicUrl(filename);
+
+      setShareableLink(publicUrl);
+      
       toast({
         title: "Link Generated",
         description: "Shareable link has been generated successfully.",
@@ -36,6 +58,8 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
         title: "Error generating link",
         description: "Failed to generate shareable link.",
       });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -79,37 +103,31 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
 
     const videoTitle = "Check out my video!";
     const videoDescription = "I recorded this video and wanted to share it with you.";
+    const encodedUrl = encodeURIComponent(shareableLink);
+    const encodedText = encodeURIComponent(videoDescription);
+    const encodedTitle = encodeURIComponent(videoTitle);
 
+    let url = '';
     switch (platform) {
       case 'youtube':
         window.open('https://studio.youtube.com/channel/upload', '_blank');
         break;
       case 'twitter':
-        window.open(
-          `https://twitter.com/intent/tweet?text=${encodeURIComponent(videoDescription)}&url=${encodeURIComponent(shareableLink)}`,
-          '_blank',
-          'width=550,height=420'
-        );
+        url = `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`;
         break;
       case 'facebook':
-        window.open(
-          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableLink)}`,
-          '_blank',
-          'width=550,height=420'
-        );
+        url = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
         break;
       case 'linkedin':
-        window.open(
-          `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableLink)}`,
-          '_blank',
-          'width=550,height=420'
-        );
+        url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
         break;
       case 'email':
-        window.location.href = `mailto:?subject=${encodeURIComponent(videoTitle)}&body=${encodeURIComponent(
-          `${videoDescription}\n\nView it here: ${shareableLink}`
-        )}`;
-        break;
+        window.location.href = `mailto:?subject=${encodedTitle}&body=${encodedText}%0A%0AView it here: ${encodedUrl}`;
+        return;
+    }
+
+    if (url) {
+      window.open(url, '_blank', 'width=550,height=420');
     }
   };
 
@@ -117,12 +135,12 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
     <div className="space-y-2">
       <Button
         onClick={generateShareableLink}
-        disabled={!recordedBlob}
+        disabled={!recordedBlob || isGenerating}
         variant="outline"
         className="w-full justify-start bg-background hover:bg-accent gap-2"
       >
         <Link2 className="w-4 h-4" />
-        Generate Shareable Link
+        {isGenerating ? 'Generating Link...' : 'Generate Shareable Link'}
       </Button>
 
       {shareableLink && (
@@ -154,7 +172,7 @@ export const LinkShareControls = ({ recordedBlob }: LinkShareControlsProps) => {
               className="w-full justify-start bg-black hover:bg-gray-800 text-white gap-2"
             >
               <Mail className="w-4 h-4" />
-              Share to Email
+              Share via Email
             </Button>
             <Button
               onClick={() => shareToSocialMedia('youtube')}

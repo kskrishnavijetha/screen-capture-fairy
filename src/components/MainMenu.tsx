@@ -39,25 +39,21 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
   }, []);
 
   const handleComponentClick = (componentId: string) => {
-    if (!isAuthenticated) {
-      navigate('/signin');
+    if (componentId === 'recorder') {
+      navigate('/recorder');
       return;
     }
-
-    if (componentId === 'recorder' || componentId === 'safeshare') {
-      const width = 1024;
-      const height = 768;
-      const left = window.screen.width / 2 - width / 2;
-      const top = window.screen.height / 2 - height / 2;
-
-      window.open(
-        `/${componentId}`,
-        componentId,
-        `width=${width},height=${height},top=${top},left=${left},noopener,noreferrer`
-      );
-    } else {
-      setSelectedComponent(componentId);
+    
+    if (componentId === 'safeshare') {
+      if (!isAuthenticated) {
+        navigate('/signin');
+        return;
+      }
+      navigate('/safeshare');
+      return;
     }
+    
+    setSelectedComponent(componentId);
   };
 
   return (
