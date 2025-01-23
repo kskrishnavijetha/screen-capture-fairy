@@ -60,7 +60,7 @@ export const UserPresence = ({ user }: UserPresenceProps) => {
 
   return (
     <div className="flex items-center gap-2">
-      <Badge variant="outline" className="bg-green-100">
+      <Badge variant="outline" className="bg-[#D3E4FD] text-[#0EA5E9] border-[#0EA5E9]">
         {onlineUsers} online
       </Badge>
     </div>
