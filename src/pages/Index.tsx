@@ -3,9 +3,11 @@ import { MainMenu } from "@/components/MainMenu";
 import { HomePage } from "@/components/HomePage";
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { AIContentGenerator } from '@/components/AIContentGenerator';
+import { UserPresence } from '@/components/UserPresence';
 import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "@/components/ui/use-toast";
+import { User } from '@supabase/supabase-js';
 
 const getThemeClasses = (themeName: string) => {
   switch (themeName) {
@@ -26,12 +28,14 @@ const Index = () => {
   const [selectedComponent, setSelectedComponent] = useState('home');
   const [currentTheme, setCurrentTheme] = useState('Default Dark');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
+      setUser(session?.user || null);
       if (session) {
         navigate('/recorder');
       }
@@ -41,6 +45,7 @@ const Index = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      setUser(session?.user || null);
       if (session) {
         navigate('/recorder');
       }
@@ -116,6 +121,7 @@ const Index = () => {
           className="w-8 h-8"
         />
         <span className="text-lg font-semibold">Softwave</span>
+        <UserPresence user={user} />
       </div>
       
       <div className="flex flex-col items-center justify-center min-h-screen">

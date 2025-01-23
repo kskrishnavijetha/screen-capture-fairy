@@ -143,6 +143,36 @@ export type Database = {
         }
         Relationships: []
       }
+      stream_presence: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_seen: string | null
+          metadata: Json | null
+          status: string
+          stream_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_seen?: string | null
+          metadata?: Json | null
+          status: string
+          stream_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_seen?: string | null
+          metadata?: Json | null
+          status?: string
+          stream_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
