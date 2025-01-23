@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Settings, LogOut, Video } from 'lucide-react';
+import { User, Settings, LogOut, Video, ArrowLeft } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
@@ -134,6 +134,15 @@ const UserPage = () => {
 
   return (
     <div className="min-h-screen p-8">
+      <Button
+        variant="ghost"
+        className="mb-4"
+        onClick={() => navigate('/')}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Home
+      </Button>
+
       <Card className="max-w-3xl mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl">User Settings</CardTitle>

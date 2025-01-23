@@ -40,7 +40,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
   const handleSeek = (time: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime = time;
+      setCurrentTime(time);
     }
+  };
+
+  const handleAnnotationClick = (timestamp: number) => {
+    handleSeek(timestamp);
   };
 
   return (
@@ -57,6 +62,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
           }}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
+          onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
         />
         <div className="absolute bottom-4 right-4">
           <CollaborativeControls
@@ -74,6 +80,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
           duration={videoRef.current?.duration || 0}
           videoId={videoId}
           currentTime={currentTime}
+          onAnnotationClick={handleAnnotationClick}
         />
       </div>
     </div>
