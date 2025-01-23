@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { CommentSection } from './video/CommentSection';
 import { CollaborativeControls } from './video/CollaborativeControls';
-import { AnnotationControls, Annotation } from './video/AnnotationControls';
+import { AnnotationControls } from './video/AnnotationControls';
 
 interface MediaPlayerProps {
   recordedBlob: Blob;
@@ -11,7 +11,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const videoId = recordedBlob.size.toString();
 
   useEffect(() => {
@@ -73,8 +72,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
         <CommentSection videoId={videoId} />
         <AnnotationControls
           duration={videoRef.current?.duration || 0}
-          annotations={annotations}
-          onAnnotationsChange={setAnnotations}
+          videoId={videoId}
         />
       </div>
     </div>
