@@ -46,29 +46,29 @@ export const getMediaStream = async (
 
     if (mode === 'screen') {
       try {
+        // First get display media with system audio
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
-          ...constraints,
-          audio: {
-            ...constraints.audio,
-            displaySurface: 'monitor'
-          }
+          video: constraints.video,
+          audio: true // Enable system audio capture
         });
 
-        // Get system audio if available
+        // Then get microphone audio
         try {
-          const audioStream = await navigator.mediaDevices.getUserMedia({
+          const micStream = await navigator.mediaDevices.getUserMedia({
             audio: constraints.audio,
             video: false
           });
           
-          // Combine display and audio streams
+          // Combine all tracks
           const tracks = [
             ...displayStream.getVideoTracks(),
-            ...audioStream.getAudioTracks()
+            ...displayStream.getAudioTracks(),
+            ...micStream.getAudioTracks()
           ];
+          
           return new MediaStream(tracks);
         } catch (audioError) {
-          console.warn('Could not capture system audio:', audioError);
+          console.warn('Could not capture microphone audio:', audioError);
           return displayStream;
         }
       } catch (error) {
@@ -84,7 +84,10 @@ export const getMediaStream = async (
       }
     } else if (mode === 'camera') {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: constraints.video,
+          audio: constraints.audio
+        });
         return stream;
       } catch (error) {
         console.error('Camera access error:', error);
@@ -92,41 +95,6 @@ export const getMediaStream = async (
           variant: "destructive",
           title: "Camera Access Failed",
           description: "Please grant camera and microphone permissions and try again."
-        });
-        return null;
-      }
-    } else if (mode === 'both') {
-      try {
-        const displayStream = await navigator.mediaDevices.getDisplayMedia({
-          ...constraints,
-          audio: {
-            ...constraints.audio,
-            displaySurface: 'monitor'
-          }
-        });
-        
-        const cameraStream = await navigator.mediaDevices.getUserMedia({
-          video: constraints.video,
-          audio: constraints.audio
-        });
-
-        // Combine all tracks
-        const tracks = [
-          ...displayStream.getVideoTracks(),
-          ...displayStream.getAudioTracks(),
-          ...cameraStream.getVideoTracks(),
-          ...cameraStream.getAudioTracks()
-        ];
-        
-        return new MediaStream(tracks);
-      } catch (error) {
-        console.error('Media capture error:', error);
-        toast({
-          variant: "destructive",
-          title: "Recording Failed",
-          description: isMobileDevice()
-            ? "This recording mode may not be supported on your device."
-            : "Please grant all necessary permissions and try again."
         });
         return null;
       }

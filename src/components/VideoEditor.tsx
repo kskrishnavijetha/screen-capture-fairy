@@ -88,6 +88,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         <AnnotationControls
           duration={duration}
           videoId={videoId}
+          currentTime={currentTime}
         />
       </div>
     </div>
