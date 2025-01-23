@@ -6,6 +6,7 @@ import { ExportControls } from './video/ExportControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
 import { VideoPreviewSection } from './video/preview/VideoPreviewSection';
+import { AnnotationControls } from './video/AnnotationControls';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
 interface VideoEditorProps {
@@ -23,6 +24,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const videoId = recordedBlob ? recordedBlob.size.toString() : '';
 
   useEffect(() => {
     if (recordedBlob) {
@@ -66,20 +68,27 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
         onTimeUpdate={handleTimeUpdate}
       />
 
-      <div className="space-y-4">
-        <SilenceControls
-          enabled={removeSilences}
-          onToggle={setRemoveSilences}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
+          <SilenceControls
+            enabled={removeSilences}
+            onToggle={setRemoveSilences}
+          />
 
-        <FillerWordControls
-          enabled={removeFillerWords}
-          onToggle={setRemoveFillerWords}
-        />
+          <FillerWordControls
+            enabled={removeFillerWords}
+            onToggle={setRemoveFillerWords}
+          />
 
-        <ShareControls recordedBlob={recordedBlob} />
-        <EmbedControls recordedBlob={recordedBlob} />
-        <ExportControls recordedBlob={recordedBlob} />
+          <ShareControls recordedBlob={recordedBlob} />
+          <EmbedControls recordedBlob={recordedBlob} />
+          <ExportControls recordedBlob={recordedBlob} />
+        </div>
+
+        <AnnotationControls
+          duration={duration}
+          videoId={videoId}
+        />
       </div>
     </div>
   );

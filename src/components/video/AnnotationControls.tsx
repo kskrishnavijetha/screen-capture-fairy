@@ -1,31 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageCircle, Plus, X } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Annotation {
   id: string;
   timestamp: number;
   text: string;
   author: string;
+  video_id: string;
 }
 
 interface AnnotationControlsProps {
   duration: number;
-  annotations: Annotation[];
-  onAnnotationsChange: (annotations: Annotation[]) => void;
+  videoId: string;
 }
 
-export const AnnotationControls = ({ duration, annotations, onAnnotationsChange }: AnnotationControlsProps) => {
+export const AnnotationControls = ({ duration, videoId }: AnnotationControlsProps) => {
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [newAnnotation, setNewAnnotation] = useState<Partial<Annotation>>({
     timestamp: 0,
     text: '',
-    author: 'User'
+    author: ''
   });
 
-  const addAnnotation = () => {
+  useEffect(() => {
+    // Fetch existing annotations
+    const fetchAnnotations = async () => {
+      const { data, error } = await supabase
+        .from('annotations')
+        .select('*')
+        .eq('video_id', videoId)
+        .order('timestamp', { ascending: true });
+
+      if (error) {
+        toast({
+          title: "Error fetching annotations",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAnnotations(data || []);
+    };
+
+    fetchAnnotations();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('annotations-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'annotations',
+          filter: `video_id=eq.${videoId}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setAnnotations(prev => [...prev, payload.new as Annotation]);
+          } else if (payload.eventType === 'DELETE') {
+            setAnnotations(prev => prev.filter(a => a.id !== payload.old.id));
+          } else if (payload.eventType === 'UPDATE') {
+            setAnnotations(prev => prev.map(a => 
+              a.id === payload.new.id ? payload.new as Annotation : a
+            ));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [videoId]);
+
+  const addAnnotation = async () => {
     if (!newAnnotation.text) {
       toast({
         title: "Error",
@@ -34,16 +89,38 @@ export const AnnotationControls = ({ duration, annotations, onAnnotationsChange 
       });
       return;
     }
-    
-    const annotation: Annotation = {
-      id: Date.now().toString(),
+
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user) {
+      toast({
+        title: "Authentication Error",
+        description: "Please sign in to add annotations",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const annotation = {
+      video_id: videoId,
       timestamp: newAnnotation.timestamp || 0,
       text: newAnnotation.text,
-      author: newAnnotation.author || 'User'
+      author: userData.user.id
     };
 
-    onAnnotationsChange([...annotations, annotation]);
-    setNewAnnotation({ timestamp: 0, text: '', author: 'User' });
+    const { error } = await supabase
+      .from('annotations')
+      .insert([annotation]);
+
+    if (error) {
+      toast({
+        title: "Error adding annotation",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setNewAnnotation({ timestamp: 0, text: '', author: '' });
     
     toast({
       title: "Annotation added",
@@ -51,9 +128,20 @@ export const AnnotationControls = ({ duration, annotations, onAnnotationsChange 
     });
   };
 
-  const removeAnnotation = (id: string) => {
-    const newAnnotations = annotations.filter(a => a.id !== id);
-    onAnnotationsChange(newAnnotations);
+  const removeAnnotation = async (id: string) => {
+    const { error } = await supabase
+      .from('annotations')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({
+        title: "Error removing annotation",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
     
     toast({
       title: "Annotation removed",
@@ -80,7 +168,7 @@ export const AnnotationControls = ({ duration, annotations, onAnnotationsChange 
             <div className="flex-1">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">
-                  {formatTime(annotation.timestamp)} - {annotation.author}
+                  {formatTime(annotation.timestamp)}
                 </span>
                 <Button
                   variant="ghost"
@@ -98,26 +186,15 @@ export const AnnotationControls = ({ duration, annotations, onAnnotationsChange 
       </div>
 
       <div className="space-y-2">
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-sm">Timestamp (seconds)</label>
-            <Input
-              type="number"
-              min={0}
-              max={duration}
-              value={newAnnotation.timestamp}
-              onChange={(e) => setNewAnnotation(prev => ({ ...prev, timestamp: Number(e.target.value) }))}
-            />
-          </div>
-          <div>
-            <label className="text-sm">Author</label>
-            <Input
-              type="text"
-              value={newAnnotation.author}
-              onChange={(e) => setNewAnnotation(prev => ({ ...prev, author: e.target.value }))}
-              placeholder="Enter your name"
-            />
-          </div>
+        <div>
+          <label className="text-sm">Timestamp (seconds)</label>
+          <Input
+            type="number"
+            min={0}
+            max={duration}
+            value={newAnnotation.timestamp}
+            onChange={(e) => setNewAnnotation(prev => ({ ...prev, timestamp: Number(e.target.value) }))}
+          />
         </div>
         <div>
           <label className="text-sm">Comment</label>

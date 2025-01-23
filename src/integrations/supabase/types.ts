@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      annotations: {
+        Row: {
+          author: string
+          created_at: string
+          id: string
+          text: string
+          timestamp: number
+          video_id: string
+        }
+        Insert: {
+          author: string
+          created_at?: string
+          id?: string
+          text: string
+          timestamp: number
+          video_id: string
+        }
+        Update: {
+          author?: string
+          created_at?: string
+          id?: string
+          text?: string
+          timestamp?: number
+          video_id?: string
+        }
+        Relationships: []
+      }
       "file sharing": {
         Row: {
           created_at: string
