@@ -15,6 +15,7 @@ import { RecordingComponent } from "@/components/RecordingComponent";
 import { SafeShareComponent } from "@/components/SafeShareComponent";
 import { supabase } from './integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
+import { UserPresence } from '@/components/UserPresence';
 
 const queryClient = new QueryClient();
 
@@ -51,7 +52,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/signin" replace />;
   }
 
-  return children;
+  return (
+    <div>
+      <div className="absolute top-4 right-4">
+        <UserPresence user={session.user} />
+      </div>
+      {children}
+    </div>
+  );
 };
 
 const App = () => (
