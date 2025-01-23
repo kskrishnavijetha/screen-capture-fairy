@@ -17,15 +17,23 @@ export interface Annotation {
 interface AnnotationControlsProps {
   duration: number;
   videoId: string;
+  currentTime: number;
 }
 
-export const AnnotationControls = ({ duration, videoId }: AnnotationControlsProps) => {
+export const AnnotationControls = ({ duration, videoId, currentTime }: AnnotationControlsProps) => {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [newAnnotation, setNewAnnotation] = useState<Partial<Annotation>>({
-    timestamp: 0,
+    timestamp: currentTime,
     text: '',
     author: ''
   });
+
+  useEffect(() => {
+    setNewAnnotation(prev => ({
+      ...prev,
+      timestamp: currentTime
+    }));
+  }, [currentTime]);
 
   useEffect(() => {
     // Fetch existing annotations
@@ -120,7 +128,7 @@ export const AnnotationControls = ({ duration, videoId }: AnnotationControlsProp
       return;
     }
 
-    setNewAnnotation({ timestamp: 0, text: '', author: '' });
+    setNewAnnotation({ timestamp: currentTime, text: '', author: '' });
     
     toast({
       title: "Annotation added",
@@ -187,13 +195,14 @@ export const AnnotationControls = ({ duration, videoId }: AnnotationControlsProp
 
       <div className="space-y-2">
         <div>
-          <label className="text-sm">Timestamp (seconds)</label>
+          <label className="text-sm">Current Time: {formatTime(currentTime)}</label>
           <Input
             type="number"
             min={0}
             max={duration}
             value={newAnnotation.timestamp}
             onChange={(e) => setNewAnnotation(prev => ({ ...prev, timestamp: Number(e.target.value) }))}
+            className="mt-1"
           />
         </div>
         <div>

@@ -73,6 +73,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
         <AnnotationControls
           duration={videoRef.current?.duration || 0}
           videoId={videoId}
+          currentTime={currentTime}
         />
       </div>
     </div>
