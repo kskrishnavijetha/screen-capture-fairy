@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, MonitorPlay, Home, Link2, Share2 } from 'lucide-react';
+import { Menu, MonitorPlay, Home } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -14,7 +14,6 @@ import { useNavigate } from "react-router-dom";
 export const MENU_ITEMS = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'recorder', label: 'Screen Recorder', icon: MonitorPlay },
-  { id: 'safeshare', label: 'SafeShare', icon: Share2 },
 ];
 
 interface MainMenuProps {
@@ -44,7 +43,7 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
       return;
     }
 
-    if (componentId === 'recorder' || componentId === 'safeshare') {
+    if (componentId === 'recorder') {
       const width = 1024;
       const height = 768;
       const left = window.screen.width / 2 - width / 2;
@@ -88,23 +87,6 @@ export const MainMenu = ({ selectedComponent, setSelectedComponent }: MainMenuPr
             <MonitorPlay className="mr-2 h-4 w-4" />
             Screen Recorder
           </Button>
-          <Button
-            variant={selectedComponent === 'safeshare' ? "default" : "ghost"}
-            className="w-full justify-start"
-            onClick={() => handleComponentClick('safeshare')}
-          >
-            <Share2 className="mr-2 h-4 w-4" />
-            SafeShare
-          </Button>
-          <a 
-            href="https://x.com/softwave1116" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors"
-          >
-            <Link2 className="h-4 w-4" />
-            <span>Connect on X</span>
-          </a>
         </div>
       </SheetContent>
     </Sheet>
