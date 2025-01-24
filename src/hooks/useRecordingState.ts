@@ -36,23 +36,29 @@ export const useRecordingState = () => {
     onRecordingStop: (blob: Blob) => void,
   ) => {
     try {
+      // Clean up any existing streams
       if (streamRef.current) {
         stopMediaStream(streamRef.current);
         streamRef.current = null;
       }
 
+      // Get new media stream
       const stream = await getMediaStream(captureMode, frameRate, resolution);
+      
       if (!stream) {
-        throw new Error('Failed to initialize media stream');
+        throw new Error('No media stream available');
       }
 
-      if (stream.getTracks().length === 0) {
+      const tracks = stream.getTracks();
+      if (tracks.length === 0) {
         throw new Error('No media tracks available');
       }
 
+      // Store the stream reference
       streamRef.current = stream;
       chunksRef.current = [];
 
+      // Configure MediaRecorder
       const options = {
         mimeType: getMimeType(),
         audioBitsPerSecond: 128000,
@@ -62,10 +68,11 @@ export const useRecordingState = () => {
       try {
         mediaRecorderRef.current = new MediaRecorder(stream, options);
       } catch (e) {
-        console.error('MediaRecorder error:', e);
+        console.error('MediaRecorder creation error:', e);
         mediaRecorderRef.current = new MediaRecorder(stream);
       }
 
+      // Set up MediaRecorder event handlers
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
           chunksRef.current.push(event.data);
@@ -77,12 +84,15 @@ export const useRecordingState = () => {
         const blob = new Blob(chunksRef.current, { type: mimeType });
         chunksRef.current = [];
         onRecordingStop(blob);
+        
+        // Clean up the stream
         if (streamRef.current) {
           stopMediaStream(streamRef.current);
           streamRef.current = null;
         }
       };
 
+      // Start recording
       mediaRecorderRef.current.start(1000);
       setIsRecording(true);
       setIsPaused(false);
@@ -90,20 +100,26 @@ export const useRecordingState = () => {
 
       toast({
         title: "Recording started",
-        description: "Your recording has begun with audio enabled"
+        description: "Your recording has begun"
       });
     } catch (error) {
       console.error('Recording error:', error);
       setIsRecording(false);
       setIsPaused(false);
+      
+      // Clean up any partial streams
       if (streamRef.current) {
         stopMediaStream(streamRef.current);
         streamRef.current = null;
       }
+
+      // Show appropriate error message
       toast({
         variant: "destructive",
         title: "Recording failed",
-        description: error instanceof Error ? error.message : "Failed to start recording"
+        description: error instanceof Error 
+          ? error.message 
+          : "Failed to start recording. Please check your permissions and try again."
       });
     }
   }, []);
