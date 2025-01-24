@@ -9,7 +9,7 @@ interface TimerProps {
 
 export const Timer = ({ 
   duration, 
-  maxDuration = 180 * 60, // 180 minutes in seconds
+  maxDuration = 240 * 60, // 240 minutes (4 hours) in seconds
   onMaxDurationReached 
 }: TimerProps) => {
   const [showWarning, setShowWarning] = useState(false);
@@ -19,7 +19,7 @@ export const Timer = ({
       setShowWarning(true);
       toast({
         title: "Maximum recording time reached",
-        description: "Recording will stop at 180 minutes",
+        description: "Recording will stop at 4 hours",
         variant: "destructive"
       });
       onMaxDurationReached?.();
