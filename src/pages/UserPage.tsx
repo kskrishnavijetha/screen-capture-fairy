@@ -2,30 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Settings, LogOut, Video, ArrowLeft, Upload } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
-import { format } from 'date-fns';
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-
-interface Recording {
-  blob: Blob;
-  timestamp: Date;
-  id: string;
-}
-
-interface Profile {
-  id: string;
-  email: string;
-  name: string | null;
-  avatar_url: string | null;
-}
+import { ProfileHeader } from '@/components/profile/ProfileHeader';
+import { ProfileActions } from '@/components/profile/ProfileActions';
+import { RecordingsList } from '@/components/profile/RecordingsList';
+import { Profile } from '@/types/profile';
 
 const UserPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [recordings, setRecordings] = useState<Recording[]>([]);
-  const [showRecordings, setShowRecordings] = useState(true);
+  const [recordings, setRecordings] = useState([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -57,7 +45,7 @@ const UserPage = () => {
     }
   };
 
-  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true);
       
@@ -139,6 +127,27 @@ const UserPage = () => {
     }
   };
 
+  const handlePreview = (recording: any) => {
+    const url = URL.createObjectURL(recording.blob);
+    window.open(url, '_blank');
+  };
+
+  const handleDownload = (recording: any) => {
+    const url = URL.createObjectURL(recording.blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `recording-${Date.now()}.webm`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Download started",
+      description: "Your recording is being downloaded"
+    });
+  };
+
   return (
     <div className="min-h-screen p-8">
       <Button
@@ -153,109 +162,25 @@ const UserPage = () => {
       <Card className="max-w-3xl mx-auto">
         <CardHeader className="space-y-4">
           <CardTitle className="text-2xl">User Profile</CardTitle>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={profile?.avatar_url || ''} />
-                <AvatarFallback>
-                  {profile?.name?.[0]?.toUpperCase() || profile?.email?.[0]?.toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <label 
-                htmlFor="avatar-upload" 
-                className="absolute bottom-0 right-0 p-1 bg-primary rounded-full cursor-pointer hover:bg-primary/90"
-              >
-                <Upload className="h-4 w-4 text-white" />
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={uploadAvatar}
-                  disabled={uploading}
-                  className="hidden"
-                />
-              </label>
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-medium">{profile?.name || 'No name set'}</h3>
-              <p className="text-sm text-muted-foreground">{profile?.email}</p>
-            </div>
-          </div>
+          <ProfileHeader 
+            profile={profile}
+            uploading={uploading}
+            onAvatarUpload={handleAvatarUpload}
+          />
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => navigate('/profile')}
-          >
-            <User className="mr-2 h-4 w-4" />
-            Edit Profile
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => navigate('/settings')}
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-start text-red-500 hover:text-red-600"
-            onClick={handleSignOut}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+          <ProfileActions 
+            onNavigate={navigate}
+            onSignOut={handleSignOut}
+          />
 
           <div className="mt-8">
             <h3 className="text-lg font-semibold mb-4">Previous Recordings</h3>
-            {recordings.length === 0 ? (
-              <p className="text-muted-foreground">No recordings found.</p>
-            ) : (
-              <div className="space-y-4">
-                {recordings.map((recording, index) => (
-                  <Card key={recording.id || index} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Video className="h-4 w-4 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          {format(recording.timestamp, 'PPpp')}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const url = URL.createObjectURL(recording.blob);
-                            window.open(url, '_blank');
-                          }}
-                        >
-                          Preview
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const url = URL.createObjectURL(recording.blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `recording-${Date.now()}.webm`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
-                          }}
-                        >
-                          Download
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
+            <RecordingsList 
+              recordings={recordings}
+              onPreview={handlePreview}
+              onDownload={handleDownload}
+            />
           </div>
         </CardContent>
       </Card>
