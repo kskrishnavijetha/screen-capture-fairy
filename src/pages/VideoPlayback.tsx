@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { VideoPreview } from '@/components/media/VideoPreview';
 import { SharedTimeline } from '@/components/video/timeline/SharedTimeline';
 import { MediaPlayer } from '@/components/MediaPlayer';
-import { Edit, Share, Download } from 'lucide-react';
+import { Edit, Download } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 
 const VideoPlayback = () => {
@@ -48,10 +48,6 @@ const VideoPlayback = () => {
     navigate('/edit', { state: { recordedBlob } });
   };
 
-  const handleShare = () => {
-    navigate('/safeshare', { state: { recordedBlob } });
-  };
-
   const handleDownload = () => {
     try {
       const url = URL.createObjectURL(recordedBlob);
@@ -92,10 +88,6 @@ const VideoPlayback = () => {
             <Button onClick={handleEdit} variant="outline">
               <Edit className="w-4 h-4 mr-2" />
               Edit Video
-            </Button>
-            <Button onClick={handleShare} variant="outline">
-              <Share className="w-4 h-4 mr-2" />
-              Share
             </Button>
             <Button onClick={handleDownload} variant="outline">
               <Download className="w-4 h-4 mr-2" />
