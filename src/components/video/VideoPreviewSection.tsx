@@ -31,11 +31,11 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="relative rounded-lg overflow-hidden bg-black">
+      <div className="relative rounded-lg overflow-hidden bg-black max-w-md mx-auto aspect-video">
         <video
           ref={videoRef}
           src={videoUrl}
-          className="w-full"
+          className="w-full h-full object-contain"
           controls
           onLoadedMetadata={(e) => onMetadataLoaded?.(e.currentTarget.duration)}
           onTimeUpdate={(e) => onTimeUpdate?.(e.currentTarget.currentTime)}
@@ -45,11 +45,11 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
       {processedVideoUrl && (
         <div className="mt-6">
           <h3 className="text-lg font-semibold mb-2">Processed Video Preview</h3>
-          <div className="relative rounded-lg overflow-hidden bg-black">
+          <div className="relative rounded-lg overflow-hidden bg-black max-w-md mx-auto aspect-video">
             <video
               ref={previewRef}
               src={processedVideoUrl}
-              className="w-full"
+              className="w-full h-full object-contain"
               controls
             />
           </div>
