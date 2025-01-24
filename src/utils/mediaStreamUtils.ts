@@ -11,7 +11,8 @@ const getDisplayMediaConstraints = (frameRate: number, resolution: Resolution) =
   audio: {
     echoCancellation: true,
     noiseSuppression: true,
-    sampleRate: 44100
+    sampleRate: 44100,
+    autoGainControl: true
   }
 });
 
@@ -24,7 +25,8 @@ const getUserMediaConstraints = (frameRate: number, resolution: Resolution) => (
   audio: {
     echoCancellation: true,
     noiseSuppression: true,
-    sampleRate: 44100
+    sampleRate: 44100,
+    autoGainControl: true
   }
 });
 
@@ -47,7 +49,24 @@ export const getMediaStream = async (
         const displayStream = await navigator.mediaDevices.getDisplayMedia(
           getDisplayMediaConstraints(frameRate, resolution)
         );
-        return displayStream;
+        
+        // Get system audio
+        const audioStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            sampleRate: 44100,
+            autoGainControl: true
+          }
+        });
+        
+        // Combine video and audio tracks
+        const tracks = [
+          ...displayStream.getVideoTracks(),
+          ...audioStream.getAudioTracks()
+        ];
+        
+        return new MediaStream(tracks);
       }
       
       case 'camera': {
@@ -59,25 +78,32 @@ export const getMediaStream = async (
       
       case 'both': {
         try {
-          // Get screen capture stream
           const displayStream = await navigator.mediaDevices.getDisplayMedia(
             getDisplayMediaConstraints(frameRate, resolution)
           );
           
-          // Get camera stream
           const cameraStream = await navigator.mediaDevices.getUserMedia(
             getUserMediaConstraints(frameRate, resolution)
           );
           
-          // Combine all tracks from both streams
-          const combinedTracks = [
+          // Get system audio
+          const audioStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              sampleRate: 44100,
+              autoGainControl: true
+            }
+          });
+          
+          // Combine all tracks
+          const tracks = [
             ...displayStream.getVideoTracks(),
-            ...displayStream.getAudioTracks(),
             ...cameraStream.getVideoTracks(),
-            ...cameraStream.getAudioTracks()
+            ...audioStream.getAudioTracks()
           ];
           
-          return new MediaStream(combinedTracks);
+          return new MediaStream(tracks);
         } catch (error: any) {
           console.error('Error combining streams:', error);
           toast({
