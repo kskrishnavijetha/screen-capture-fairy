@@ -6,7 +6,6 @@ import { ExportControls } from './video/ExportControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
 import { VideoPreviewSection } from './video/preview/VideoPreviewSection';
-import { AnnotationControls } from './video/AnnotationControls';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
 interface VideoEditorProps {
@@ -24,7 +23,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const videoId = recordedBlob ? recordedBlob.size.toString() : '';
 
   useEffect(() => {
     if (recordedBlob) {
@@ -84,12 +82,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
           <EmbedControls recordedBlob={recordedBlob} />
           <ExportControls recordedBlob={recordedBlob} />
         </div>
-
-        <AnnotationControls
-          duration={duration}
-          videoId={videoId}
-          currentTime={currentTime}
-        />
       </div>
     </div>
   );
