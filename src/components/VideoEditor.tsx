@@ -4,6 +4,7 @@ import { ExportControls } from './video/ExportControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
 import { VideoPreviewSection } from './video/preview/VideoPreviewSection';
+import { ShareControls } from './video/ShareControls';
 
 interface VideoEditorProps {
   recordedBlob: Blob | null;
@@ -75,6 +76,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
             onToggle={setRemoveFillerWords}
           />
 
+          <ShareControls recordedBlob={recordedBlob} />
           <EmbedControls recordedBlob={recordedBlob} />
           <ExportControls recordedBlob={recordedBlob} />
         </div>
