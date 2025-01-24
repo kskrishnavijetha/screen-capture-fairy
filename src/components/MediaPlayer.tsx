@@ -13,6 +13,20 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const videoId = recordedBlob.size.toString();
+  const [videoUrl, setVideoUrl] = useState<string>('');
+
+  useEffect(() => {
+    // Create and set video URL when component mounts or blob changes
+    const url = URL.createObjectURL(recordedBlob);
+    setVideoUrl(url);
+
+    // Cleanup URL when component unmounts
+    return () => {
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
+    };
+  }, [recordedBlob]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -31,7 +45,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
     if (!video) return;
 
     if (playing) {
-      video.play();
+      video.play().catch(error => {
+        console.error('Error playing video:', error);
+      });
     } else {
       video.pause();
     }
@@ -50,13 +66,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
       <div className="relative">
         <video
           ref={videoRef}
-          src={URL.createObjectURL(recordedBlob)}
+          src={videoUrl}
           controls
+          playsInline
           className="w-full rounded-lg bg-black"
-          onEnded={() => {
-            URL.revokeObjectURL(URL.createObjectURL(recordedBlob));
-            setIsPlaying(false);
-          }}
+          onEnded={() => setIsPlaying(false)}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
