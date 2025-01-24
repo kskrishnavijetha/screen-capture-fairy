@@ -2,6 +2,8 @@ import React from 'react';
 import { Monitor, Camera, Video } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "@/components/ui/use-toast";
 
 export type CaptureMode = 'screen' | 'camera' | 'both';
 
@@ -11,17 +13,39 @@ interface CaptureModeProps {
 }
 
 export const CaptureModeSelector = ({ mode, onChange }: CaptureModeProps) => {
+  const isMobile = useIsMobile();
+
+  const handleModeChange = (value: CaptureMode) => {
+    if (isMobile && (value === 'screen' || value === 'both')) {
+      toast({
+        variant: "destructive",
+        title: "Not supported",
+        description: "Screen recording is not available on mobile devices. Please use camera mode instead."
+      });
+      onChange('camera');
+      return;
+    }
+    onChange(value);
+  };
+
   return (
     <div className="mb-6">
       <h2 className="text-sm font-medium mb-3">What do you want to capture?</h2>
       <RadioGroup
         value={mode}
-        onValueChange={(value) => onChange(value as CaptureMode)}
+        onValueChange={handleModeChange}
         className="flex space-x-4"
       >
         <div className="flex items-center space-x-2">
-          <RadioGroupItem value="screen" id="screen" />
-          <Label htmlFor="screen" className="flex items-center space-x-2 cursor-pointer">
+          <RadioGroupItem 
+            value="screen" 
+            id="screen" 
+            disabled={isMobile}
+          />
+          <Label 
+            htmlFor="screen" 
+            className={`flex items-center space-x-2 ${isMobile ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+          >
             <Monitor className="h-4 w-4" />
             <span>Screen only</span>
           </Label>
@@ -36,8 +60,15 @@ export const CaptureModeSelector = ({ mode, onChange }: CaptureModeProps) => {
         </div>
 
         <div className="flex items-center space-x-2">
-          <RadioGroupItem value="both" id="both" />
-          <Label htmlFor="both" className="flex items-center space-x-2 cursor-pointer">
+          <RadioGroupItem 
+            value="both" 
+            id="both" 
+            disabled={isMobile}
+          />
+          <Label 
+            htmlFor="both" 
+            className={`flex items-center space-x-2 ${isMobile ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+          >
             <Video className="h-4 w-4" />
             <span>Screen & Camera</span>
           </Label>
