@@ -33,6 +33,7 @@ export const AnnotationControls = ({
     text: '',
     author: ''
   });
+  const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
 
   useEffect(() => {
     setNewAnnotation(prev => ({
@@ -42,7 +43,6 @@ export const AnnotationControls = ({
   }, [currentTime]);
 
   useEffect(() => {
-    // Fetch existing annotations
     const fetchAnnotations = async () => {
       const { data, error } = await supabase
         .from('annotations')
@@ -64,7 +64,6 @@ export const AnnotationControls = ({
 
     fetchAnnotations();
 
-    // Subscribe to realtime changes
     const channel = supabase
       .channel('annotations-changes')
       .on(
@@ -169,9 +168,10 @@ export const AnnotationControls = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleAnnotationClick = (timestamp: number) => {
+  const handleAnnotationClick = (annotation: Annotation) => {
+    setSelectedAnnotation(annotation);
     if (onAnnotationClick) {
-      onAnnotationClick(timestamp);
+      onAnnotationClick(annotation.timestamp);
     }
   };
 
@@ -182,15 +182,40 @@ export const AnnotationControls = ({
         Annotations
       </h3>
       
+      {/* Video Overlay for Annotations */}
+      <div className="relative">
+        {annotations.map((annotation) => (
+          <div
+            key={annotation.id}
+            className={`absolute cursor-pointer transform -translate-y-1/2 ${
+              selectedAnnotation?.id === annotation.id ? 'bg-primary' : 'bg-secondary'
+            } text-white px-2 py-1 rounded-full text-sm`}
+            style={{
+              left: `${(annotation.timestamp / duration) * 100}%`,
+              top: '50%',
+              zIndex: 10
+            }}
+            onClick={() => handleAnnotationClick(annotation)}
+          >
+            {annotation.text}
+          </div>
+        ))}
+      </div>
+
       <div className="space-y-4">
         {annotations.map((annotation) => (
-          <div key={annotation.id} className="flex items-start gap-2 bg-secondary/50 p-2 rounded-lg">
+          <div 
+            key={annotation.id} 
+            className={`flex items-start gap-2 p-2 rounded-lg cursor-pointer ${
+              selectedAnnotation?.id === annotation.id ? 'bg-primary/20' : 'bg-secondary/50'
+            }`}
+            onClick={() => handleAnnotationClick(annotation)}
+          >
             <div className="flex-1">
               <div className="flex justify-between items-center">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleAnnotationClick(annotation.timestamp)}
                   className="text-sm text-muted-foreground hover:text-primary"
                 >
                   {formatTime(annotation.timestamp)}
@@ -198,7 +223,10 @@ export const AnnotationControls = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => removeAnnotation(annotation.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeAnnotation(annotation.id);
+                  }}
                   className="h-8 w-8"
                 >
                   <X className="h-4 w-4" />
