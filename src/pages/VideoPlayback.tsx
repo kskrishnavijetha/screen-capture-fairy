@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { MediaPlayer } from '@/components/MediaPlayer';
-import { Edit, Share, Download } from 'lucide-react';
+import { Edit, Download } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 
 const VideoPlayback = () => {
@@ -25,23 +25,6 @@ const VideoPlayback = () => {
 
   const handleEdit = () => {
     navigate('/edit', { state: { recordedBlob } });
-  };
-
-  const handleShare = () => {
-    // Copy video URL to clipboard
-    const videoUrl = window.location.href;
-    navigator.clipboard.writeText(videoUrl).then(() => {
-      toast({
-        title: "Link copied",
-        description: "Video link has been copied to clipboard"
-      });
-    }).catch(() => {
-      toast({
-        variant: "destructive",
-        title: "Failed to copy",
-        description: "Could not copy the video link"
-      });
-    });
   };
 
   const handleDownload = () => {
@@ -84,10 +67,6 @@ const VideoPlayback = () => {
             <Button onClick={handleEdit} variant="outline">
               <Edit className="w-4 h-4 mr-2" />
               Edit Video
-            </Button>
-            <Button onClick={handleShare} variant="outline">
-              <Share className="w-4 h-4 mr-2" />
-              Share
             </Button>
             <Button onClick={handleDownload} variant="outline">
               <Download className="w-4 h-4 mr-2" />
