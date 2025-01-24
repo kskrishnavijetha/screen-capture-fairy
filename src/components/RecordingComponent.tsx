@@ -10,6 +10,7 @@ import { RecordingManager } from '@/components/RecordingManager';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,7 @@ import {
 export const RecordingComponent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -92,57 +94,52 @@ export const RecordingComponent = () => {
   const handleSignOut = async () => {
     try {
       cleanupRecording();
-      
-      // First clear all session data
       await supabase.auth.signOut({ scope: 'local' });
-      
       toast({
         title: "Signed out successfully",
         description: "You have been signed out of your account",
       });
-      
       navigate('/signin');
     } catch (error) {
       console.error('Sign out error:', error);
-      // Even if sign out fails, ensure user is redirected
       navigate('/signin');
     }
   };
 
   return (
-    <div className="text-center space-y-6 w-full max-w-md mx-auto">
+    <div className={`text-center ${isMobile ? 'p-4' : 'space-y-6 w-full max-w-md mx-auto'}`}>
       <div className="flex justify-between items-center mb-4">
         <div className="flex gap-2">
           <Button
             variant="outline"
-            size="icon"
+            size={isMobile ? "sm" : "icon"}
             onClick={() => navigateRecordings('prev')}
             disabled={recordings.length === 0}
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
           </Button>
           <Button
             variant="outline"
-            size="icon"
+            size={isMobile ? "sm" : "icon"}
             onClick={() => navigateRecordings('next')}
             disabled={recordings.length === 0}
           >
-            <ArrowRight className="h-5 w-5" />
+            <ArrowRight className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
           </Button>
         </div>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <User className="h-5 w-5" />
+            <Button variant="outline" size={isMobile ? "sm" : "icon"}>
+              <User className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem disabled>
+          <DropdownMenuContent align="end" className={isMobile ? "w-[200px]" : ""}>
+            <DropdownMenuItem disabled className="text-sm">
               <User className="mr-2 h-4 w-4" />
               {userEmail}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSignOut}>
+            <DropdownMenuItem onClick={handleSignOut} className="text-sm">
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
             </DropdownMenuItem>
@@ -156,7 +153,9 @@ export const RecordingComponent = () => {
         </div>
       )}
 
-      <CaptureModeSelector mode={captureMode} onChange={setCaptureMode} />
+      <div className={`${isMobile ? 'mt-4' : ''}`}>
+        <CaptureModeSelector mode={captureMode} onChange={setCaptureMode} />
+      </div>
 
       <RecordingManager
         captureMode={captureMode}
@@ -213,7 +212,7 @@ export const RecordingComponent = () => {
       {!isRecording && !showCountdown && (
         <Button 
           onClick={() => setShowCountdown(true)}
-          className="w-full bg-primary hover:bg-primary/90"
+          className={`w-full bg-primary hover:bg-primary/90 ${isMobile ? 'mt-4' : ''}`}
         >
           <MonitorPlay className="mr-2 h-5 w-5" />
           Start Recording
