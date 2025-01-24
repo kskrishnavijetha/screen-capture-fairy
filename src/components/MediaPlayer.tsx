@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { CommentSection } from './video/CommentSection';
 import { CollaborativeControls } from './video/CollaborativeControls';
 import { AnnotationControls } from './video/AnnotationControls';
+import { TimelineView } from './video/timeline/TimelineView';
 
 interface MediaPlayerProps {
   recordedBlob: Blob;
@@ -71,12 +72,19 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <CommentSection videoId={videoId} />
-        <AnnotationControls
-          duration={videoRef.current?.duration || 0}
+        <div className="space-y-4">
+          <CommentSection videoId={videoId} />
+          <AnnotationControls
+            duration={videoRef.current?.duration || 0}
+            videoId={videoId}
+            currentTime={currentTime}
+            onAnnotationClick={handleSeek}
+          />
+        </div>
+        <TimelineView
           videoId={videoId}
           currentTime={currentTime}
-          onAnnotationClick={handleSeek}
+          onSeek={handleSeek}
         />
       </div>
     </div>

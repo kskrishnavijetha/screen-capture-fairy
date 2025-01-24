@@ -200,6 +200,39 @@ export type Database = {
         }
         Relationships: []
       }
+      timeline_events: {
+        Row: {
+          content: string | null
+          created_at: string
+          created_by: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          timestamp: number
+          video_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          timestamp: number
+          video_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          timestamp?: number
+          video_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
