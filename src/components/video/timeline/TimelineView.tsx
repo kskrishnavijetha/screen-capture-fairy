@@ -11,8 +11,8 @@ interface TimelineViewProps {
 
 export const TimelineView = ({ videoId, currentTime, onSeek }: TimelineViewProps) => {
   return (
-    <div className="space-y-6 p-4 bg-background/95 rounded-lg border">
-      <TaskManager videoId={videoId} currentTime={currentTime} />
+    <div className="space-y-6 p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-lg border">
+      <TaskManager videoId={videoId} currentTime={currentTime} onSeek={onSeek} />
       <Separator />
       <IssueFlags videoId={videoId} currentTime={currentTime} onSeek={onSeek} />
     </div>

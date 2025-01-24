@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Flag, X } from 'lucide-react';
-import { toast } from "@/components/ui/use-toast";
+import { Flag, AlertTriangle } from 'lucide-react';
+import { toast } from "@/hooks/use-toast";
 
 interface Issue {
   id: string;
@@ -50,7 +50,8 @@ export const IssueFlags = ({ videoId, currentTime, onSeek }: IssueFlagsProps) =>
           event_type: 'issue',
           timestamp: currentTime,
           content: 'Issue flagged',
-          created_by: user.id
+          created_by: user.id,
+          metadata: { severity: 'high' }
         }])
         .select()
         .single();
@@ -90,14 +91,18 @@ export const IssueFlags = ({ videoId, currentTime, onSeek }: IssueFlagsProps) =>
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Issues</h3>
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-red-500" />
+          Issues
+        </h3>
         <Button
-          variant="secondary"
+          variant="destructive"
           size="sm"
           onClick={() => flagIssueMutation.mutate()}
+          className="gap-2"
         >
-          <Flag className="h-4 w-4 mr-2" />
-          Flag Current Position
+          <Flag className="h-4 w-4" />
+          Flag Issue at {new Date(currentTime * 1000).toISOString().substr(11, 8)}
         </Button>
       </div>
 
@@ -105,27 +110,34 @@ export const IssueFlags = ({ videoId, currentTime, onSeek }: IssueFlagsProps) =>
         {issues?.map((issue) => (
           <div
             key={issue.id}
-            className="flex items-center justify-between p-2 bg-red-500/10 rounded-lg"
+            className="flex items-center justify-between p-2 bg-red-500/10 rounded-lg hover:bg-red-500/20 transition-colors"
           >
             <div className="flex items-center gap-2">
               <Flag className="h-4 w-4 text-red-500" />
               <Badge
-                variant="secondary"
-                className="cursor-pointer"
+                variant="outline"
+                className="cursor-pointer hover:bg-red-500/20"
                 onClick={() => onSeek(issue.timestamp)}
               >
                 {new Date(issue.timestamp * 1000).toISOString().substr(11, 8)}
               </Badge>
+              <span className="text-sm text-muted-foreground">{issue.content}</span>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => removeIssueMutation.mutate(issue.id)}
+              className="hover:bg-red-500/20 hover:text-red-500"
             >
-              <X className="h-4 w-4" />
+              <Flag className="h-4 w-4" />
             </Button>
           </div>
         ))}
+        {issues?.length === 0 && (
+          <div className="text-center text-muted-foreground text-sm py-4">
+            No issues flagged yet
+          </div>
+        )}
       </div>
     </div>
   );

@@ -202,32 +202,38 @@ export type Database = {
       }
       timeline_events: {
         Row: {
+          assignee_id: string | null
           content: string | null
           created_at: string
           created_by: string | null
           event_type: string
           id: string
           metadata: Json | null
+          status: string | null
           timestamp: number
           video_id: string
         }
         Insert: {
+          assignee_id?: string | null
           content?: string | null
           created_at?: string
           created_by?: string | null
           event_type: string
           id?: string
           metadata?: Json | null
+          status?: string | null
           timestamp: number
           video_id: string
         }
         Update: {
+          assignee_id?: string | null
           content?: string | null
           created_at?: string
           created_by?: string | null
           event_type?: string
           id?: string
           metadata?: Json | null
+          status?: string | null
           timestamp?: number
           video_id?: string
         }
