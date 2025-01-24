@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { MonitorPlay, LogOut, User } from 'lucide-react';
+import { MonitorPlay, LogOut, User, ArrowLeft, ArrowRight } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
 import { RecordingControls } from '@/components/RecordingControls';
 import { DownloadRecording } from '@/components/DownloadRecording';
@@ -28,35 +28,54 @@ export const RecordingComponent = () => {
   const [showCountdown, setShowCountdown] = useState(false);
   const [filename, setFilename] = useState('recording');
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [currentRecordingIndex, setCurrentRecordingIndex] = useState(0);
+  const [recordings, setRecordings] = useState<{ blob: Blob; timestamp: Date }[]>([]);
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error || !session) {
-        cleanupRecording();
-        navigate('/signin');
-        return;
+    const loadRecordings = () => {
+      const existingRecordings = localStorage.getItem('recordings');
+      if (existingRecordings) {
+        try {
+          const parsedRecordings = JSON.parse(existingRecordings);
+          const processedRecordings = parsedRecordings.map((recording: any) => ({
+            blob: new Blob([new Uint8Array(recording.blob)], { type: 'video/webm' }),
+            timestamp: new Date(recording.timestamp)
+          }));
+          setRecordings(processedRecordings);
+        } catch (error) {
+          console.error('Error loading recordings:', error);
+        }
       }
-      
-      setUserEmail(session.user.email);
     };
 
-    checkSession();
+    loadRecordings();
+  }, []);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        cleanupRecording();
-        navigate('/signin');
-      } else if (session) {
-        setUserEmail(session.user.email);
-      }
-    });
+  const navigateRecordings = (direction: 'prev' | 'next') => {
+    if (recordings.length === 0) return;
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
+    let newIndex;
+    if (direction === 'prev') {
+      newIndex = currentRecordingIndex > 0 ? currentRecordingIndex - 1 : recordings.length - 1;
+    } else {
+      newIndex = currentRecordingIndex < recordings.length - 1 ? currentRecordingIndex + 1 : 0;
+    }
+
+    setCurrentRecordingIndex(newIndex);
+    setRecordedBlob(recordings[newIndex].blob);
+  };
+
+  const checkSession = async () => {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error || !session) {
+      cleanupRecording();
+      navigate('/signin');
+      return;
+    }
+    
+    setUserEmail(session.user.email);
+  };
 
   const cleanupRecording = () => {
     if (isRecording) {
@@ -90,54 +109,28 @@ export const RecordingComponent = () => {
     }
   };
 
-  const handleRecordingStart = () => {
-    setDuration(0);
-    setRecordedBlob(null);
-  };
-
-  const handleRecordingStop = (blob: Blob) => {
-    setRecordedBlob(blob);
-    navigate('/playback', { state: { recordedBlob: blob } });
-  };
-
-  const handleMaxDurationReached = () => {
-    const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
-    if (stopButton) stopButton.click();
-  };
-
-  const startRecordingWithCountdown = () => {
-    setShowCountdown(true);
-  };
-
-  const handleCountdownComplete = () => {
-    setShowCountdown(false);
-    const startButton = document.getElementById('start-recording') as HTMLButtonElement;
-    if (startButton) startButton.click();
-  };
-
-  const handlePause = () => {
-    const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
-    if (pauseButton) pauseButton.click();
-  };
-
-  const handleResume = () => {
-    const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
-    if (pauseButton) pauseButton.click();
-  };
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isRecording && !isPaused) {
-      interval = setInterval(() => {
-        setDuration(prev => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isRecording, isPaused]);
-
   return (
     <div className="text-center space-y-6 w-full max-w-md mx-auto">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigateRecordings('prev')}
+            disabled={recordings.length === 0}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigateRecordings('next')}
+            disabled={recordings.length === 0}
+          >
+            <ArrowRight className="h-5 w-5" />
+          </Button>
+        </div>
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon">
@@ -157,14 +150,23 @@ export const RecordingComponent = () => {
         </DropdownMenu>
       </div>
 
+      {recordings.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          Recording {currentRecordingIndex + 1} of {recordings.length}
+        </div>
+      )}
+
       <CaptureModeSelector mode={captureMode} onChange={setCaptureMode} />
 
       <RecordingManager
         captureMode={captureMode}
         frameRate={30}
         resolution={{ width: 1920, height: 1080, label: "1080p" }}
-        onRecordingStart={handleRecordingStart}
-        onRecordingStop={handleRecordingStop}
+        onRecordingStart={() => setDuration(0)}
+        onRecordingStop={(blob) => {
+          setRecordedBlob(blob);
+          navigate('/playback', { state: { recordedBlob: blob } });
+        }}
         isRecording={isRecording}
         setIsRecording={setIsRecording}
         setIsPaused={setIsPaused}
@@ -174,7 +176,11 @@ export const RecordingComponent = () => {
       {showCountdown && (
         <CountdownTimer
           seconds={5}
-          onComplete={handleCountdownComplete}
+          onComplete={() => {
+            setShowCountdown(false);
+            const startButton = document.getElementById('start-recording') as HTMLButtonElement;
+            if (startButton) startButton.click();
+          }}
           onCancel={() => setShowCountdown(false)}
         />
       )}
@@ -182,14 +188,23 @@ export const RecordingComponent = () => {
       {isRecording && (
         <RecordingControls
           isPaused={isPaused}
-          onPause={handlePause}
-          onResume={handleResume}
+          onPause={() => {
+            const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
+            if (pauseButton) pauseButton.click();
+          }}
+          onResume={() => {
+            const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
+            if (pauseButton) pauseButton.click();
+          }}
           onStop={() => {
             const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
             if (stopButton) stopButton.click();
           }}
           duration={duration}
-          onMaxDurationReached={handleMaxDurationReached}
+          onMaxDurationReached={() => {
+            const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
+            if (stopButton) stopButton.click();
+          }}
         />
       )}
 
@@ -197,7 +212,7 @@ export const RecordingComponent = () => {
 
       {!isRecording && !showCountdown && (
         <Button 
-          onClick={startRecordingWithCountdown}
+          onClick={() => setShowCountdown(true)}
           className="w-full bg-primary hover:bg-primary/90"
         >
           <MonitorPlay className="mr-2 h-5 w-5" />

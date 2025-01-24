@@ -44,80 +44,81 @@ export const getMediaStream = async (
   resolution: Resolution
 ): Promise<MediaStream | null> => {
   try {
+    let combinedStream: MediaStream;
+
     switch (mode) {
       case 'screen': {
-        const displayStream = await navigator.mediaDevices.getDisplayMedia(
-          getDisplayMediaConstraints(frameRate, resolution)
-        );
+        // Get screen capture with system audio
+        const displayStream = await navigator.mediaDevices.getDisplayMedia({
+          ...getDisplayMediaConstraints(frameRate, resolution),
+          audio: true // Enable system audio capture
+        });
         
-        // Get system audio
+        // Get microphone audio
         const audioStream = await navigator.mediaDevices.getUserMedia({
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
             sampleRate: 44100,
             autoGainControl: true
-          }
+          },
+          video: false
         });
         
-        // Combine video and audio tracks
+        // Combine all tracks
         const tracks = [
           ...displayStream.getVideoTracks(),
-          ...audioStream.getAudioTracks()
+          ...displayStream.getAudioTracks(), // System audio
+          ...audioStream.getAudioTracks() // Microphone audio
         ];
         
-        return new MediaStream(tracks);
+        combinedStream = new MediaStream(tracks);
+        break;
       }
       
       case 'camera': {
-        const cameraStream = await navigator.mediaDevices.getUserMedia(
+        combinedStream = await navigator.mediaDevices.getUserMedia(
           getUserMediaConstraints(frameRate, resolution)
         );
-        return cameraStream;
+        break;
       }
       
       case 'both': {
-        try {
-          const displayStream = await navigator.mediaDevices.getDisplayMedia(
-            getDisplayMediaConstraints(frameRate, resolution)
-          );
-          
-          const cameraStream = await navigator.mediaDevices.getUserMedia(
-            getUserMediaConstraints(frameRate, resolution)
-          );
-          
-          // Get system audio
-          const audioStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              sampleRate: 44100,
-              autoGainControl: true
-            }
-          });
-          
-          // Combine all tracks
-          const tracks = [
-            ...displayStream.getVideoTracks(),
-            ...cameraStream.getVideoTracks(),
-            ...audioStream.getAudioTracks()
-          ];
-          
-          return new MediaStream(tracks);
-        } catch (error: any) {
-          console.error('Error combining streams:', error);
-          toast({
-            variant: "destructive",
-            title: "Recording failed",
-            description: error.message || "Failed to initialize both screen and camera capture"
-          });
-          throw error;
-        }
+        const displayStream = await navigator.mediaDevices.getDisplayMedia({
+          ...getDisplayMediaConstraints(frameRate, resolution),
+          audio: true
+        });
+        
+        const cameraStream = await navigator.mediaDevices.getUserMedia(
+          getUserMediaConstraints(frameRate, resolution)
+        );
+        
+        // Combine all tracks
+        const tracks = [
+          ...displayStream.getVideoTracks(),
+          ...displayStream.getAudioTracks(),
+          ...cameraStream.getVideoTracks(),
+          ...cameraStream.getAudioTracks()
+        ];
+        
+        combinedStream = new MediaStream(tracks);
+        break;
       }
       
       default:
         throw new Error('Invalid capture mode');
     }
+
+    // Verify audio tracks are present
+    if (combinedStream.getAudioTracks().length === 0) {
+      toast({
+        variant: "warning",
+        title: "No audio detected",
+        description: "Make sure you've granted permission for audio capture"
+      });
+    }
+
+    return combinedStream;
   } catch (error: any) {
     console.error('Media stream error:', error);
     let errorMessage = 'Failed to initialize media stream';
