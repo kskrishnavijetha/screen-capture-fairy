@@ -18,9 +18,10 @@ interface AnnotationControlsProps {
   duration: number;
   videoId: string;
   currentTime: number;
+  onAnnotationClick?: (timestamp: number) => void;
 }
 
-export const AnnotationControls = ({ duration, videoId, currentTime }: AnnotationControlsProps) => {
+export const AnnotationControls = ({ duration, videoId, currentTime, onAnnotationClick }: AnnotationControlsProps) => {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [newAnnotation, setNewAnnotation] = useState<Partial<Annotation>>({
     timestamp: currentTime,
@@ -163,6 +164,12 @@ export const AnnotationControls = ({ duration, videoId, currentTime }: Annotatio
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleAnnotationClick = (timestamp: number) => {
+    if (onAnnotationClick) {
+      onAnnotationClick(timestamp);
+    }
+  };
+
   return (
     <div className="space-y-4 mt-4">
       <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -175,9 +182,14 @@ export const AnnotationControls = ({ duration, videoId, currentTime }: Annotatio
           <div key={annotation.id} className="flex items-start gap-2 bg-secondary/50 p-2 rounded-lg">
             <div className="flex-1">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleAnnotationClick(annotation.timestamp)}
+                  className="text-sm text-muted-foreground hover:text-primary"
+                >
                   {formatTime(annotation.timestamp)}
-                </span>
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
