@@ -3,7 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Smile, Heart, Laugh, Angry, MessageCircle } from 'lucide-react';
+import { 
+  Smile, 
+  Heart, 
+  Laugh, 
+  Angry, 
+  ThumbsUp, 
+  ThumbsDown, 
+  Party, 
+  Flame,
+  Star,
+  MessageCircle 
+} from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 
 interface Comment {
@@ -22,13 +33,18 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
-  const [username, setUsername] = useState('User'); // In a real app, this would come from authentication
+  const [username, setUsername] = useState('User');
 
   const emojis = [
     { icon: Smile, label: 'smile' },
     { icon: Heart, label: 'heart' },
     { icon: Laugh, label: 'laugh' },
     { icon: Angry, label: 'angry' },
+    { icon: ThumbsUp, label: 'thumbs-up' },
+    { icon: ThumbsDown, label: 'thumbs-down' },
+    { icon: Party, label: 'party' },
+    { icon: Flame, label: 'fire' },
+    { icon: Star, label: 'star' },
   ];
 
   const handleAddComment = () => {
@@ -66,9 +82,16 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
     }
   };
 
+  const getEmojiComponent = (emojiLabel: string) => {
+    const emoji = emojis.find(e => e.label === emojiLabel);
+    if (!emoji) return null;
+    const IconComponent = emoji.icon;
+    return <IconComponent className="h-4 w-4" />;
+  };
+
   return (
     <div className="mt-6 space-y-4">
-      <div className="flex items-center gap-2 mb-4">
+      <div className="grid grid-cols-5 gap-2 mb-4">
         {emojis.map(({ icon: Icon, label }) => (
           <Button
             key={label}
@@ -76,6 +99,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
             size="icon"
             onClick={() => setSelectedEmoji(label)}
             className="w-10 h-10"
+            title={label}
           >
             <Icon className="h-5 w-5" />
           </Button>
@@ -113,10 +137,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
                 <div className="flex items-center gap-2 mt-1">
                   {comment.emoji && (
                     <div className="flex-shrink-0">
-                      {emojis.find(e => e.label === comment.emoji)?.icon && 
-                        React.createElement(emojis.find(e => e.label === comment.emoji)!.icon, {
-                          className: "h-4 w-4"
-                        })}
+                      {getEmojiComponent(comment.emoji)}
                     </div>
                   )}
                   <p className="text-sm">{comment.text}</p>
