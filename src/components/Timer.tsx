@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 
 interface TimerProps {
   duration: number;
@@ -29,7 +29,7 @@ export const Timer = ({
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
+    const remainingSeconds = Math.floor(seconds % 60);
     
     if (hours > 0) {
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
@@ -38,7 +38,7 @@ export const Timer = ({
   };
 
   return (
-    <div className={`text-xl font-mono ${duration >= maxDuration ? 'text-red-500' : 'text-primary'}`}>
+    <div className={`text-2xl font-mono font-bold ${duration >= maxDuration ? 'text-red-500' : 'text-white'}`}>
       {formatTime(Math.min(duration, maxDuration))}
     </div>
   );

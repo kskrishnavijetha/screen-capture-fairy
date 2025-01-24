@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { StopCircle, Pause, Play, Camera } from 'lucide-react';
 import { Timer } from './Timer';
@@ -22,13 +22,28 @@ export const RecordingControls = ({
   onMaxDurationReached
 }: RecordingControlsProps) => {
   const { toast } = useToast();
+  const [elapsedTime, setElapsedTime] = useState(0);
+  
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (!isPaused) {
+      interval = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isPaused]);
 
   const takeScreenshot = async () => {
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ 
-        video: { 
-          displaySurface: 'monitor'
-        } 
+        video: { displaySurface: 'monitor' } 
       });
       
       const track = stream.getVideoTracks()[0];
@@ -46,7 +61,6 @@ export const RecordingControls = ({
       link.href = canvas.toDataURL('image/png');
       link.click();
       
-      // Clean up
       stream.getTracks().forEach(track => track.stop());
       
       toast({
@@ -67,7 +81,7 @@ export const RecordingControls = ({
     <div className="space-y-4">
       <div className="flex justify-center mb-4">
         <Timer 
-          duration={duration} 
+          duration={elapsedTime} 
           onMaxDurationReached={onMaxDurationReached}
         />
       </div>
