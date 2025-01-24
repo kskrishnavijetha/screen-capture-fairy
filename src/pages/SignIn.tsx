@@ -64,7 +64,6 @@ const SignIn = () => {
       
       if (error) throw error;
       
-      // Navigation will be handled by the auth state change listener
     } catch (error) {
       toast({
         variant: "destructive",
@@ -127,12 +126,12 @@ const SignIn = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 bg-background">
+      <div className="w-full max-w-sm mx-auto space-y-6">
         <div className="flex items-center">
           <Button
             variant="ghost"
-            className="mb-4"
+            className="mb-4 hover:bg-accent"
             onClick={() => navigate('/')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -140,14 +139,16 @@ const SignIn = () => {
           </Button>
         </div>
         
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">Sign In</h2>
-          <p className="text-muted-foreground mt-2">Welcome back! Please sign in to continue.</p>
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold tracking-tight">Sign In</h2>
+          <p className="text-sm text-muted-foreground">Welcome back! Please sign in to continue.</p>
         </div>
 
-        <form onSubmit={handleSignIn} className="space-y-6">
+        <form onSubmit={handleSignIn} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-sm font-medium">
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
@@ -155,16 +156,21 @@ const SignIn = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="h-10 px-3 rounded-md"
+              autoComplete="email"
+              inputMode="email"
             />
           </div>
           
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium">
+                Password
+              </Label>
               <Button
                 variant="link"
                 type="button"
-                className="px-0 font-normal"
+                className="px-0 h-auto font-normal text-sm"
                 onClick={handleForgotPassword}
               >
                 Forgot password?
@@ -177,6 +183,8 @@ const SignIn = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              className="h-10 px-3 rounded-md"
+              autoComplete="current-password"
             />
           </div>
 
@@ -185,10 +193,11 @@ const SignIn = () => {
               id="stayConnected"
               checked={stayConnected}
               onCheckedChange={(checked) => setStayConnected(checked as boolean)}
+              className="rounded"
             />
             <Label
               htmlFor="stayConnected"
-              className="text-sm font-normal cursor-pointer"
+              className="text-sm font-normal cursor-pointer select-none"
             >
               Stay connected
             </Label>
@@ -196,7 +205,7 @@ const SignIn = () => {
 
           <Button
             type="submit"
-            className="w-full"
+            className="w-full h-10 rounded-md"
             disabled={loading}
           >
             {loading ? "Signing in..." : "Sign In"}
@@ -207,6 +216,7 @@ const SignIn = () => {
           <Button
             variant="link"
             onClick={() => navigate('/signup')}
+            className="text-sm"
           >
             Don't have an account? Sign up
           </Button>
