@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
+import { ShareControls } from './video/ShareControls';
 import { EmbedControls } from './video/EmbedControls';
 import { ExportControls } from './video/ExportControls';
 import { SilenceControls } from './video/SilenceControls';
@@ -77,6 +78,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
             onToggle={setRemoveFillerWords}
           />
 
+          <ShareControls recordedBlob={recordedBlob} />
           <EmbedControls recordedBlob={recordedBlob} />
           <ExportControls recordedBlob={recordedBlob} />
         </div>
