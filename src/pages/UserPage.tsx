@@ -9,11 +9,12 @@ import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { ProfileActions } from '@/components/profile/ProfileActions';
 import { RecordingsList } from '@/components/profile/RecordingsList';
 import { Profile } from '@/types/profile';
+import { Recording } from '@/types/recording';
 
 const UserPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [recordings, setRecordings] = useState([]);
+  const [recordings, setRecordings] = useState<Recording[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -127,12 +128,12 @@ const UserPage = () => {
     }
   };
 
-  const handlePreview = (recording: any) => {
+  const handlePreview = (recording: Recording) => {
     const url = URL.createObjectURL(recording.blob);
     window.open(url, '_blank');
   };
 
-  const handleDownload = (recording: any) => {
+  const handleDownload = (recording: Recording) => {
     const url = URL.createObjectURL(recording.blob);
     const a = document.createElement('a');
     a.href = url;
