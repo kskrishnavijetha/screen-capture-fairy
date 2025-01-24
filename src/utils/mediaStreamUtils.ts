@@ -1,6 +1,6 @@
 import { Resolution } from '@/types/recording';
 import { CaptureMode } from '@/components/CaptureModeSelector';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 const getDisplayMediaConstraints = (frameRate: number, resolution: Resolution) => ({
   video: {
@@ -114,7 +114,7 @@ export const getMediaStream = async (
     // Verify audio tracks are present
     if (combinedStream.getAudioTracks().length === 0) {
       toast({
-        variant: "default",
+        variant: "default",  // Changed from "warning" to "default"
         title: "No audio detected",
         description: "Make sure you've granted permission for audio capture"
       });
