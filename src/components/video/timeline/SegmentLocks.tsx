@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
 import { Lock, LockOpen } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
+import { formatTime } from '@/utils/timeUtils';
 
 interface SegmentLock {
   id: string;
@@ -86,20 +87,31 @@ export const SegmentLocks = ({ videoId, currentTime, onSeek }: SegmentLocksProps
     },
   });
 
-  const handleStartLocking = () => {
-    setIsLocking(true);
-    setStartTime(currentTime);
-  };
-
-  const handleEndLocking = () => {
-    if (startTime !== null && currentTime > startTime) {
+  const handleTimeClick = () => {
+    if (!isLocking) {
+      setIsLocking(true);
+      setStartTime(currentTime);
+      toast({
+        title: "Start time set",
+        description: `Lock starting at ${formatTime(currentTime)}`,
+      });
+    } else if (startTime !== null && currentTime > startTime) {
       createLockMutation.mutate({
         start_time: startTime,
         end_time: currentTime,
       });
+      setIsLocking(false);
+      setStartTime(null);
     }
+  };
+
+  const handleCancelLock = () => {
     setIsLocking(false);
     setStartTime(null);
+    toast({
+      title: "Lock cancelled",
+      description: "Segment locking cancelled",
+    });
   };
 
   return (
@@ -109,24 +121,35 @@ export const SegmentLocks = ({ videoId, currentTime, onSeek }: SegmentLocksProps
           <Lock className="h-5 w-5" />
           Segment Locks
         </h3>
-        <Button
-          variant={isLocking ? "destructive" : "default"}
-          size="sm"
-          onClick={isLocking ? handleEndLocking : handleStartLocking}
-          className="gap-2"
-        >
-          {isLocking ? (
-            <>
-              <LockOpen className="h-4 w-4" />
-              End Lock at {new Date(currentTime * 1000).toISOString().substr(11, 8)}
-            </>
-          ) : (
-            <>
-              <Lock className="h-4 w-4" />
-              Start Lock at {new Date(currentTime * 1000).toISOString().substr(11, 8)}
-            </>
+        <div className="flex gap-2">
+          <Button
+            variant={isLocking ? "destructive" : "default"}
+            size="sm"
+            onClick={handleTimeClick}
+            className="gap-2"
+          >
+            {isLocking ? (
+              <>
+                <LockOpen className="h-4 w-4" />
+                End Lock at {formatTime(currentTime)}
+              </>
+            ) : (
+              <>
+                <Lock className="h-4 w-4" />
+                Lock at {formatTime(currentTime)}
+              </>
+            )}
+          </Button>
+          {isLocking && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCancelLock}
+            >
+              Cancel
+            </Button>
           )}
-        </Button>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -150,7 +173,7 @@ export const SegmentLocks = ({ videoId, currentTime, onSeek }: SegmentLocksProps
                   className="hover:bg-accent/20"
                   onClick={() => onSeek(lock.start_time)}
                 >
-                  {new Date(lock.start_time * 1000).toISOString().substr(11, 8)}
+                  {formatTime(lock.start_time)}
                 </Button>
                 <span>to</span>
                 <Button
@@ -159,7 +182,7 @@ export const SegmentLocks = ({ videoId, currentTime, onSeek }: SegmentLocksProps
                   className="hover:bg-accent/20"
                   onClick={() => onSeek(lock.end_time)}
                 >
-                  {new Date(lock.end_time * 1000).toISOString().substr(11, 8)}
+                  {formatTime(lock.end_time)}
                 </Button>
               </div>
               <Button
