@@ -44,10 +44,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
     }
   };
 
-  const handleAnnotationClick = (timestamp: number) => {
-    handleSeek(timestamp);
-  };
-
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -80,7 +76,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
           duration={videoRef.current?.duration || 0}
           videoId={videoId}
           currentTime={currentTime}
-          onAnnotationClick={handleAnnotationClick}
+          onAnnotationClick={handleSeek}
         />
       </div>
     </div>

@@ -21,7 +21,12 @@ interface AnnotationControlsProps {
   onAnnotationClick?: (timestamp: number) => void;
 }
 
-export const AnnotationControls = ({ duration, videoId, currentTime, onAnnotationClick }: AnnotationControlsProps) => {
+export const AnnotationControls = ({ 
+  duration, 
+  videoId, 
+  currentTime,
+  onAnnotationClick 
+}: AnnotationControlsProps) => {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [newAnnotation, setNewAnnotation] = useState<Partial<Annotation>>({
     timestamp: currentTime,
