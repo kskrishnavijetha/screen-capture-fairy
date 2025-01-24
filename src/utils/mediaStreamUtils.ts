@@ -1,39 +1,39 @@
 import { Resolution } from '@/types/recording';
 import { CaptureMode } from '@/components/CaptureModeSelector';
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 
-const isMobileDevice = () => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-};
-
-const getSupportedConstraints = (frameRate: number, resolution: Resolution) => {
-  const baseConstraints = {
-    video: {
-      width: { ideal: resolution.width },
-      height: { ideal: resolution.height },
-      frameRate: { ideal: frameRate }
-    },
-    audio: {
-      echoCancellation: true,
-      noiseSuppression: true,
-      sampleRate: 44100,
-      autoGainControl: true
-    }
-  };
-
-  if (isMobileDevice()) {
-    return {
-      ...baseConstraints,
-      video: {
-        ...baseConstraints.video,
-        width: { ideal: Math.min(resolution.width, 1280) },
-        height: { ideal: Math.min(resolution.height, 720) },
-        frameRate: { ideal: Math.min(frameRate, 30) }
-      }
-    };
+const getDisplayMediaConstraints = (frameRate: number, resolution: Resolution) => ({
+  video: {
+    frameRate: { ideal: frameRate },
+    width: { ideal: resolution.width },
+    height: { ideal: resolution.height }
+  },
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    sampleRate: 44100
   }
+});
 
-  return baseConstraints;
+const getUserMediaConstraints = (frameRate: number, resolution: Resolution) => ({
+  video: {
+    frameRate: { ideal: frameRate },
+    width: { ideal: resolution.width },
+    height: { ideal: resolution.height }
+  },
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    sampleRate: 44100
+  }
+});
+
+export const stopMediaStream = (stream: MediaStream | null) => {
+  if (stream) {
+    stream.getTracks().forEach(track => {
+      track.stop();
+    });
+  }
 };
 
 export const getMediaStream = async (
@@ -42,66 +42,74 @@ export const getMediaStream = async (
   resolution: Resolution
 ): Promise<MediaStream | null> => {
   try {
-    const constraints = getSupportedConstraints(frameRate, resolution);
-
-    if (mode === 'screen') {
-      try {
-        const displayStream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: true
-        });
-
+    switch (mode) {
+      case 'screen': {
+        const displayStream = await navigator.mediaDevices.getDisplayMedia(
+          getDisplayMediaConstraints(frameRate, resolution)
+        );
+        return displayStream;
+      }
+      
+      case 'camera': {
+        const cameraStream = await navigator.mediaDevices.getUserMedia(
+          getUserMediaConstraints(frameRate, resolution)
+        );
+        return cameraStream;
+      }
+      
+      case 'both': {
         try {
-          const micStream = await navigator.mediaDevices.getUserMedia({
-            audio: constraints.audio,
-            video: false
-          });
+          // Get screen capture stream
+          const displayStream = await navigator.mediaDevices.getDisplayMedia(
+            getDisplayMediaConstraints(frameRate, resolution)
+          );
           
-          const tracks = [
+          // Get camera stream
+          const cameraStream = await navigator.mediaDevices.getUserMedia(
+            getUserMediaConstraints(frameRate, resolution)
+          );
+          
+          // Combine all tracks from both streams
+          const combinedTracks = [
             ...displayStream.getVideoTracks(),
             ...displayStream.getAudioTracks(),
-            ...micStream.getAudioTracks()
+            ...cameraStream.getVideoTracks(),
+            ...cameraStream.getAudioTracks()
           ];
           
-          return new MediaStream(tracks);
-        } catch (audioError) {
-          console.warn('Could not capture microphone audio:', audioError);
-          return displayStream;
+          return new MediaStream(combinedTracks);
+        } catch (error: any) {
+          console.error('Error combining streams:', error);
+          toast({
+            variant: "destructive",
+            title: "Recording failed",
+            description: error.message || "Failed to initialize both screen and camera capture"
+          });
+          throw error;
         }
-      } catch (error: any) {
-        console.error('Screen capture error:', error);
-        throw new Error(
-          error.name === 'NotAllowedError' 
-            ? 'Please grant screen sharing permission and try again'
-            : 'Failed to access screen recording. Please try again'
-        );
       }
-    } else if (mode === 'camera') {
-      try {
-        return await navigator.mediaDevices.getUserMedia({
-          video: constraints.video,
-          audio: constraints.audio
-        });
-      } catch (error: any) {
-        console.error('Camera access error:', error);
-        throw new Error(
-          error.name === 'NotAllowedError'
-            ? 'Please grant camera and microphone permissions'
-            : 'Failed to access camera. Please check your device settings'
-        );
-      }
+      
+      default:
+        throw new Error('Invalid capture mode');
     }
-    throw new Error('Invalid capture mode');
-  } catch (error) {
+  } catch (error: any) {
     console.error('Media stream error:', error);
-    throw error;
-  }
-};
-
-export const stopMediaStream = (stream: MediaStream | null) => {
-  if (stream) {
-    stream.getTracks().forEach(track => {
-      track.stop();
+    let errorMessage = 'Failed to initialize media stream';
+    
+    if (error.name === 'NotAllowedError') {
+      errorMessage = 'Please grant permission to access your camera and microphone';
+    } else if (error.name === 'NotFoundError') {
+      errorMessage = 'No camera or microphone found';
+    } else if (error.name === 'NotReadableError') {
+      errorMessage = 'Your camera or microphone is already in use';
+    }
+    
+    toast({
+      variant: "destructive",
+      title: "Recording failed",
+      description: errorMessage
     });
+    
+    throw error;
   }
 };

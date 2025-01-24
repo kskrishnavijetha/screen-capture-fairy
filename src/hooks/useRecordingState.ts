@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { getMediaStream, stopMediaStream } from '@/utils/mediaStreamUtils';
 import { Resolution } from '@/types/recording';
 import { CaptureMode } from '@/components/CaptureModeSelector';
@@ -49,11 +49,6 @@ export const useRecordingState = () => {
         throw new Error('No media stream available');
       }
 
-      const tracks = stream.getTracks();
-      if (tracks.length === 0) {
-        throw new Error('No media tracks available');
-      }
-
       // Store the stream reference
       streamRef.current = stream;
       chunksRef.current = [];
@@ -65,12 +60,7 @@ export const useRecordingState = () => {
         videoBitsPerSecond: 2500000
       };
 
-      try {
-        mediaRecorderRef.current = new MediaRecorder(stream, options);
-      } catch (e) {
-        console.error('MediaRecorder creation error:', e);
-        mediaRecorderRef.current = new MediaRecorder(stream);
-      }
+      mediaRecorderRef.current = new MediaRecorder(stream, options);
 
       // Set up MediaRecorder event handlers
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -80,8 +70,7 @@ export const useRecordingState = () => {
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const mimeType = getMimeType();
-        const blob = new Blob(chunksRef.current, { type: mimeType });
+        const blob = new Blob(chunksRef.current, { type: getMimeType() });
         chunksRef.current = [];
         onRecordingStop(blob);
         
@@ -112,15 +101,6 @@ export const useRecordingState = () => {
         stopMediaStream(streamRef.current);
         streamRef.current = null;
       }
-
-      // Show appropriate error message
-      toast({
-        variant: "destructive",
-        title: "Recording failed",
-        description: error instanceof Error 
-          ? error.message 
-          : "Failed to start recording. Please check your permissions and try again."
-      });
     }
   }, []);
 
