@@ -33,9 +33,10 @@ interface TimelineEvent {
 interface TaskManagerProps {
   videoId: string;
   currentTime: number;
+  onSeek: (time: number) => void;
 }
 
-export const TaskManager = ({ videoId, currentTime }: TaskManagerProps) => {
+export const TaskManager = ({ videoId, currentTime, onSeek }: TaskManagerProps) => {
   const [newTask, setNewTask] = React.useState('');
   const queryClient = useQueryClient();
 
@@ -174,7 +175,11 @@ export const TaskManager = ({ videoId, currentTime }: TaskManagerProps) => {
             <div className="flex items-center gap-2">
               {getStatusIcon(task.status)}
               <span>{task.content}</span>
-              <Badge variant="secondary">
+              <Badge
+                variant="secondary"
+                className="cursor-pointer"
+                onClick={() => onSeek(task.timestamp)}
+              >
                 {new Date(task.timestamp * 1000).toISOString().substr(11, 8)}
               </Badge>
             </div>
