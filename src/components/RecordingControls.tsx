@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { StopCircle, Pause, Play, Camera } from 'lucide-react';
 import { Timer } from './Timer';
@@ -22,7 +22,6 @@ export const RecordingControls = ({
   onMaxDurationReached
 }: RecordingControlsProps) => {
   const { toast } = useToast();
-  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
 
   const takeScreenshot = async () => {
     try {
@@ -47,6 +46,7 @@ export const RecordingControls = ({
       link.href = canvas.toDataURL('image/png');
       link.click();
       
+      // Clean up
       stream.getTracks().forEach(track => track.stop());
       
       toast({

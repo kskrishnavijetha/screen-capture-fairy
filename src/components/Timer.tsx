@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 interface TimerProps {
   duration: number;
@@ -9,7 +9,7 @@ interface TimerProps {
 
 export const Timer = ({ 
   duration, 
-  maxDuration = 240 * 60, // 240 minutes (4 hours) in seconds
+  maxDuration = 180 * 60, // 180 minutes in seconds
   onMaxDurationReached 
 }: TimerProps) => {
   const [showWarning, setShowWarning] = useState(false);
@@ -19,7 +19,7 @@ export const Timer = ({
       setShowWarning(true);
       toast({
         title: "Maximum recording time reached",
-        description: "Recording will stop at 4 hours",
+        description: "Recording will stop at 180 minutes",
         variant: "destructive"
       });
       onMaxDurationReached?.();

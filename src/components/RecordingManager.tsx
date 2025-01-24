@@ -55,11 +55,8 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
     try {
       cleanup(); // Clean up any existing recordings
       
-      console.log('Starting recording with mode:', captureMode);
       const stream = await getMediaStream(captureMode, frameRate, resolution);
-      if (!stream) {
-        throw new Error('Failed to get media stream');
-      }
+      if (!stream) return;
       
       streamRef.current = stream;
       chunksRef.current = [];
@@ -98,12 +95,6 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
       cleanup();
       setIsRecording(false);
       setIsPaused(false);
-      
-      toast({
-        variant: "destructive",
-        title: "Recording failed",
-        description: error.message || "Failed to start recording"
-      });
     }
   };
 

@@ -15,10 +15,8 @@ interface CaptureModeProps {
 export const CaptureModeSelector = ({ mode, onChange }: CaptureModeProps) => {
   const isMobile = useIsMobile();
 
-  const handleModeChange = (value: string) => {
-    const newMode = value as CaptureMode;
-    
-    if (isMobile && (newMode === 'screen' || newMode === 'both')) {
+  const handleModeChange = (value: CaptureMode) => {
+    if (isMobile && (value === 'screen' || value === 'both')) {
       toast({
         variant: "destructive",
         title: "Not supported",
@@ -27,7 +25,7 @@ export const CaptureModeSelector = ({ mode, onChange }: CaptureModeProps) => {
       onChange('camera');
       return;
     }
-    onChange(newMode);
+    onChange(value);
   };
 
   return (
@@ -36,7 +34,7 @@ export const CaptureModeSelector = ({ mode, onChange }: CaptureModeProps) => {
       <RadioGroup
         value={mode}
         onValueChange={handleModeChange}
-        className="flex flex-wrap gap-4"
+        className="flex space-x-4"
       >
         <div className="flex items-center space-x-2">
           <RadioGroupItem 
