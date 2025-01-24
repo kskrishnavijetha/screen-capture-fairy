@@ -41,12 +41,17 @@ export const SegmentLocks = ({ videoId, currentTime, onSeek }: SegmentLocksProps
 
   const createLockMutation = useMutation({
     mutationFn: async (lockData: { start_time: number; end_time: number }) => {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
         .from('timeline_segment_locks')
         .insert([{
           video_id: videoId,
           start_time: lockData.start_time,
           end_time: lockData.end_time,
+          locked_by: user.id
         }])
         .select()
         .single();
