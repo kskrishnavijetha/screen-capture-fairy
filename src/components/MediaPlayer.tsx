@@ -1,4 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from './ui/button';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { CommentSection } from './video/CommentSection';
 import { CollaborativeControls } from './video/CollaborativeControls';
 import { AnnotationControls } from './video/AnnotationControls';
@@ -9,6 +12,7 @@ interface MediaPlayerProps {
 }
 
 export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
+  const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -63,6 +67,23 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-between mb-4">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => navigate('/recorder')}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => navigate('/playback', { state: { recordedBlob } })}
+        >
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
+
       <div className="relative">
         <video
           ref={videoRef}
