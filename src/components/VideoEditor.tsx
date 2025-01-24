@@ -42,12 +42,12 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   if (!recordedBlob) return null;
 
   return (
-    <div className="space-y-4 w-full max-w-2xl mx-auto">
-      <div className="relative rounded-lg overflow-hidden bg-black">
+    <div className="space-y-4 w-full max-w-xl mx-auto">
+      <div className="relative rounded-lg overflow-hidden bg-black max-w-lg mx-auto aspect-video">
         <video
           ref={videoRef}
           src={videoUrl}
-          className="w-full"
+          className="w-full h-full object-contain"
           controls
           playsInline
           onTimeUpdate={(e) => handleTimeUpdate(e.currentTarget.currentTime)}
