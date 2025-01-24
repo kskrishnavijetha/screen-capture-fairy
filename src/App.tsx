@@ -17,6 +17,7 @@ import { supabase } from './integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 import { UserPresence } from '@/components/UserPresence';
 
+// Create a client
 const queryClient = new QueryClient();
 
 // Protected Route component
@@ -62,13 +63,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-const App = () => (
-  <React.StrictMode>
+function App() {
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
         <BrowserRouter>
+          <Toaster />
+          <Sonner />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/signin" element={<SignIn />} />
@@ -83,7 +84,13 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
-  </React.StrictMode>
-);
+  );
+}
 
-export default App;
+export default function AppWrapper() {
+  return (
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}
