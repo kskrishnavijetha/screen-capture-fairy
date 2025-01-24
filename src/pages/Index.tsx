@@ -54,6 +54,32 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  const handleSignUp = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password: crypto.randomUUID(),
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Check your email for the confirmation link"
+      });
+    } catch (error) {
+      console.error('Error signing up:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message
+      });
+    }
+  };
+
   const renderComponent = () => {
     switch (selectedComponent) {
       case 'home':
@@ -79,32 +105,6 @@ const Index = () => {
         return <div className="text-center">Monetization Hub Coming Soon</div>;
       default:
         return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
-    }
-  };
-
-  const handleSignUp = async (email: string) => {
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password: crypto.randomUUID(),
-        options: {
-          emailRedirectTo: window.location.origin
-        }
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Check your email for the confirmation link"
-      });
-    } catch (error) {
-      console.error('Error signing up:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message
-      });
     }
   };
 
