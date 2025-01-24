@@ -10,7 +10,7 @@ import {
   Angry, 
   ThumbsUp, 
   ThumbsDown, 
-  Party, 
+  PartyPopper,
   Flame,
   Star,
   MessageCircle 
@@ -42,7 +42,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
     { icon: Angry, label: 'angry' },
     { icon: ThumbsUp, label: 'thumbs-up' },
     { icon: ThumbsDown, label: 'thumbs-down' },
-    { icon: Party, label: 'party' },
+    { icon: PartyPopper, label: 'party' },
     { icon: Flame, label: 'fire' },
     { icon: Star, label: 'star' },
   ];
