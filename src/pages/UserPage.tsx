@@ -13,17 +13,51 @@ interface Recording {
   id: string;
 }
 
+interface Profile {
+  id: string;
+  email: string;
+  name: string | null;
+}
+
 const UserPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [showRecordings, setShowRecordings] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
 
   useEffect(() => {
     if (showRecordings) {
       loadRecordings();
     }
   }, [showRecordings]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+        setProfile(profileData);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast({
+        variant: "destructive",
+        title: "Error loading profile",
+        description: "Failed to load user profile"
+      });
+    }
+  };
 
   const loadRecordings = () => {
     try {
@@ -145,7 +179,13 @@ const UserPage = () => {
 
       <Card className="max-w-3xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl">User Settings</CardTitle>
+          <CardTitle className="text-2xl">User Profile</CardTitle>
+          {profile && (
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium">{profile.name || 'No name set'}</p>
+              <p>{profile.email}</p>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <Button
@@ -154,7 +194,7 @@ const UserPage = () => {
             onClick={() => navigate('/profile')}
           >
             <User className="mr-2 h-4 w-4" />
-            Profile
+            Profile Settings
           </Button>
           <Button
             variant="outline"
@@ -162,7 +202,7 @@ const UserPage = () => {
             onClick={() => setShowRecordings(!showRecordings)}
           >
             <Video className="mr-2 h-4 w-4" />
-            My Recordings
+            {showRecordings ? 'Hide Recordings' : 'View Previous Recordings'}
           </Button>
           <Button
             variant="outline"
@@ -191,11 +231,10 @@ const UserPage = () => {
                   {recordings.map((recording, index) => (
                     <Card key={recording.id || index} className="p-4">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Video className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
+                        <div>
+                          <p className="text-sm text-muted-foreground">
                             {format(recording.timestamp, 'PPpp')}
-                          </span>
+                          </p>
                         </div>
                         <div className="flex gap-2">
                           <Button
