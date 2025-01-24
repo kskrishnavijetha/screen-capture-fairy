@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, Plus, X } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { AnnotationOverlay } from './annotations/AnnotationOverlay';
+import { AnnotationForm } from './annotations/AnnotationForm';
+import { AnnotationList } from './annotations/AnnotationList';
 
 export interface Annotation {
   id: string;
@@ -162,12 +162,6 @@ export const AnnotationControls = ({
     });
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const handleAnnotationClick = (annotation: Annotation) => {
     setSelectedAnnotation(annotation);
     if (onAnnotationClick) {
@@ -182,88 +176,28 @@ export const AnnotationControls = ({
         Annotations
       </h3>
       
-      {/* Video Overlay for Annotations */}
-      <div className="relative">
-        {annotations.map((annotation) => (
-          <div
-            key={annotation.id}
-            className={`absolute cursor-pointer transform -translate-y-1/2 ${
-              selectedAnnotation?.id === annotation.id ? 'bg-primary' : 'bg-secondary'
-            } text-white px-2 py-1 rounded-full text-sm`}
-            style={{
-              left: `${(annotation.timestamp / duration) * 100}%`,
-              top: '50%',
-              zIndex: 10
-            }}
-            onClick={() => handleAnnotationClick(annotation)}
-          >
-            {annotation.text}
-          </div>
-        ))}
-      </div>
+      <AnnotationOverlay
+        annotations={annotations}
+        duration={duration}
+        selectedAnnotation={selectedAnnotation}
+        onAnnotationClick={handleAnnotationClick}
+      />
 
-      <div className="space-y-4">
-        {annotations.map((annotation) => (
-          <div 
-            key={annotation.id} 
-            className={`flex items-start gap-2 p-2 rounded-lg cursor-pointer ${
-              selectedAnnotation?.id === annotation.id ? 'bg-primary/20' : 'bg-secondary/50'
-            }`}
-            onClick={() => handleAnnotationClick(annotation)}
-          >
-            <div className="flex-1">
-              <div className="flex justify-between items-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-sm text-muted-foreground hover:text-primary"
-                >
-                  {formatTime(annotation.timestamp)}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeAnnotation(annotation.id);
-                  }}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="mt-1">{annotation.text}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <AnnotationList
+        annotations={annotations}
+        selectedAnnotation={selectedAnnotation}
+        onAnnotationClick={handleAnnotationClick}
+        onAnnotationRemove={removeAnnotation}
+      />
 
-      <div className="space-y-2">
-        <div>
-          <label className="text-sm">Current Time: {formatTime(currentTime)}</label>
-          <Input
-            type="number"
-            min={0}
-            max={duration}
-            value={newAnnotation.timestamp}
-            onChange={(e) => setNewAnnotation(prev => ({ ...prev, timestamp: Number(e.target.value) }))}
-            className="mt-1"
-          />
-        </div>
-        <div>
-          <label className="text-sm">Comment</label>
-          <Textarea
-            value={newAnnotation.text}
-            onChange={(e) => setNewAnnotation(prev => ({ ...prev, text: e.target.value }))}
-            placeholder="Add your comment..."
-            className="mt-1"
-          />
-        </div>
-        <Button onClick={addAnnotation} className="w-full">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Annotation
-        </Button>
-      </div>
+      <AnnotationForm
+        currentTime={currentTime}
+        text={newAnnotation.text || ''}
+        timestamp={newAnnotation.timestamp || 0}
+        onTextChange={(text) => setNewAnnotation(prev => ({ ...prev, text }))}
+        onTimestampChange={(timestamp) => setNewAnnotation(prev => ({ ...prev, timestamp }))}
+        onSubmit={addAnnotation}
+      />
     </div>
   );
 };
