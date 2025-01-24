@@ -54,25 +54,29 @@ export const getMediaStream = async (
           audio: true // Enable system audio capture
         });
         
-        // Get microphone audio
-        const audioStream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            sampleRate: 44100,
-            autoGainControl: true
-          },
-          video: false
-        });
-        
-        // Combine all tracks
-        const tracks = [
-          ...displayStream.getVideoTracks(),
-          ...displayStream.getAudioTracks(), // System audio
-          ...audioStream.getAudioTracks() // Microphone audio
-        ];
-        
-        combinedStream = new MediaStream(tracks);
+        try {
+          // Get microphone audio separately
+          const audioStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              sampleRate: 44100,
+              autoGainControl: true
+            },
+            video: false
+          });
+          
+          // Combine all tracks
+          combinedStream = new MediaStream([
+            ...displayStream.getVideoTracks(),
+            ...displayStream.getAudioTracks(),
+            ...audioStream.getAudioTracks()
+          ]);
+        } catch (audioError) {
+          // If microphone access fails, continue with just screen capture
+          console.warn('Microphone access denied, continuing with screen audio only:', audioError);
+          combinedStream = displayStream;
+        }
         break;
       }
       
@@ -94,14 +98,12 @@ export const getMediaStream = async (
         );
         
         // Combine all tracks
-        const tracks = [
+        combinedStream = new MediaStream([
           ...displayStream.getVideoTracks(),
           ...displayStream.getAudioTracks(),
           ...cameraStream.getVideoTracks(),
           ...cameraStream.getAudioTracks()
-        ];
-        
-        combinedStream = new MediaStream(tracks);
+        ]);
         break;
       }
       
@@ -112,7 +114,7 @@ export const getMediaStream = async (
     // Verify audio tracks are present
     if (combinedStream.getAudioTracks().length === 0) {
       toast({
-        variant: "warning",
+        variant: "default",
         title: "No audio detected",
         description: "Make sure you've granted permission for audio capture"
       });
