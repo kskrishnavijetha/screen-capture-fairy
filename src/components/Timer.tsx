@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 
 interface TimerProps {
   duration: number;

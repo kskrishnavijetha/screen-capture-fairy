@@ -13,7 +13,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState({ x: window.innerWidth - 280, y: 20 }); // Position in top-right by default
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hasPermissions, setHasPermissions] = useState<{camera: boolean, audio: boolean}>({ camera: false, audio: false });
@@ -21,7 +21,6 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
 
   const requestPermissions = async () => {
     try {
-      // First check if we already have permissions
       const permissions = await navigator.mediaDevices.enumerateDevices();
       const hasVideoPermission = permissions.some(device => device.kind === 'videoinput' && device.label !== '');
       const hasAudioPermission = permissions.some(device => device.kind === 'audioinput' && device.label !== '');
@@ -31,7 +30,6 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
         return true;
       }
 
-      // Request permissions if we don't have them
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: {
           width: { ideal: isMobile ? 640 : 1280 },
@@ -41,29 +39,17 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
         audio: true
       });
 
-      // Stop the test stream immediately
       stream.getTracks().forEach(track => track.stop());
-      
       setHasPermissions({ camera: true, audio: true });
-      toast({
-        title: "Permissions granted",
-        description: "Camera and microphone access has been enabled"
-      });
       return true;
     } catch (error: any) {
       console.error('Permission error:', error);
-      let errorMessage = 'Please grant camera and microphone permissions to continue';
-      
-      if (error.name === 'NotAllowedError') {
-        errorMessage = 'Camera and microphone access was denied. Please enable them in your device settings.';
-      } else if (error.name === 'NotFoundError') {
-        errorMessage = 'No camera or microphone found on your device';
-      }
-      
       toast({
         variant: "destructive",
         title: "Permission required",
-        description: errorMessage
+        description: error.name === 'NotAllowedError' 
+          ? 'Camera and microphone access was denied. Please enable them in your device settings.'
+          : 'Please grant camera and microphone permissions to continue'
       });
       return false;
     }
@@ -86,15 +72,24 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
               audio: false
             });
             streamRef.current = stream;
-            videoRef.current.srcObject = stream;
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+            }
           }
         } catch (error) {
           console.error('Error accessing camera:', error);
+          toast({
+            variant: "destructive",
+            title: "Camera error",
+            description: "Failed to access camera stream"
+          });
         }
       }
     };
 
-    const cleanup = () => {
+    if (isRecording) {
+      showCameraPreview();
+    } else {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
@@ -102,20 +97,18 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
-    };
-
-    if (isRecording) {
-      showCameraPreview();
-    } else {
-      cleanup();
     }
 
-    return cleanup;
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+    };
   }, [isRecording, captureMode, isMobile]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!containerRef.current) return;
-    
     setIsDragging(true);
     setDragStart({
       x: e.clientX - position.x,
@@ -132,12 +125,9 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
     const maxX = window.innerWidth - (containerRef.current.offsetWidth || 0);
     const maxY = window.innerHeight - (containerRef.current.offsetHeight || 0);
 
-    const constrainedX = Math.max(0, Math.min(newX, maxX));
-    const constrainedY = Math.max(0, Math.min(newY, maxY));
-
     setPosition({
-      x: constrainedX,
-      y: constrainedY
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY))
     });
   };
 
@@ -147,7 +137,6 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!containerRef.current) return;
-    
     setIsDragging(true);
     setDragStart({
       x: e.touches[0].clientX - position.x,
@@ -164,12 +153,9 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
     const maxX = window.innerWidth - (containerRef.current.offsetWidth || 0);
     const maxY = window.innerHeight - (containerRef.current.offsetHeight || 0);
 
-    const constrainedX = Math.max(0, Math.min(newX, maxX));
-    const constrainedY = Math.max(0, Math.min(newY, maxY));
-
     setPosition({
-      x: constrainedX,
-      y: constrainedY
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY))
     });
   };
 
@@ -187,15 +173,15 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
         document.removeEventListener('touchend', handleMouseUp);
       };
     }
-  }, [isDragging, dragStart]);
+  }, [isDragging]);
 
-  if (captureMode !== 'camera' && captureMode !== 'both') {
+  if (!isRecording || (captureMode !== 'camera' && captureMode !== 'both')) {
     return null;
   }
 
   if (!hasPermissions.camera || !hasPermissions.audio) {
     return (
-      <div className="fixed bottom-4 left-4 right-4 bg-background border rounded-lg p-4 shadow-lg">
+      <div className="fixed bottom-4 left-4 right-4 bg-background border rounded-lg p-4 shadow-lg z-50">
         <h3 className="text-lg font-medium mb-2">Camera & Microphone Access Required</h3>
         <p className="text-sm text-muted-foreground mb-4">
           To record video and audio, we need permission to access your camera and microphone.
