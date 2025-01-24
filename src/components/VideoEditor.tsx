@@ -1,12 +1,10 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { toast } from "@/hooks/use-toast";
+import React, { useRef, useState } from 'react';
 import { ShareControls } from './video/ShareControls';
 import { EmbedControls } from './video/EmbedControls';
 import { ExportControls } from './video/ExportControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
 import { VideoPreviewSection } from './video/preview/VideoPreviewSection';
-import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
 interface VideoEditorProps {
   recordedBlob: Blob | null;
@@ -24,7 +22,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (recordedBlob) {
       const url = URL.createObjectURL(recordedBlob);
       setVideoUrl(url);
@@ -34,7 +32,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     }
   }, [recordedBlob]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     return () => {
       if (processedVideoUrl) {
         URL.revokeObjectURL(processedVideoUrl);
