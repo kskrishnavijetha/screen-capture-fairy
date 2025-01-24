@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
 import { CheckCircle, Clock, AlertTriangle, Plus } from 'lucide-react';
+import { Json } from '@/integrations/supabase/types';
 
 type TaskStatus = 'todo' | 'in-progress' | 'done';
 
@@ -16,6 +17,17 @@ interface Task {
   content: string;
   status: TaskStatus;
   created_by: string;
+}
+
+interface TimelineEvent {
+  id: string;
+  video_id: string;
+  timestamp: number;
+  content: string;
+  created_by: string;
+  event_type: string;
+  metadata: Json;
+  created_at: string;
 }
 
 interface TaskManagerProps {
@@ -38,7 +50,16 @@ export const TaskManager = ({ videoId, currentTime }: TaskManagerProps) => {
         .order('timestamp');
 
       if (error) throw error;
-      return data as Task[];
+      
+      // Map the timeline events to Task interface
+      return (data as TimelineEvent[]).map(event => ({
+        id: event.id,
+        video_id: event.video_id,
+        timestamp: event.timestamp,
+        content: event.content || '',
+        status: (event.metadata as { status?: TaskStatus })?.status || 'todo',
+        created_by: event.created_by
+      })) as Task[];
     },
   });
 
