@@ -5,7 +5,6 @@ import { EmbedControls } from './video/EmbedControls';
 import { ExportControls } from './video/ExportControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
-import { VideoPreviewSection } from './video/preview/VideoPreviewSection';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 
 interface VideoEditorProps {
@@ -16,10 +15,8 @@ interface VideoEditorProps {
 
 export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const previewRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -34,17 +31,6 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     }
   }, [recordedBlob]);
 
-  useEffect(() => {
-    return () => {
-      if (processedVideoUrl) {
-        URL.revokeObjectURL(processedVideoUrl);
-      }
-      if (videoUrl) {
-        URL.revokeObjectURL(videoUrl);
-      }
-    };
-  }, [processedVideoUrl, videoUrl]);
-
   const handleMetadataLoaded = (videoDuration: number) => {
     setDuration(videoDuration);
   };
@@ -57,14 +43,19 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
 
   return (
     <div className="space-y-4 w-full max-w-2xl mx-auto">
-      <VideoPreviewSection
-        videoRef={videoRef}
-        previewRef={previewRef}
-        videoUrl={videoUrl}
-        processedVideoUrl={processedVideoUrl}
-        onMetadataLoaded={handleMetadataLoaded}
-        onTimeUpdate={handleTimeUpdate}
-      />
+      <div className="relative rounded-lg overflow-hidden bg-black">
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          className="w-full"
+          controls
+          playsInline
+          onTimeUpdate={(e) => handleTimeUpdate(e.currentTarget.currentTime)}
+          onLoadedMetadata={(e) => handleMetadataLoaded(e.currentTarget.duration)}
+          autoPlay={false}
+          muted={false}
+        />
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-4">
