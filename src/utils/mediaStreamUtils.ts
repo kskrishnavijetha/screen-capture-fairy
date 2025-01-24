@@ -16,11 +16,13 @@ const getDisplayMediaConstraints = (frameRate: number, resolution: Resolution) =
   }
 });
 
-const getUserMediaConstraints = (frameRate: number, resolution: Resolution) => ({
+const getUserMediaConstraints = (frameRate: number, resolution: Resolution, isMobile: boolean) => ({
   video: {
     frameRate: { ideal: frameRate },
-    width: { ideal: resolution.width },
-    height: { ideal: resolution.height }
+    width: { ideal: isMobile ? 640 : resolution.width },
+    height: { ideal: isMobile ? 480 : resolution.height },
+    facingMode: isMobile ? "user" : undefined,
+    aspectRatio: isMobile ? 1.777777778 : undefined // 16:9 aspect ratio
   },
   audio: {
     echoCancellation: true,
@@ -44,18 +46,26 @@ export const getMediaStream = async (
   resolution: Resolution
 ): Promise<MediaStream | null> => {
   try {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     let combinedStream: MediaStream;
 
     switch (mode) {
       case 'screen': {
-        // Get screen capture with system audio
+        if (isMobile) {
+          toast({
+            variant: "destructive",
+            title: "Screen recording unavailable",
+            description: "Screen recording is not supported on mobile devices. Please use camera mode instead."
+          });
+          throw new Error('Screen recording is not supported on mobile devices');
+        }
+
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           ...getDisplayMediaConstraints(frameRate, resolution),
-          audio: true // Enable system audio capture
+          audio: true
         });
         
         try {
-          // Get microphone audio separately
           const audioStream = await navigator.mediaDevices.getUserMedia({
             audio: {
               echoCancellation: true,
@@ -66,14 +76,12 @@ export const getMediaStream = async (
             video: false
           });
           
-          // Combine all tracks
           combinedStream = new MediaStream([
             ...displayStream.getVideoTracks(),
             ...displayStream.getAudioTracks(),
             ...audioStream.getAudioTracks()
           ]);
         } catch (audioError) {
-          // If microphone access fails, continue with just screen capture
           console.warn('Microphone access denied, continuing with screen audio only:', audioError);
           combinedStream = displayStream;
         }
@@ -82,22 +90,30 @@ export const getMediaStream = async (
       
       case 'camera': {
         combinedStream = await navigator.mediaDevices.getUserMedia(
-          getUserMediaConstraints(frameRate, resolution)
+          getUserMediaConstraints(frameRate, resolution, isMobile)
         );
         break;
       }
       
       case 'both': {
+        if (isMobile) {
+          toast({
+            variant: "destructive",
+            title: "Combined mode unavailable",
+            description: "Combined screen and camera recording is not supported on mobile devices. Please use camera mode instead."
+          });
+          throw new Error('Combined mode is not supported on mobile devices');
+        }
+
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           ...getDisplayMediaConstraints(frameRate, resolution),
           audio: true
         });
         
         const cameraStream = await navigator.mediaDevices.getUserMedia(
-          getUserMediaConstraints(frameRate, resolution)
+          getUserMediaConstraints(frameRate, resolution, isMobile)
         );
         
-        // Combine all tracks
         combinedStream = new MediaStream([
           ...displayStream.getVideoTracks(),
           ...displayStream.getAudioTracks(),
@@ -111,10 +127,9 @@ export const getMediaStream = async (
         throw new Error('Invalid capture mode');
     }
 
-    // Verify audio tracks are present
     if (combinedStream.getAudioTracks().length === 0) {
       toast({
-        variant: "default",  // Changed from "warning" to "default"
+        variant: "default",
         title: "No audio detected",
         description: "Make sure you've granted permission for audio capture"
       });
@@ -131,6 +146,10 @@ export const getMediaStream = async (
       errorMessage = 'No camera or microphone found';
     } else if (error.name === 'NotReadableError') {
       errorMessage = 'Your camera or microphone is already in use';
+    } else if (error.name === 'OverconstrainedError') {
+      errorMessage = 'The requested media settings are not supported by your device';
+    } else if (error.name === 'AbortError') {
+      errorMessage = 'Media capture was aborted';
     }
     
     toast({
