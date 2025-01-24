@@ -239,6 +239,39 @@ export type Database = {
         }
         Relationships: []
       }
+      timeline_flags: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_time: number
+          flag_type: string
+          id: string
+          start_time: number
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_time: number
+          flag_type: string
+          id?: string
+          start_time: number
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_time?: number
+          flag_type?: string
+          id?: string
+          start_time?: number
+          video_id?: string
+        }
+        Relationships: []
+      }
       timeline_segment_locks: {
         Row: {
           created_at: string

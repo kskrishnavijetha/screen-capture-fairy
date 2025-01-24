@@ -2,6 +2,7 @@ import React from 'react';
 import { TaskManager } from './TaskManager';
 import { IssueFlags } from './IssueFlags';
 import { SegmentLocks } from './SegmentLocks';
+import { FlaggedSegments } from './FlaggedSegments';
 import { Separator } from "@/components/ui/separator";
 
 interface TimelineViewProps {
@@ -16,6 +17,8 @@ export const TimelineView = ({ videoId, currentTime, onSeek }: TimelineViewProps
       <TaskManager videoId={videoId} currentTime={currentTime} onSeek={onSeek} />
       <Separator />
       <IssueFlags videoId={videoId} currentTime={currentTime} onSeek={onSeek} />
+      <Separator />
+      <FlaggedSegments videoId={videoId} currentTime={currentTime} onSeek={onSeek} />
       <Separator />
       <SegmentLocks videoId={videoId} currentTime={currentTime} onSeek={onSeek} />
     </div>
