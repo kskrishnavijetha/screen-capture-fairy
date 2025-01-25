@@ -16,6 +16,8 @@ import { SafeShareComponent } from "@/components/SafeShareComponent";
 import { supabase } from './integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 import { UserPresence } from '@/components/UserPresence';
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -54,12 +56,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <div>
-      <div className="absolute top-4 right-4">
-        <UserPresence user={session.user} />
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <AppSidebar />
+        <div className="flex-1">
+          <div className="absolute top-4 right-4">
+            <UserPresence user={session.user} />
+          </div>
+          {children}
+        </div>
       </div>
-      {children}
-    </div>
+    </SidebarProvider>
   );
 };
 
