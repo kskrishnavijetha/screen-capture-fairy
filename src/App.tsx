@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index";
 import VideoPlayback from "./pages/VideoPlayback";
 import VideoEdit from "./pages/VideoEdit";
@@ -73,23 +74,25 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/user" element={<ProtectedRoute><UserPage /></ProtectedRoute>} />
-            <Route path="/recorder" element={<ProtectedRoute><RecordingComponent /></ProtectedRoute>} />
-            <Route path="/safeshare" element={<ProtectedRoute><SafeShareComponent /></ProtectedRoute>} />
-            <Route path="/playback" element={<ProtectedRoute><VideoPlayback /></ProtectedRoute>} />
-            <Route path="/edit" element={<ProtectedRoute><VideoEdit /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <BrowserRouter>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/user" element={<ProtectedRoute><UserPage /></ProtectedRoute>} />
+              <Route path="/recorder" element={<ProtectedRoute><RecordingComponent /></ProtectedRoute>} />
+              <Route path="/safeshare" element={<ProtectedRoute><SafeShareComponent /></ProtectedRoute>} />
+              <Route path="/playback" element={<ProtectedRoute><VideoPlayback /></ProtectedRoute>} />
+              <Route path="/edit" element={<ProtectedRoute><VideoEdit /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
