@@ -48,6 +48,14 @@ const LibraryPage = () => {
     }
   };
 
+  const handleEdit = (recordingId: string) => {
+    navigate(`/edit?id=${recordingId}`);
+  };
+
+  const handleShare = (recordingId: string) => {
+    navigate(`/safeshare?id=${recordingId}`);
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
@@ -75,7 +83,7 @@ const LibraryPage = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate(`/edit/${recording.id}`)}
+                  onClick={() => handleEdit(recording.id)}
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
@@ -83,7 +91,7 @@ const LibraryPage = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate(`/share/${recording.id}`)}
+                  onClick={() => handleShare(recording.id)}
                 >
                   <Share2 className="h-4 w-4 mr-2" />
                   Share
