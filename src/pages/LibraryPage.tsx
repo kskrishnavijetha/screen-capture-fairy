@@ -33,6 +33,7 @@ const LibraryPage = () => {
           blob: new Blob([new Uint8Array(recording.blob)], { type: 'video/webm' }),
           timestamp: new Date(recording.timestamp)
         }));
+        console.log('Loaded recordings:', processedRecordings); // Debug log
         setRecordings(processedRecordings);
       }
     } catch (error) {

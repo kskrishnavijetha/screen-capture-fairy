@@ -31,7 +31,7 @@ export const RecordingComponent = () => {
   const [filename, setFilename] = useState('recording');
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [currentRecordingIndex, setCurrentRecordingIndex] = useState(0);
-  const [recordings, setRecordings] = useState<{ blob: Blob; timestamp: Date }[]>([]);
+  const [recordings, setRecordings] = useState<{ blob: Blob; timestamp: Date; id: string }[]>([]);
 
   useEffect(() => {
     const loadRecordings = () => {
@@ -41,7 +41,8 @@ export const RecordingComponent = () => {
           const parsedRecordings = JSON.parse(existingRecordings);
           const processedRecordings = parsedRecordings.map((recording: any) => ({
             blob: new Blob([new Uint8Array(recording.blob)], { type: 'video/webm' }),
-            timestamp: new Date(recording.timestamp)
+            timestamp: new Date(recording.timestamp),
+            id: recording.id
           }));
           setRecordings(processedRecordings);
         } catch (error) {
@@ -106,6 +107,44 @@ export const RecordingComponent = () => {
     }
   };
 
+  const handleRecordingStop = (blob: Blob) => {
+    const newRecording = {
+      blob: blob,
+      timestamp: new Date(),
+      id: crypto.randomUUID() // Add unique ID for each recording
+    };
+    
+    try {
+      const existingRecordings = localStorage.getItem('recordings');
+      const recordings = existingRecordings ? JSON.parse(existingRecordings) : [];
+      
+      // Convert blob to array buffer for storage
+      const reader = new FileReader();
+      reader.readAsArrayBuffer(blob);
+      reader.onloadend = () => {
+        const arrayBuffer = reader.result;
+        const uint8Array = new Uint8Array(arrayBuffer as ArrayBuffer);
+        const recordingToStore = {
+          ...newRecording,
+          blob: Array.from(uint8Array) // Convert Uint8Array to regular array for storage
+        };
+        
+        recordings.push(recordingToStore);
+        localStorage.setItem('recordings', JSON.stringify(recordings));
+        
+        setRecordedBlob(blob);
+        navigate('/playback', { state: { recordedBlob: blob } });
+      };
+    } catch (error) {
+      console.error('Error saving recording:', error);
+      toast({
+        variant: "destructive",
+        title: "Error saving recording",
+        description: "Failed to save your recording"
+      });
+    }
+  };
+
   return (
     <div className={`text-center ${isMobile ? 'p-4' : 'space-y-6 w-full max-w-md mx-auto'}`}>
       <div className="flex justify-between items-center mb-4">
@@ -162,10 +201,7 @@ export const RecordingComponent = () => {
         frameRate={30}
         resolution={{ width: 1920, height: 1080, label: "1080p" }}
         onRecordingStart={() => setDuration(0)}
-        onRecordingStop={(blob) => {
-          setRecordedBlob(blob);
-          navigate('/playback', { state: { recordedBlob: blob } });
-        }}
+        onRecordingStop={handleRecordingStop}
         isRecording={isRecording}
         setIsRecording={setIsRecording}
         setIsPaused={setIsPaused}
