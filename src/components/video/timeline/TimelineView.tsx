@@ -18,8 +18,6 @@ export const TimelineView = ({ videoId, currentTime, onSeek }: TimelineViewProps
       <Separator />
       <IssueFlags videoId={videoId} currentTime={currentTime} onSeek={onSeek} />
       <Separator />
-      <FlaggedSegments videoId={videoId} currentTime={currentTime} onSeek={onSeek} />
-      <Separator />
       <SegmentLocks videoId={videoId} currentTime={currentTime} onSeek={onSeek} />
     </div>
   );
