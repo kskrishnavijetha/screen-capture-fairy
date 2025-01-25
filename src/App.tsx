@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from './components/ThemeProvider';
-import { Toaster } from '@/components/ui/toaster';
-import SignIn from '@/pages/SignIn';
-import SignUp from '@/pages/SignUp';
-import Index from '@/pages/Index';
-import NotFound from '@/pages/NotFound';
-import VideoEdit from '@/pages/VideoEdit';
-import VideoPlayback from '@/pages/VideoPlayback';
-import UserPage from '@/pages/UserPage';
-import LibraryPage from '@/pages/LibraryPage';
+import React from 'react';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Index from "./pages/Index";
+import VideoPlayback from "./pages/VideoPlayback";
+import VideoEdit from "./pages/VideoEdit";
+import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
+import UserPage from "./pages/UserPage";
+import NotFound from "./pages/NotFound";
+import { RecordingComponent } from "@/components/RecordingComponent";
+import { SafeShareComponent } from "@/components/SafeShareComponent";
 import { supabase } from './integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 import { UserPresence } from '@/components/UserPresence';
@@ -20,58 +22,39 @@ import { AppSidebar } from "@/components/AppSidebar";
 // Create a client
 const queryClient = new QueryClient();
 
-function App() {
-  const [session, setSession] = useState<Session | null>(null);
+// Protected Route component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const [session, setSession] = React.useState<Session | null>(null);
+  const [loading, setLoading] = React.useState(true);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+  React.useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setLoading(false);
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" attribute="class">
-        <Router>
-          <Routes>
-            <Route path="/signin" element={!session ? <SignIn /> : <Navigate to="/" />} />
-            <Route path="/signup" element={!session ? <SignUp /> : <Navigate to="/" />} />
-            <Route
-              path="/*"
-              element={
-                session ? (
-                  <ProtectedLayout session={session}>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/library" element={<LibraryPage />} />
-                      <Route path="/edit" element={<VideoEdit />} />
-                      <Route path="/playback" element={<VideoPlayback />} />
-                      <Route path="/profile" element={<UserPage />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </ProtectedLayout>
-                ) : (
-                  <Navigate to="/signin" />
-                )
-              }
-            />
-          </Routes>
-          <Toaster />
-        </Router>
-      </ThemeProvider>
-    </QueryClientProvider>
-  );
-}
+  // Show loading state
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-const ProtectedLayout = ({ session, children }: { session: Session; children: React.ReactNode }) => {
+  // Redirect if not authenticated
+  if (!session) {
+    return <Navigate to="/signin" replace />;
+  }
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -87,4 +70,34 @@ const ProtectedLayout = ({ session, children }: { session: Session; children: Re
   );
 };
 
-export default App;
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BrowserRouter>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/user" element={<ProtectedRoute><UserPage /></ProtectedRoute>} />
+            <Route path="/recorder" element={<ProtectedRoute><RecordingComponent /></ProtectedRoute>} />
+            <Route path="/safeshare" element={<ProtectedRoute><SafeShareComponent /></ProtectedRoute>} />
+            <Route path="/playback" element={<ProtectedRoute><VideoPlayback /></ProtectedRoute>} />
+            <Route path="/edit" element={<ProtectedRoute><VideoEdit /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default function AppWrapper() {
+  return (
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}
