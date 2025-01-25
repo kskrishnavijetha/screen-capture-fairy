@@ -2,14 +2,24 @@
 
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
-import { type ThemeProviderProps } from "next-themes/dist/types";
 
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+interface ThemeProviderProps {
+  children: React.ReactNode;
+  defaultTheme?: string;
+  storageKey?: string;
+}
+
+export function ThemeProvider({ 
+  children,
+  defaultTheme = "dark",
+  storageKey = "vite-ui-theme",
+  ...props 
+}: ThemeProviderProps) {
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="dark"
-      enableSystem
+      defaultTheme={defaultTheme}
+      storageKey={storageKey}
       {...props}
     >
       {children}
