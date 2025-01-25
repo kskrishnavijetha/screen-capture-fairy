@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { MainMenu } from "@/components/MainMenu";
 import { HomePage } from "@/components/HomePage";
 import { ThemeSelector } from '@/components/ThemeSelector';
-import { AIContentGenerator } from '@/components/AIContentGenerator';
 import { UserPresence } from '@/components/UserPresence';
 import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -80,34 +79,6 @@ const Index = () => {
     }
   };
 
-  const renderComponent = () => {
-    switch (selectedComponent) {
-      case 'home':
-        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
-      case 'content':
-        if (!isAuthenticated) {
-          toast({
-            title: "Authentication Required",
-            description: "Please sign in to access the AI Content Generator",
-            variant: "destructive"
-          });
-          navigate('/signin');
-          return null;
-        }
-        return <AIContentGenerator />;
-      case 'video':
-        return <div className="text-center">AI Short Video Generator Coming Soon</div>;
-      case 'calendar':
-        return <div className="text-center">Content Calendar Coming Soon</div>;
-      case 'analytics':
-        return <div className="text-center">Social Media Analytics Coming Soon</div>;
-      case 'monetization':
-        return <div className="text-center">Monetization Hub Coming Soon</div>;
-      default:
-        return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
-    }
-  };
-
   return (
     <div className={`min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
       <div className="absolute top-4 left-4 flex items-center gap-4">
@@ -129,7 +100,7 @@ const Index = () => {
           <div className="flex flex-col items-center mb-8 space-y-4">
             <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
           </div>
-          {renderComponent()}
+          <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />
         </div>
       </div>
     </div>
