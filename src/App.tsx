@@ -14,7 +14,7 @@ import UserPage from "./pages/UserPage";
 import NotFound from "./pages/NotFound";
 import { RecordingComponent } from "@/components/RecordingComponent";
 import { SafeShareComponent } from "@/components/SafeShareComponent";
-import { LibraryPage } from "./pages/LibraryPage";
+import LibraryPage from "./pages/LibraryPage";
 import { supabase } from './integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 import { UserPresence } from '@/components/UserPresence';

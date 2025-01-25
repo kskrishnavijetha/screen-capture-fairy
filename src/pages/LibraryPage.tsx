@@ -12,7 +12,7 @@ interface Recording {
   id: string;
 }
 
-export const LibraryPage = () => {
+const LibraryPage = () => {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const navigate = useNavigate();
 
