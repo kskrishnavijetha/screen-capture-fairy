@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { FileDown, Loader2, Lock, Save } from 'lucide-react';
+import { FileDown, Loader2, Lock } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { generateEncryptionKey, encryptBlob, saveEncryptedRecording } from '@/utils/encryption';
@@ -21,11 +21,18 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
   const [isPasswordProtected, setIsPasswordProtected] = useState(false);
   const [password, setPassword] = useState('');
   const [filename, setFilename] = useState(`recording-${Date.now()}`);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const validatePassword = (pwd: string) => {
     if (pwd.length < 6) {
       throw new Error('Password must be at least 6 characters long');
     }
+  };
+
+  const resetExportState = () => {
+    setIsExporting(false);
+    setProgress(0);
+    setExportError(null);
   };
 
   const handleExport = async () => {
@@ -53,6 +60,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
 
     setIsExporting(true);
     setProgress(0);
+    setExportError(null);
     
     try {
       // Simulate processing progress
@@ -99,8 +107,13 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
         a.download = `${filename}.${selectedFormat}`;
         
         await a.click();
-        URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        
+        // Clean up
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          resetExportState();
+        }, 100);
 
         clearInterval(progressInterval);
         setProgress(100);
@@ -112,6 +125,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
       }
     } catch (error) {
       console.error('Export error:', error);
+      setExportError('There was an error exporting your recording. Please try again.');
       toast({
         variant: "destructive",
         title: "Export failed",
@@ -119,12 +133,17 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
       });
     } finally {
       setIsExporting(false);
-      setProgress(0);
     }
   };
 
   return (
     <div className="space-y-4">
+      {exportError && (
+        <div className="bg-destructive/15 text-destructive px-4 py-2 rounded-md text-sm">
+          {exportError}
+        </div>
+      )}
+      
       <div className="space-y-2">
         <label className="text-sm font-medium">Filename</label>
         <Input
