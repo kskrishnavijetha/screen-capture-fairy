@@ -26,14 +26,44 @@ const UserPage = () => {
   const fetchUserProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profileData, error } = await supabase
+      if (!user) {
+        navigate('/signin');
+        return;
+      }
+
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        toast({
+          variant: "destructive",
+          title: "Error loading profile",
+          description: "Failed to load user profile"
+        });
+        return;
+      }
+
+      // If no profile exists, create one
+      if (!profileData) {
+        const { data: newProfile, error: createError } = await supabase
           .from('profiles')
-          .select('*')
-          .eq('id', user.id)
+          .insert([
+            { 
+              id: user.id,
+              email: user.email,
+              name: user.user_metadata?.name || null
+            }
+          ])
+          .select()
           .single();
 
-        if (error) throw error;
+        if (createError) throw createError;
+        setProfile(newProfile);
+      } else {
         setProfile(profileData);
       }
     } catch (error) {
