@@ -16,20 +16,23 @@ import { SafeShareComponent } from "@/components/SafeShareComponent";
 import { supabase } from './integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 import { UserPresence } from '@/components/UserPresence';
-import { SideNavigation } from '@/components/SideNavigation';
 
+// Create a client
 const queryClient = new QueryClient();
 
+// Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = React.useState<Session | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
       setLoading(false);
     });
 
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       setLoading(false);
@@ -40,23 +43,22 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
+  // Show loading state
   if (loading) {
     return <div>Loading...</div>;
   }
 
+  // Redirect if not authenticated
   if (!session) {
     return <Navigate to="/signin" replace />;
   }
 
   return (
-    <div className="flex">
-      <SideNavigation />
-      <div className="flex-1">
-        <div className="absolute top-4 right-4">
-          <UserPresence user={session.user} />
-        </div>
-        {children}
+    <div>
+      <div className="absolute top-4 right-4">
+        <UserPresence user={session.user} />
       </div>
+      {children}
     </div>
   );
 };
@@ -69,7 +71,7 @@ function App() {
           <Toaster />
           <Sonner />
           <Routes>
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/" element={<Index />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/user" element={<ProtectedRoute><UserPage /></ProtectedRoute>} />
