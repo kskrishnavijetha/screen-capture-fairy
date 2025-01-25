@@ -25,7 +25,7 @@ interface SidebarProps {
   userName?: string;
 }
 
-export const Sidebar = ({ userName = "User's Workspace" }: SidebarProps) => {
+export const Sidebar = ({ userName = "shanmukha's Workspace" }: SidebarProps) => {
   const navigate = useNavigate();
 
   const menuItems = [
