@@ -11,11 +11,13 @@
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+  filter: drop-shadow(0 0 2em #9b87f5aa);
 }
+
 .logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  filter: drop-shadow(0 0 2em #9b87f5aa);
 }
 
 @keyframes logo-spin {
@@ -35,8 +37,44 @@
 
 .card {
   padding: 2em;
+  background: #1A1F2C;
+  border: 1px solid #403E43;
+  border-radius: 0.5rem;
 }
 
 .read-the-docs {
-  color: #888;
+  color: #8E9196;
+}
+
+/* Loom-like styles */
+.button-primary {
+  @apply bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-md transition-colors;
+}
+
+.button-secondary {
+  @apply bg-secondary hover:bg-secondary/90 text-white font-medium py-2 px-4 rounded-md transition-colors;
+}
+
+.input-field {
+  @apply bg-secondary border-border text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none;
+}
+
+.card-hover {
+  @apply hover:border-primary/50 transition-colors duration-200;
+}
+
+.nav-link {
+  @apply text-muted hover:text-white transition-colors;
+}
+
+.heading-primary {
+  @apply text-2xl font-bold text-white mb-4;
+}
+
+.heading-secondary {
+  @apply text-xl font-semibold text-white mb-3;
+}
+
+.text-gradient {
+  @apply bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent;
 }
