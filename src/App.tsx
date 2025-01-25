@@ -14,6 +14,7 @@ import UserPage from "./pages/UserPage";
 import NotFound from "./pages/NotFound";
 import { RecordingComponent } from "@/components/RecordingComponent";
 import { SafeShareComponent } from "@/components/SafeShareComponent";
+import { LibraryPage } from "@/components/LibraryPage";
 import { supabase } from './integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 import { UserPresence } from '@/components/UserPresence';
@@ -88,6 +89,7 @@ function App() {
               <Route path="/safeshare" element={<ProtectedRoute><SafeShareComponent /></ProtectedRoute>} />
               <Route path="/playback" element={<ProtectedRoute><VideoPlayback /></ProtectedRoute>} />
               <Route path="/edit" element={<ProtectedRoute><VideoEdit /></ProtectedRoute>} />
+              <Route path="/library" element={<ProtectedRoute><LibraryPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, MonitorPlay, Home, Link2 } from 'lucide-react';
+import { Menu, MonitorPlay, Home, Link2, Library } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -11,6 +11,7 @@ import {
 export const MENU_ITEMS = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'recorder', label: 'Screen Recorder', icon: MonitorPlay },
+  { id: 'library', label: 'Library', icon: Library },
 ];
 
 interface MainMenuProps {
@@ -38,6 +39,11 @@ export const MainMenu = ({
         'recorder',
         `width=${width},height=${height},left=${left},top=${top}`
       );
+      return;
+    }
+
+    if (componentId === 'library') {
+      window.location.href = '/library';
       return;
     }
 
@@ -71,6 +77,14 @@ export const MainMenu = ({
           >
             <MonitorPlay className="mr-2 h-4 w-4" />
             Screen Recorder
+          </Button>
+          <Button
+            variant={selectedComponent === 'library' ? "default" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => handleComponentClick('library')}
+          >
+            <Library className="mr-2 h-4 w-4" />
+            Library
           </Button>
           <a 
             href="https://x.com/softwave1116" 
