@@ -2,7 +2,6 @@ import React from 'react';
 import { TaskManager } from './TaskManager';
 import { IssueFlags } from './IssueFlags';
 import { SegmentLocks } from './SegmentLocks';
-import { FlaggedSegments } from './FlaggedSegments';
 import { Separator } from "@/components/ui/separator";
 
 interface TimelineViewProps {
