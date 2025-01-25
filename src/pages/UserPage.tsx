@@ -31,13 +31,17 @@ const UserPage = () => {
         return;
       }
 
+      console.log('Current user:', user); // Debug log
+
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      if (error) {
+      console.log('Profile data:', profileData, 'Error:', error); // Debug log
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
         console.error('Error fetching profile:', error);
         toast({
           variant: "destructive",
@@ -49,76 +53,37 @@ const UserPage = () => {
 
       // If no profile exists, create one
       if (!profileData) {
+        console.log('Creating new profile for user:', user.id); // Debug log
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .insert([
             { 
               id: user.id,
               email: user.email,
-              name: user.user_metadata?.name || null
+              name: user.user_metadata?.name || null,
+              avatar_url: null
             }
           ])
           .select()
           .single();
 
-        if (createError) throw createError;
+        if (createError) {
+          console.error('Error creating profile:', createError);
+          throw createError;
+        }
+        console.log('New profile created:', newProfile); // Debug log
         setProfile(newProfile);
       } else {
+        console.log('Setting existing profile:', profileData); // Debug log
         setProfile(profileData);
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error in fetchUserProfile:', error);
       toast({
         variant: "destructive",
         title: "Error loading profile",
         description: "Failed to load user profile"
       });
-    }
-  };
-
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      setUploading(true);
-      
-      if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('You must select an image to upload.');
-      }
-
-      const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${profile?.id}/${Math.random()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', profile?.id);
-
-      if (updateError) throw updateError;
-
-      setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : null);
-
-      toast({
-        title: "Success",
-        description: "Profile picture updated successfully"
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error uploading avatar",
-        description: error.message
-      });
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -193,11 +158,13 @@ const UserPage = () => {
       <Card className="max-w-3xl mx-auto">
         <CardHeader className="space-y-4">
           <CardTitle className="text-2xl">User Profile</CardTitle>
-          <ProfileHeader 
-            profile={profile}
-            uploading={uploading}
-            onAvatarUpload={handleAvatarUpload}
-          />
+          {profile && (
+            <ProfileHeader 
+              profile={profile}
+              uploading={uploading}
+              onAvatarUpload={() => {}} // We'll implement this later
+            />
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <ProfileActions 

@@ -1,11 +1,5 @@
-export interface Resolution {
-  label: string;
-  width: number;
-  height: number;
-}
-
 export interface Recording {
-  id?: string;
+  id: string;
   blob: Blob;
   timestamp: Date;
 }
