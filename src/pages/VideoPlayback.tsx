@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { VideoPreview } from '@/components/media/VideoPreview';
+import { SharedTimeline } from '@/components/video/timeline/SharedTimeline';
 import { MediaPlayer } from '@/components/MediaPlayer';
 import { Edit, Download } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
@@ -93,6 +94,15 @@ const VideoPlayback = () => {
               Download
             </Button>
           </div>
+        </div>
+        
+        <div className="space-y-6">
+          <SharedTimeline
+            videoId={recordedBlob.size.toString()}
+            videoRef={videoRef}
+            currentTime={currentTime}
+            onSeek={handleSeek}
+          />
         </div>
       </div>
     </div>
