@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft } from "lucide-react";
+import { Menu, Home, Library, Calendar, Bell, Bookmark, Clock, Gift, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AuthError, AuthApiError } from '@supabase/supabase-js';
@@ -76,147 +76,212 @@ const SignIn = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 bg-background">
-      <div className="fixed top-4 left-4 flex items-center gap-4">
-        <Button
-          variant="ghost"
-          className="hover:bg-accent"
-          onClick={() => navigate('/')}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        <img 
-          src="/lovable-uploads/d61c7c4e-e7ad-4177-bfd9-c819f5de7986.png"
-          alt="ScreenCraft Logo"
-          className="w-8 h-8"
-        />
-        <span className="text-lg font-semibold text-primary">Softwave</span>
-      </div>
-
-      <div className="w-full max-w-sm mx-auto space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold tracking-tight">Welcome back</h2>
-          <p className="text-sm text-muted-foreground">Sign in to continue recording and sharing</p>
+    <div className="flex h-screen bg-background">
+      {/* Left Sidebar */}
+      <div className="w-64 bg-[#1B1B1B] text-white p-4 flex flex-col">
+        <div className="flex items-center gap-2 mb-8">
+          <img 
+            src="/lovable-uploads/d61c7c4e-e7ad-4177-bfd9-c819f5de7986.png"
+            alt="ScreenCraft Logo"
+            className="w-8 h-8"
+          />
+          <span className="text-lg font-semibold">Softwave</span>
         </div>
 
-        <form onSubmit={handleSignIn} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="h-10"
-              autoComplete="email"
-              inputMode="email"
-            />
+        <nav className="space-y-2">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-white hover:bg-white/10"
+            onClick={() => navigate('/')}
+          >
+            <Home className="h-4 w-4 mr-2" />
+            Home
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-white hover:bg-white/10"
+          >
+            <Library className="h-4 w-4 mr-2" />
+            My Library
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-white hover:bg-white/10"
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            Meetings
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-white hover:bg-white/10"
+          >
+            <Bell className="h-4 w-4 mr-2" />
+            Notifications
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-white hover:bg-white/10"
+          >
+            <Bookmark className="h-4 w-4 mr-2" />
+            Watch Later
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-white hover:bg-white/10"
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            History
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-white hover:bg-white/10"
+          >
+            <Gift className="h-4 w-4 mr-2" />
+            Earn free videos
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-white hover:bg-white/10"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
+        </nav>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm mx-auto space-y-6">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold tracking-tight">Welcome back</h2>
+            <p className="text-sm text-muted-foreground">Sign in to continue recording and sharing</p>
           </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="password">Password</Label>
-              <Button
-                variant="link"
-                type="button"
-                className="px-0 h-auto font-normal text-sm"
-                onClick={() => {
-                  if (!email.trim()) {
-                    toast({
-                      variant: "destructive",
-                      title: "Error",
-                      description: "Please enter your email address"
-                    });
-                    return;
-                  }
 
-                  const now = Date.now();
-                  const timeSinceLastRequest = now - resetRequestTime;
-                  if (timeSinceLastRequest < 60000) {
-                    const remainingSeconds = Math.ceil((60000 - timeSinceLastRequest) / 1000);
-                    toast({
-                      variant: "destructive",
-                      title: "Please wait",
-                      description: `You can request another reset email in ${remainingSeconds} seconds.`
-                    });
-                    return;
-                  }
-
-                  supabase.auth.resetPasswordForEmail(email.trim())
-                    .then(({ error }) => {
-                      if (error) throw error;
-                      setResetRequestTime(now);
-                      toast({
-                        title: "Password reset email sent",
-                        description: "Check your email for the password reset link"
-                      });
-                    })
-                    .catch((error) => {
-                      if (error.message.includes('rate_limit')) {
-                        toast({
-                          variant: "destructive",
-                          title: "Too many requests",
-                          description: "Please wait a minute before requesting another password reset."
-                        });
-                      } else {
-                        toast({
-                          variant: "destructive",
-                          title: "Error",
-                          description: error.message
-                        });
-                      }
-                    });
-                }}
-              >
-                Forgot password?
-              </Button>
+          <form onSubmit={handleSignIn} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-10"
+                autoComplete="email"
+                inputMode="email"
+              />
             </div>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="h-10"
-              autoComplete="current-password"
-            />
-          </div>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="password">Password</Label>
+                <Button
+                  variant="link"
+                  type="button"
+                  className="px-0 h-auto font-normal text-sm"
+                  onClick={() => {
+                    if (!email.trim()) {
+                      toast({
+                        variant: "destructive",
+                        title: "Error",
+                        description: "Please enter your email address"
+                      });
+                      return;
+                    }
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="stayConnected"
-              checked={stayConnected}
-              onCheckedChange={(checked) => setStayConnected(checked as boolean)}
-            />
-            <Label
-              htmlFor="stayConnected"
-              className="text-sm font-normal cursor-pointer"
+                    const now = Date.now();
+                    const timeSinceLastRequest = now - resetRequestTime;
+                    if (timeSinceLastRequest < 60000) {
+                      const remainingSeconds = Math.ceil((60000 - timeSinceLastRequest) / 1000);
+                      toast({
+                        variant: "destructive",
+                        title: "Please wait",
+                        description: `You can request another reset email in ${remainingSeconds} seconds.`
+                      });
+                      return;
+                    }
+
+                    supabase.auth.resetPasswordForEmail(email.trim())
+                      .then(({ error }) => {
+                        if (error) throw error;
+                        setResetRequestTime(now);
+                        toast({
+                          title: "Password reset email sent",
+                          description: "Check your email for the password reset link"
+                        });
+                      })
+                      .catch((error) => {
+                        if (error.message.includes('rate_limit')) {
+                          toast({
+                            variant: "destructive",
+                            title: "Too many requests",
+                            description: "Please wait a minute before requesting another password reset."
+                          });
+                        } else {
+                          toast({
+                            variant: "destructive",
+                            title: "Error",
+                            description: error.message
+                          });
+                        }
+                      });
+                  }}
+                >
+                  Forgot password?
+                </Button>
+              </div>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="h-10"
+                autoComplete="current-password"
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="stayConnected"
+                checked={stayConnected}
+                onCheckedChange={(checked) => setStayConnected(checked as boolean)}
+              />
+              <Label
+                htmlFor="stayConnected"
+                className="text-sm font-normal cursor-pointer"
+              >
+                Stay connected
+              </Label>
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-10"
+              disabled={loading}
             >
-              Stay connected
-            </Label>
+              {loading ? "Signing in..." : "Sign In"}
+            </Button>
+          </form>
+
+          <div className="text-center">
+            <Button
+              variant="link"
+              onClick={() => navigate('/signup')}
+              className="text-sm"
+            >
+              Don't have an account? Sign up
+            </Button>
           </div>
-
-          <Button
-            type="submit"
-            className="w-full h-10"
-            disabled={loading}
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </Button>
-        </form>
-
-        <div className="text-center">
-          <Button
-            variant="link"
-            onClick={() => navigate('/signup')}
-            className="text-sm"
-          >
-            Don't have an account? Sign up
-          </Button>
         </div>
       </div>
     </div>
