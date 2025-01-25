@@ -37,6 +37,22 @@ const SignIn = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  const getErrorMessage = (error: AuthError) => {
+    if (error instanceof AuthApiError) {
+      switch (error.message) {
+        case "Invalid login credentials":
+          return 'Invalid email or password. Please check your credentials and try again.';
+        case "Email not confirmed":
+          return 'Please check your email for the confirmation link.';
+        case "Invalid email or password":
+          return 'Please check your email and password and try again.';
+        default:
+          return error.message;
+      }
+    }
+    return error.message;
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -59,50 +75,80 @@ const SignIn = () => {
     }
   };
 
-  const getErrorMessage = (error: AuthError) => {
-    if (error instanceof AuthApiError) {
-      switch (error.message) {
-        case "Invalid login credentials":
-          return 'Invalid email or password. Please check your credentials and try again.';
-        case "Email not confirmed":
-          return 'Please check your email for the confirmation link.';
-        case "Invalid email or password":
-          return 'Please check your email and password and try again.';
-        default:
-          return error.message;
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter your email address"
+      });
+      return;
+    }
+
+    const now = Date.now();
+    const timeSinceLastRequest = now - resetRequestTime;
+    if (timeSinceLastRequest < 60000) {
+      const remainingSeconds = Math.ceil((60000 - timeSinceLastRequest) / 1000);
+      toast({
+        variant: "destructive",
+        title: "Please wait",
+        description: `You can request another reset email in ${remainingSeconds} seconds.`
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+      if (error) throw error;
+      
+      setResetRequestTime(now);
+      
+      toast({
+        title: "Password reset email sent",
+        description: "Check your email for the password reset link"
+      });
+    } catch (error) {
+      const err = error as AuthError;
+      if (err.message.includes('rate_limit')) {
+        toast({
+          variant: "destructive",
+          title: "Too many requests",
+          description: "Please wait a minute before requesting another password reset."
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: err.message
+        });
       }
     }
-    return error.message;
   };
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 bg-background">
-      <div className="fixed top-4 left-4 flex items-center gap-4">
-        <Button
-          variant="ghost"
-          className="hover:bg-accent"
-          onClick={() => navigate('/')}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        <img 
-          src="/lovable-uploads/d61c7c4e-e7ad-4177-bfd9-c819f5de7986.png"
-          alt="ScreenCraft Logo"
-          className="w-8 h-8"
-        />
-        <span className="text-lg font-semibold text-primary">Softwave</span>
-      </div>
-
       <div className="w-full max-w-sm mx-auto space-y-6">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            className="mb-4 hover:bg-accent"
+            onClick={() => navigate('/')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+        </div>
+        
         <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold tracking-tight">Welcome back</h2>
-          <p className="text-sm text-muted-foreground">Sign in to continue recording and sharing</p>
+          <h2 className="text-2xl font-bold tracking-tight">Sign In</h2>
+          <p className="text-sm text-muted-foreground">Welcome back! Please sign in to continue.</p>
         </div>
 
         <form onSubmit={handleSignIn} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-sm font-medium">
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
@@ -110,7 +156,7 @@ const SignIn = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="h-10"
+              className="h-10 px-3 rounded-md"
               autoComplete="email"
               inputMode="email"
             />
@@ -118,58 +164,14 @@ const SignIn = () => {
           
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium">
+                Password
+              </Label>
               <Button
                 variant="link"
                 type="button"
                 className="px-0 h-auto font-normal text-sm"
-                onClick={() => {
-                  if (!email.trim()) {
-                    toast({
-                      variant: "destructive",
-                      title: "Error",
-                      description: "Please enter your email address"
-                    });
-                    return;
-                  }
-
-                  const now = Date.now();
-                  const timeSinceLastRequest = now - resetRequestTime;
-                  if (timeSinceLastRequest < 60000) {
-                    const remainingSeconds = Math.ceil((60000 - timeSinceLastRequest) / 1000);
-                    toast({
-                      variant: "destructive",
-                      title: "Please wait",
-                      description: `You can request another reset email in ${remainingSeconds} seconds.`
-                    });
-                    return;
-                  }
-
-                  supabase.auth.resetPasswordForEmail(email.trim())
-                    .then(({ error }) => {
-                      if (error) throw error;
-                      setResetRequestTime(now);
-                      toast({
-                        title: "Password reset email sent",
-                        description: "Check your email for the password reset link"
-                      });
-                    })
-                    .catch((error) => {
-                      if (error.message.includes('rate_limit')) {
-                        toast({
-                          variant: "destructive",
-                          title: "Too many requests",
-                          description: "Please wait a minute before requesting another password reset."
-                        });
-                      } else {
-                        toast({
-                          variant: "destructive",
-                          title: "Error",
-                          description: error.message
-                        });
-                      }
-                    });
-                }}
+                onClick={handleForgotPassword}
               >
                 Forgot password?
               </Button>
@@ -181,7 +183,7 @@ const SignIn = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="h-10"
+              className="h-10 px-3 rounded-md"
               autoComplete="current-password"
             />
           </div>
@@ -191,10 +193,11 @@ const SignIn = () => {
               id="stayConnected"
               checked={stayConnected}
               onCheckedChange={(checked) => setStayConnected(checked as boolean)}
+              className="rounded"
             />
             <Label
               htmlFor="stayConnected"
-              className="text-sm font-normal cursor-pointer"
+              className="text-sm font-normal cursor-pointer select-none"
             >
               Stay connected
             </Label>
@@ -202,7 +205,7 @@ const SignIn = () => {
 
           <Button
             type="submit"
-            className="w-full h-10"
+            className="w-full h-10 rounded-md"
             disabled={loading}
           >
             {loading ? "Signing in..." : "Sign In"}
