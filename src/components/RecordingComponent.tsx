@@ -107,34 +107,45 @@ export const RecordingComponent = () => {
     }
   };
 
-  const handleRecordingStop = (blob: Blob) => {
+  const handleRecordingStop = async (blob: Blob) => {
     const newRecording = {
       blob: blob,
       timestamp: new Date(),
-      id: crypto.randomUUID() // Add unique ID for each recording
+      id: crypto.randomUUID()
     };
     
     try {
-      const existingRecordings = localStorage.getItem('recordings');
-      const recordings = existingRecordings ? JSON.parse(existingRecordings) : [];
+      // Read existing recordings
+      const existingRecordingsStr = localStorage.getItem('recordings');
+      const existingRecordings = existingRecordingsStr ? JSON.parse(existingRecordingsStr) : [];
       
       // Convert blob to array buffer for storage
-      const reader = new FileReader();
-      reader.readAsArrayBuffer(blob);
-      reader.onloadend = () => {
-        const arrayBuffer = reader.result;
-        const uint8Array = new Uint8Array(arrayBuffer as ArrayBuffer);
-        const recordingToStore = {
-          ...newRecording,
-          blob: Array.from(uint8Array) // Convert Uint8Array to regular array for storage
-        };
-        
-        recordings.push(recordingToStore);
-        localStorage.setItem('recordings', JSON.stringify(recordings));
-        
-        setRecordedBlob(blob);
-        navigate('/playback', { state: { recordedBlob: blob } });
+      const arrayBuffer = await blob.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      // Prepare recording for storage
+      const recordingToStore = {
+        ...newRecording,
+        blob: Array.from(uint8Array)
       };
+      
+      // Add new recording to existing ones
+      const updatedRecordings = [...existingRecordings, recordingToStore];
+      
+      // Store updated recordings
+      localStorage.setItem('recordings', JSON.stringify(updatedRecordings));
+      
+      // Update state and navigate
+      setRecordedBlob(blob);
+      setRecordings(prev => [...prev, newRecording]);
+      
+      toast({
+        title: "Recording saved",
+        description: "Your recording has been saved to your library"
+      });
+      
+      // Navigate to library instead of playback
+      navigate('/library');
     } catch (error) {
       console.error('Error saving recording:', error);
       toast({
