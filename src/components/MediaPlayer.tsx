@@ -5,7 +5,6 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { CommentSection } from './video/CommentSection';
 import { CollaborativeControls } from './video/CollaborativeControls';
 import { AnnotationControls } from './video/AnnotationControls';
-import { TimelineView } from './video/timeline/TimelineView';
 
 interface MediaPlayerProps {
   recordedBlob: Blob;
@@ -106,20 +105,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-4">
-          <CommentSection videoId={videoId} />
-          <AnnotationControls
-            duration={videoRef.current?.duration || 0}
-            videoId={videoId}
-            currentTime={currentTime}
-            onAnnotationClick={handleSeek}
-          />
-        </div>
-        <TimelineView
+      <div className="space-y-4">
+        <CommentSection videoId={videoId} />
+        <AnnotationControls
+          duration={videoRef.current?.duration || 0}
           videoId={videoId}
           currentTime={currentTime}
-          onSeek={handleSeek}
+          onAnnotationClick={handleSeek}
         />
       </div>
     </div>
