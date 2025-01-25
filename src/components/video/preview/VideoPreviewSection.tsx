@@ -32,8 +32,8 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
   if (!videoUrl) return null;
 
   return (
-    <div className="space-y-6">
-      <div className="relative rounded-lg overflow-hidden bg-black">
+    <div className="space-y-4">
+      <div className="relative rounded-lg overflow-hidden bg-black max-w-sm mx-auto">
         <video
           ref={videoRef}
           src={videoUrl}
@@ -48,9 +48,9 @@ export const VideoPreviewSection: React.FC<VideoPreviewSectionProps> = ({
       </div>
 
       {processedVideoUrl && (
-        <div className="mt-6">
+        <div className="mt-4">
           <h3 className="text-lg font-semibold mb-2">Processed Video Preview</h3>
-          <div className="relative rounded-lg overflow-hidden bg-black">
+          <div className="relative rounded-lg overflow-hidden bg-black max-w-sm mx-auto">
             <video
               ref={previewRef}
               src={processedVideoUrl}

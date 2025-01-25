@@ -22,13 +22,15 @@ export const VideoPreview = ({
 }: VideoPreviewProps) => {
   return (
     <div className="space-y-4">
-      <video 
-        ref={videoRef}
-        src={videoUrl}
-        controls
-        className="w-full rounded-lg bg-black"
-        onEnded={() => URL.revokeObjectURL(videoUrl)}
-      />
+      <div className="max-w-sm mx-auto">
+        <video 
+          ref={videoRef}
+          src={videoUrl}
+          controls
+          className="w-full rounded-lg bg-black"
+          onEnded={() => URL.revokeObjectURL(videoUrl)}
+        />
+      </div>
       
       <div className="flex justify-between items-center gap-2">
         <Button 
