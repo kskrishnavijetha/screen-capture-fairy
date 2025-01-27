@@ -45,8 +45,8 @@
 }
 
 /* Smooth transitions */
-.transition-all {
-  @apply transition-all duration-300 ease-in-out;
+.smooth-transition {
+  @apply duration-300 ease-in-out;
 }
 
 /* Hover effects */
