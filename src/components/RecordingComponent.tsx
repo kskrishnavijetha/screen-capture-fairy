@@ -30,42 +30,41 @@ export const RecordingComponent = () => {
   const [showCountdown, setShowCountdown] = useState(false);
   const [filename, setFilename] = useState('recording');
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [currentRecordingIndex, setCurrentRecordingIndex] = useState(0);
+  const [recordings, setRecordings] = useState<{ blob: Blob; timestamp: Date }[]>([]);
 
-  const handleRecordingStop = async (blob: Blob) => {
-    const newRecording = {
-      blob: Array.from(new Uint8Array(await blob.arrayBuffer())),
-      timestamp: new Date().toISOString(),
-      id: crypto.randomUUID()
+  useEffect(() => {
+    const loadRecordings = () => {
+      const existingRecordings = localStorage.getItem('recordings');
+      if (existingRecordings) {
+        try {
+          const parsedRecordings = JSON.parse(existingRecordings);
+          const processedRecordings = parsedRecordings.map((recording: any) => ({
+            blob: new Blob([new Uint8Array(recording.blob)], { type: 'video/webm' }),
+            timestamp: new Date(recording.timestamp)
+          }));
+          setRecordings(processedRecordings);
+        } catch (error) {
+          console.error('Error loading recordings:', error);
+        }
+      }
     };
-    
-    try {
-      // Read existing recordings
-      const existingRecordingsStr = localStorage.getItem('recordings');
-      const existingRecordings = existingRecordingsStr ? JSON.parse(existingRecordingsStr) : [];
-      
-      // Add new recording to existing ones
-      const updatedRecordings = [...existingRecordings, newRecording];
-      
-      // Store updated recordings
-      localStorage.setItem('recordings', JSON.stringify(updatedRecordings));
-      
-      setRecordedBlob(blob);
-      
-      toast({
-        title: "Recording saved",
-        description: "Your recording has been saved to your library"
-      });
-      
-      // Navigate to library
-      navigate('/library');
-    } catch (error) {
-      console.error('Error saving recording:', error);
-      toast({
-        variant: "destructive",
-        title: "Error saving recording",
-        description: "Failed to save your recording"
-      });
+
+    loadRecordings();
+  }, []);
+
+  const navigateRecordings = (direction: 'prev' | 'next') => {
+    if (recordings.length === 0) return;
+
+    let newIndex;
+    if (direction === 'prev') {
+      newIndex = currentRecordingIndex > 0 ? currentRecordingIndex - 1 : recordings.length - 1;
+    } else {
+      newIndex = currentRecordingIndex < recordings.length - 1 ? currentRecordingIndex + 1 : 0;
     }
+
+    setCurrentRecordingIndex(newIndex);
+    setRecordedBlob(recordings[newIndex].blob);
   };
 
   const checkSession = async () => {
@@ -110,21 +109,32 @@ export const RecordingComponent = () => {
   return (
     <div className={`text-center ${isMobile ? 'p-4' : 'space-y-6 w-full max-w-md mx-auto'}`}>
       <div className="flex justify-between items-center mb-4">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => navigate('/library')}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size={isMobile ? "sm" : "icon"}
+            onClick={() => navigateRecordings('prev')}
+            disabled={recordings.length === 0}
+          >
+            <ArrowLeft className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
+          </Button>
+          <Button
+            variant="outline"
+            size={isMobile ? "sm" : "icon"}
+            onClick={() => navigateRecordings('next')}
+            disabled={recordings.length === 0}
+          >
+            <ArrowRight className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
+          </Button>
+        </div>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <User className="h-5 w-5" />
+            <Button variant="outline" size={isMobile ? "sm" : "icon"}>
+              <User className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className={isMobile ? "w-[200px]" : ""}>
             <DropdownMenuItem disabled className="text-sm">
               <User className="mr-2 h-4 w-4" />
               {userEmail}
@@ -137,6 +147,12 @@ export const RecordingComponent = () => {
         </DropdownMenu>
       </div>
 
+      {recordings.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          Recording {currentRecordingIndex + 1} of {recordings.length}
+        </div>
+      )}
+
       <div className={`${isMobile ? 'mt-4' : ''}`}>
         <CaptureModeSelector mode={captureMode} onChange={setCaptureMode} />
       </div>
@@ -146,7 +162,10 @@ export const RecordingComponent = () => {
         frameRate={30}
         resolution={{ width: 1920, height: 1080, label: "1080p" }}
         onRecordingStart={() => setDuration(0)}
-        onRecordingStop={handleRecordingStop}
+        onRecordingStop={(blob) => {
+          setRecordedBlob(blob);
+          navigate('/playback', { state: { recordedBlob: blob } });
+        }}
         isRecording={isRecording}
         setIsRecording={setIsRecording}
         setIsPaused={setIsPaused}
