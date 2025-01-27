@@ -9,21 +9,6 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from "@/components/ui/use-toast";
 import { User } from '@supabase/supabase-js';
 
-const getThemeClasses = (themeName: string) => {
-  switch (themeName) {
-    case 'Ocean':
-      return 'bg-[#222222] accent-[#0EA5E9]';
-    case 'Forest':
-      return 'bg-[#221F26] accent-[#22C55E]';
-    case 'Sunset':
-      return 'bg-[#403E43] accent-[#F97316]';
-    case 'Berry':
-      return 'bg-[#1A1F2C] accent-[#D946EF]';
-    default:
-      return 'bg-[#1A1F2C] accent-[#9b87f5]';
-  }
-};
-
 const Index = () => {
   const [selectedComponent, setSelectedComponent] = useState('home');
   const [currentTheme, setCurrentTheme] = useState('Default Dark');
@@ -95,41 +80,44 @@ const Index = () => {
           return null;
         }
         return <AIContentGenerator />;
-      case 'video':
-        return <div className="text-center">AI Short Video Generator Coming Soon</div>;
-      case 'calendar':
-        return <div className="text-center">Content Calendar Coming Soon</div>;
-      case 'analytics':
-        return <div className="text-center">Social Media Analytics Coming Soon</div>;
-      case 'monetization':
-        return <div className="text-center">Monetization Hub Coming Soon</div>;
       default:
         return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
     }
   };
 
   return (
-    <div className={`min-h-screen p-4 transition-colors duration-200 ${getThemeClasses(currentTheme)}`}>
-      <div className="absolute top-4 left-4 flex items-center gap-4">
+    <div 
+      className="min-h-screen p-4 font-sans bg-gradient-to-br from-primary to-primary-light"
+      style={{
+        backgroundImage: 'radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.4) 0%, rgba(129, 140, 248, 0.2) 90%)'
+      }}
+    >
+      <div className="absolute top-4 left-4 flex items-center gap-4 animate-fade-in">
         <MainMenu
           selectedComponent={selectedComponent}
           setSelectedComponent={setSelectedComponent}
         />
-        <img 
-          src="/lovable-uploads/d61c7c4e-e7ad-4177-bfd9-c819f5de7986.png"
-          alt="ScreenCraft Logo"
-          className="w-8 h-8"
-        />
-        <span className="text-lg font-semibold">Softwave</span>
+        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg">
+          <img 
+            src="/lovable-uploads/d61c7c4e-e7ad-4177-bfd9-c819f5de7986.png"
+            alt="ScreenCraft Logo"
+            className="w-8 h-8"
+          />
+          <span className="text-lg font-semibold text-white">Softwave</span>
+        </div>
         {isAuthenticated && <UserPresence user={user} />}
       </div>
       
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="text-center space-y-6 w-full max-w-7xl">
+        <div className="text-center space-y-6 w-full max-w-7xl animate-scale-in">
           <div className="flex flex-col items-center mb-8 space-y-4">
-            <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
+            <div className="bg-white/10 backdrop-blur-sm p-2 rounded-lg">
+              <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
+            </div>
           </div>
-          {renderComponent()}
+          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-white/10">
+            {renderComponent()}
+          </div>
         </div>
       </div>
     </div>
