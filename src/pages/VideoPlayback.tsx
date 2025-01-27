@@ -2,7 +2,6 @@ import React, { useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { VideoPreview } from '@/components/media/VideoPreview';
-import { SharedTimeline } from '@/components/video/timeline/SharedTimeline';
 import { MediaPlayer } from '@/components/MediaPlayer';
 import { Edit, Download } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
@@ -12,7 +11,6 @@ const VideoPlayback = () => {
   const navigate = useNavigate();
   const { recordedBlob } = location.state || {};
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [currentTime, setCurrentTime] = useState(0);
   const [isTranscribing, setIsTranscribing] = useState(false);
 
   if (!recordedBlob) {
@@ -26,12 +24,6 @@ const VideoPlayback = () => {
     }
   };
 
-  const handleSeek = (time: number) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = time;
-    }
-  };
-
   const handleAddTimestamp = () => {
     if (videoRef.current) {
       console.log('Adding timestamp at:', videoRef.current.currentTime);
@@ -40,7 +32,6 @@ const VideoPlayback = () => {
 
   const handleStartTranscription = () => {
     setIsTranscribing(true);
-    // Implementation for starting transcription
     console.log('Starting transcription');
   };
 
@@ -79,30 +70,19 @@ const VideoPlayback = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="grid grid-cols-1 gap-6">
-        <div className="space-y-4">
-          <MediaPlayer recordedBlob={recordedBlob} />
-          
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={handleEdit} variant="outline">
-              <Edit className="w-4 h-4 mr-2" />
-              Edit Video
-            </Button>
-            <Button onClick={handleDownload} variant="outline">
-              <Download className="w-4 h-4 mr-2" />
-              Download
-            </Button>
-          </div>
-        </div>
+    <div className="container mx-auto p-4">
+      <div className="max-w-3xl mx-auto space-y-6">
+        <MediaPlayer recordedBlob={recordedBlob} />
         
-        <div className="space-y-6">
-          <SharedTimeline
-            videoId={recordedBlob.size.toString()}
-            videoRef={videoRef}
-            currentTime={currentTime}
-            onSeek={handleSeek}
-          />
+        <div className="flex flex-wrap gap-2 justify-center">
+          <Button onClick={handleEdit} variant="outline">
+            <Edit className="w-4 h-4 mr-2" />
+            Edit Video
+          </Button>
+          <Button onClick={handleDownload} variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Download
+          </Button>
         </div>
       </div>
     </div>
