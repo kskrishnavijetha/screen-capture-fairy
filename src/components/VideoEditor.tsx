@@ -6,6 +6,8 @@ import { ExportControls } from './video/ExportControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
+import { Separator } from './ui/separator';
+import { Card } from './ui/card';
 
 interface VideoEditorProps {
   recordedBlob: Blob | null;
@@ -42,37 +44,54 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
   if (!recordedBlob) return null;
 
   return (
-    <div className="space-y-4 w-full max-w-xl mx-auto">
-      <div className="relative rounded-lg overflow-hidden bg-black max-w-sm mx-auto">
-        <video
-          ref={videoRef}
-          src={videoUrl}
-          className="w-full"
-          controls
-          playsInline
-          onTimeUpdate={(e) => handleTimeUpdate(e.currentTarget.currentTime)}
-          onLoadedMetadata={(e) => handleMetadataLoaded(e.currentTarget.duration)}
-          autoPlay={false}
-          muted={false}
-        />
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Video Preview */}
+      <div className="space-y-6">
+        <Card className="p-4">
+          <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              className="w-full h-full"
+              controls
+              playsInline
+              onTimeUpdate={(e) => handleTimeUpdate(e.currentTarget.currentTime)}
+              onLoadedMetadata={(e) => handleMetadataLoaded(e.currentTarget.duration)}
+              autoPlay={false}
+              muted={false}
+            />
+          </div>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-4">
-          <SilenceControls
-            enabled={removeSilences}
-            onToggle={setRemoveSilences}
-          />
+      {/* Controls */}
+      <div className="space-y-6">
+        <Card className="p-6 space-y-6">
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Video Enhancement</h3>
+            <div className="space-y-4">
+              <SilenceControls
+                enabled={removeSilences}
+                onToggle={setRemoveSilences}
+              />
+              <FillerWordControls
+                enabled={removeFillerWords}
+                onToggle={setRemoveFillerWords}
+              />
+            </div>
+          </div>
 
-          <FillerWordControls
-            enabled={removeFillerWords}
-            onToggle={setRemoveFillerWords}
-          />
+          <Separator />
 
-          <ShareControls recordedBlob={recordedBlob} />
-          <EmbedControls recordedBlob={recordedBlob} />
-          <ExportControls recordedBlob={recordedBlob} />
-        </div>
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Share & Export</h3>
+            <div className="space-y-4">
+              <ShareControls recordedBlob={recordedBlob} />
+              <EmbedControls recordedBlob={recordedBlob} />
+              <ExportControls recordedBlob={recordedBlob} />
+            </div>
+          </div>
+        </Card>
       </div>
     </div>
   );

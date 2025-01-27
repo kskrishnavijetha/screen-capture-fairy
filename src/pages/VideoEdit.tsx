@@ -21,26 +21,37 @@ const VideoEdit = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <Button 
-        variant="ghost" 
-        onClick={handleBack}
-        className="mb-4"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Preview
-      </Button>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="mb-8 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                onClick={handleBack}
+                className="hover:bg-secondary/80"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Preview
+              </Button>
+              <h1 className="text-2xl font-semibold text-foreground">Edit Recording</h1>
+            </div>
+          </div>
 
-      <div className="w-full max-w-4xl mx-auto">
-        <VideoEditor
-          recordedBlob={recordedBlob}
-          timestamps={[]}
-          onSave={(newBlob) => {
-            navigate('/playback', { 
-              state: { recordedBlob: newBlob } 
-            });
-          }}
-        />
+          {/* Main Content */}
+          <div className="bg-card rounded-lg shadow-lg p-6">
+            <VideoEditor
+              recordedBlob={recordedBlob}
+              timestamps={[]}
+              onSave={(newBlob) => {
+                navigate('/playback', { 
+                  state: { recordedBlob: newBlob } 
+                });
+              }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
