@@ -18,12 +18,6 @@ const VideoPlayback = () => {
     return null;
   }
 
-  const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
-    }
-  };
-
   const handleAddTimestamp = () => {
     if (videoRef.current) {
       console.log('Adding timestamp at:', videoRef.current.currentTime);
