@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MainMenu } from "@/components/MainMenu";
 import { HomePage } from "@/components/HomePage";
-import { ThemeSelector } from '@/components/ThemeSelector';
 import { AIContentGenerator } from '@/components/AIContentGenerator';
 import { UserPresence } from '@/components/UserPresence';
 import { supabase } from '../integrations/supabase/client';
@@ -11,7 +10,6 @@ import { User } from '@supabase/supabase-js';
 
 const Index = () => {
   const [selectedComponent, setSelectedComponent] = useState('home');
-  const [currentTheme, setCurrentTheme] = useState('Default Dark');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
@@ -110,11 +108,6 @@ const Index = () => {
       
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="text-center space-y-6 w-full max-w-7xl animate-scale-in">
-          <div className="flex flex-col items-center mb-8 space-y-4">
-            <div className="bg-white/10 backdrop-blur-sm p-2 rounded-lg">
-              <ThemeSelector currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
-            </div>
-          </div>
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-white/10">
             {renderComponent()}
           </div>
