@@ -19,17 +19,25 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
     const showCameraPreview = async () => {
       if ((captureMode === 'camera' || captureMode === 'both') && videoRef.current) {
         try {
-          if (!streamRef.current) {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-              video: {
-                width: { ideal: isMobile ? 640 : 1280 },
-                height: { ideal: isMobile ? 480 : 720 },
-                facingMode: isMobile ? "user" : undefined
-              },
-              audio: false
-            });
-            streamRef.current = stream;
+          // Stop any existing stream
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+          }
+
+          // Request new stream
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: {
+              width: { ideal: isMobile ? 640 : 1280 },
+              height: { ideal: isMobile ? 480 : 720 },
+              facingMode: isMobile ? "user" : undefined
+            },
+            audio: false
+          });
+          
+          streamRef.current = stream;
+          if (videoRef.current) {
             videoRef.current.srcObject = stream;
+            await videoRef.current.play().catch(console.error);
           }
         } catch (error) {
           console.error('Error accessing camera:', error);
@@ -37,7 +45,10 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
       }
     };
 
-    const cleanup = () => {
+    if (isRecording) {
+      showCameraPreview();
+    } else {
+      // Cleanup stream when not recording
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
@@ -45,15 +56,14 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
-    };
-
-    if (isRecording) {
-      showCameraPreview();
-    } else {
-      cleanup();
     }
 
-    return cleanup;
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+    };
   }, [isRecording, captureMode, isMobile]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
