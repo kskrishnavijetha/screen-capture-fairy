@@ -10,7 +10,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: window.innerWidth - 200, y: window.innerHeight - 200 }); // Default position in bottom-right
+  const [position, setPosition] = useState({ x: 20, y: 20 }); // Default position in top-left
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const isMobile = useIsMobile();
@@ -19,25 +19,17 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
     const showCameraPreview = async () => {
       if ((captureMode === 'camera' || captureMode === 'both') && videoRef.current) {
         try {
-          // Stop any existing stream
-          if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
-          }
-
-          // Request new stream
-          const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: {
-              width: { ideal: isMobile ? 640 : 1280 },
-              height: { ideal: isMobile ? 480 : 720 },
-              facingMode: isMobile ? "user" : undefined
-            },
-            audio: false
-          });
-          
-          streamRef.current = stream;
-          if (videoRef.current) {
+          if (!streamRef.current) {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+              video: {
+                width: { ideal: isMobile ? 640 : 1280 },
+                height: { ideal: isMobile ? 480 : 720 },
+                facingMode: isMobile ? "user" : undefined
+              },
+              audio: false
+            });
+            streamRef.current = stream;
             videoRef.current.srcObject = stream;
-            await videoRef.current.play().catch(console.error);
           }
         } catch (error) {
           console.error('Error accessing camera:', error);
@@ -45,10 +37,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
       }
     };
 
-    if (isRecording) {
-      showCameraPreview();
-    } else {
-      // Cleanup stream when not recording
+    const cleanup = () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
@@ -56,14 +45,15 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
+    };
+
+    if (isRecording) {
+      showCameraPreview();
+    } else {
+      cleanup();
     }
 
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
-    };
+    return cleanup;
   }, [isRecording, captureMode, isMobile]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -141,23 +131,6 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
       };
     }
   }, [isDragging, dragStart]);
-
-  // Update position when window is resized
-  useEffect(() => {
-    const handleResize = () => {
-      if (containerRef.current) {
-        const maxX = window.innerWidth - containerRef.current.offsetWidth;
-        const maxY = window.innerHeight - containerRef.current.offsetHeight;
-        setPosition(prev => ({
-          x: Math.min(prev.x, maxX),
-          y: Math.min(prev.y, maxY)
-        }));
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   if (captureMode !== 'camera' && captureMode !== 'both') {
     return null;
