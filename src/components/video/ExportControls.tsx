@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { generateEncryptionKey, encryptBlob } from '@/utils/encryption';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
 type ExportFormat = 'webm' | 'mp4' | 'gif' | 'avi';
 
@@ -76,18 +77,21 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
       throw new Error(`Upload failed: ${uploadError.message}`);
     }
 
-    // Save metadata in the shared_files table
+    type SharedFileInsert = Database['public']['Tables']['shared_files']['Insert'];
+    
+    const fileData: SharedFileInsert = {
+      file_name: filename,
+      file_path: filePath,
+      file_size: encryptedBlob.size,
+      mime_type: 'application/octet-stream',
+      is_encrypted: true,
+      encryption_key: Array.from(iv).join(','),
+      owner_id: user.id
+    };
+
     const { error: dbError } = await supabase
       .from('shared_files')
-      .insert({
-        file_name: filename,
-        file_path: filePath,
-        file_size: encryptedBlob.size,
-        mime_type: 'application/octet-stream',
-        is_encrypted: true,
-        encryption_key: Array.from(iv).join(','), // Store IV for later decryption
-        owner_id: user.id // Add the owner_id field
-      });
+      .insert(fileData);
 
     if (dbError) {
       throw new Error(`Failed to save file metadata: ${dbError.message}`);
