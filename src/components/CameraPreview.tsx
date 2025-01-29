@@ -10,7 +10,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState({ x: 20, y: 20 }); // Default position in top-left
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const isMobile = useIsMobile();
@@ -139,14 +139,19 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   return (
     <div
       ref={containerRef}
-      className={`fixed cursor-move rounded-lg overflow-hidden border border-gray-200 shadow-md ${
-        isDragging ? 'opacity-75' : ''
+      className={`fixed cursor-move overflow-hidden transition-transform duration-200 ${
+        isDragging ? 'opacity-75 scale-105' : ''
       }`}
       style={{
         transform: `translate(${position.x}px, ${position.y}px)`,
-        width: isMobile ? '160px' : '240px',
+        width: isMobile ? '120px' : '180px',
+        height: isMobile ? '120px' : '180px',
         zIndex: 1000,
-        touchAction: 'none'
+        touchAction: 'none',
+        borderRadius: '50%',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+        border: '2px solid rgba(255, 255, 255, 0.1)',
+        background: '#1A1F2C'
       }}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
@@ -156,8 +161,9 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
         autoPlay
         playsInline
         muted
-        className="w-full rounded-lg"
+        className="w-full h-full object-cover rounded-full transform scale-[1.02]"
       />
+      <div className="absolute inset-0 rounded-full ring-2 ring-primary/20 pointer-events-none" />
     </div>
   );
 };
