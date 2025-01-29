@@ -7,7 +7,8 @@ import { FileDown, Loader2, Lock } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { generateEncryptionKey, encryptBlob, saveEncryptedRecording } from '@/utils/encryption';
+import { generateEncryptionKey, encryptBlob } from '@/utils/encryption';
+import { supabase } from '@/integrations/supabase/client';
 
 type ExportFormat = 'webm' | 'mp4' | 'gif' | 'avi';
 
@@ -42,6 +43,50 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
     setExportError(null);
   };
 
+  const saveEncryptedRecording = async (encryptedData: ArrayBuffer, iv: Uint8Array) => {
+    const { data: bucketData, error: bucketError } = await supabase
+      .storage
+      .getBucket('secure_files');
+
+    if (bucketError) {
+      throw new Error('Failed to access secure storage');
+    }
+
+    const encryptedBlob = new Blob([encryptedData]);
+    const filePath = `${filename}-${Date.now()}`;
+
+    const { error: uploadError } = await supabase
+      .storage
+      .from('secure_files')
+      .upload(filePath, encryptedBlob, {
+        contentType: 'application/octet-stream',
+        upsert: false
+      });
+
+    if (uploadError) {
+      if (uploadError.message.includes('exceeded the quota')) {
+        throw new Error('Storage quota exceeded. Please delete some files or upgrade your storage plan.');
+      }
+      throw new Error(`Upload failed: ${uploadError.message}`);
+    }
+
+    // Save metadata in the shared_files table
+    const { error: dbError } = await supabase
+      .from('shared_files')
+      .insert({
+        file_name: filename,
+        file_path: filePath,
+        file_size: encryptedBlob.size,
+        mime_type: 'application/octet-stream',
+        is_encrypted: true,
+        encryption_key: Array.from(iv).join(',') // Store IV for later decryption
+      });
+
+    if (dbError) {
+      throw new Error(`Failed to save file metadata: ${dbError.message}`);
+    }
+  };
+
   const handleExport = async () => {
     resetExportState();
     
@@ -49,7 +94,6 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
       validateExport();
       setIsExporting(true);
       
-      // Start progress indication
       const progressInterval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 90) {
@@ -70,7 +114,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
             throw new Error('Encryption failed - no data produced');
           }
           
-          await saveEncryptedRecording(encryptedData, iv, filename);
+          await saveEncryptedRecording(encryptedData, iv);
           clearInterval(progressInterval);
           setProgress(100);
           
@@ -79,7 +123,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
             description: "Recording encrypted and saved successfully",
           });
         } catch (encryptError) {
-          throw new Error(`Encryption failed: ${encryptError.message}`);
+          throw new Error(encryptError instanceof Error ? encryptError.message : 'Encryption failed unexpectedly');
         }
       } else {
         try {
@@ -92,7 +136,6 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
           document.body.appendChild(a);
           await a.click();
           
-          // Clean up
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
           clearInterval(progressInterval);
