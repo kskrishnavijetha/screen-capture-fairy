@@ -26,7 +26,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
 
   const validateExport = () => {
     if (!recordedBlob || recordedBlob.size === 0) {
-      throw new Error('Invalid recording data');
+      throw new Error('No valid recording data found');
     }
     if (!filename.trim()) {
       throw new Error('Please enter a valid filename');
@@ -49,55 +49,66 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
       validateExport();
       setIsExporting(true);
       
-      // Simulate processing progress
+      // Start progress indication
       const progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 10, 90));
+        setProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 10;
+        });
       }, 200);
 
       if (isPasswordProtected) {
-        const blobCopy = new Blob([await recordedBlob.arrayBuffer()], { type: recordedBlob.type });
-        const key = await generateEncryptionKey(password);
-        const { encryptedData, iv } = await encryptBlob(blobCopy, key);
-        
-        if (!encryptedData || encryptedData.byteLength === 0) {
-          throw new Error('Encryption failed');
+        try {
+          const blobCopy = new Blob([await recordedBlob.arrayBuffer()], { type: recordedBlob.type });
+          const key = await generateEncryptionKey(password);
+          const { encryptedData, iv } = await encryptBlob(blobCopy, key);
+          
+          if (!encryptedData || encryptedData.byteLength === 0) {
+            throw new Error('Encryption failed - no data produced');
+          }
+          
+          await saveEncryptedRecording(encryptedData, iv, filename);
+          clearInterval(progressInterval);
+          setProgress(100);
+          
+          toast({
+            title: "Success",
+            description: "Recording encrypted and saved successfully",
+          });
+        } catch (encryptError) {
+          throw new Error(`Encryption failed: ${encryptError.message}`);
         }
-        
-        await saveEncryptedRecording(encryptedData, iv, filename);
-        clearInterval(progressInterval);
-        setProgress(100);
-        
-        toast({
-          title: "Success",
-          description: "Recording encrypted and saved successfully",
-        });
       } else {
-        const url = URL.createObjectURL(recordedBlob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `${filename}.${selectedFormat}`;
-        
-        document.body.appendChild(a);
-        await a.click();
-        
-        // Clean up
-        setTimeout(() => {
+        try {
+          const url = URL.createObjectURL(recordedBlob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `${filename}.${selectedFormat}`;
+          
+          document.body.appendChild(a);
+          await a.click();
+          
+          // Clean up
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
           clearInterval(progressInterval);
           setProgress(100);
-          resetExportState();
-        }, 100);
-
-        toast({
-          title: "Success",
-          description: `Recording exported as ${selectedFormat.toUpperCase()}`,
-        });
+          
+          toast({
+            title: "Success",
+            description: `Recording exported as ${selectedFormat.toUpperCase()}`,
+          });
+        } catch (downloadError) {
+          throw new Error(`Download failed: ${downloadError.message}`);
+        }
       }
     } catch (error) {
       console.error('Export error:', error);
-      setExportError(error instanceof Error ? error.message : 'Export failed. Please try again.');
+      setExportError(error instanceof Error ? error.message : 'Export failed unexpectedly');
       toast({
         variant: "destructive",
         title: "Export failed",
@@ -105,6 +116,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
       });
     } finally {
       setIsExporting(false);
+      setTimeout(() => setProgress(0), 1000);
     }
   };
 
@@ -180,7 +192,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
 
       <Button
         onClick={handleExport}
-        disabled={isExporting || (isPasswordProtected && !password)}
+        disabled={isExporting || (isPasswordProtected && password.length < 6)}
         className="w-full"
         variant="outline"
       >
