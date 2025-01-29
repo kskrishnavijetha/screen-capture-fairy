@@ -77,9 +77,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
       throw new Error(`Upload failed: ${uploadError.message}`);
     }
 
-    type SharedFileInsert = Database['public']['Tables']['shared_files']['Insert'];
-    
-    const fileData: SharedFileInsert = {
+    const fileData: Database['public']['Tables']['shared_files']['Insert'] = {
       file_name: filename,
       file_path: filePath,
       file_size: encryptedBlob.size,
