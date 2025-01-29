@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { FileDown, Loader2, Lock } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { generateEncryptionKey, encryptBlob, saveEncryptedRecording } from '@/utils/encryption';
 
 type ExportFormat = 'webm' | 'mp4' | 'gif' | 'avi';
@@ -23,8 +24,14 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
   const [filename, setFilename] = useState(`recording-${Date.now()}`);
   const [exportError, setExportError] = useState<string | null>(null);
 
-  const validatePassword = (pwd: string) => {
-    if (pwd.length < 6) {
+  const validateExport = () => {
+    if (!recordedBlob || recordedBlob.size === 0) {
+      throw new Error('Invalid recording data');
+    }
+    if (!filename.trim()) {
+      throw new Error('Please enter a valid filename');
+    }
+    if (isPasswordProtected && password.length < 6) {
       throw new Error('Password must be at least 6 characters long');
     }
   };
@@ -36,100 +43,65 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
   };
 
   const handleExport = async () => {
-    if (!recordedBlob || recordedBlob.size === 0) {
-      toast({
-        variant: "destructive",
-        title: "Export failed",
-        description: "Invalid recording data. Please try recording again.",
-      });
-      return;
-    }
-
-    if (isPasswordProtected) {
-      try {
-        validatePassword(password);
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Invalid password",
-          description: error instanceof Error ? error.message : "Please enter a valid password",
-        });
-        return;
-      }
-    }
-
-    setIsExporting(true);
-    setProgress(0);
-    setExportError(null);
+    resetExportState();
     
     try {
+      validateExport();
+      setIsExporting(true);
+      
       // Simulate processing progress
       const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + 10;
-        });
+        setProgress(prev => Math.min(prev + 10, 90));
       }, 200);
-      
-      if (isPasswordProtected) {
-        // Create a copy of the blob
-        const blobCopy = new Blob([await recordedBlob.arrayBuffer()], { type: recordedBlob.type });
-        
-        if (blobCopy.size === 0) {
-          throw new Error('Invalid blob data');
-        }
 
+      if (isPasswordProtected) {
+        const blobCopy = new Blob([await recordedBlob.arrayBuffer()], { type: recordedBlob.type });
         const key = await generateEncryptionKey(password);
         const { encryptedData, iv } = await encryptBlob(blobCopy, key);
         
         if (!encryptedData || encryptedData.byteLength === 0) {
-          throw new Error('Encryption failed - invalid data');
+          throw new Error('Encryption failed');
         }
         
         await saveEncryptedRecording(encryptedData, iv, filename);
-        
         clearInterval(progressInterval);
         setProgress(100);
         
         toast({
-          title: "Recording encrypted and saved",
-          description: "Your recording has been securely stored with password protection",
+          title: "Success",
+          description: "Recording encrypted and saved successfully",
         });
       } else {
         const url = URL.createObjectURL(recordedBlob);
         const a = document.createElement('a');
-        document.body.appendChild(a);
         a.style.display = 'none';
         a.href = url;
         a.download = `${filename}.${selectedFormat}`;
         
+        document.body.appendChild(a);
         await a.click();
         
         // Clean up
         setTimeout(() => {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
+          clearInterval(progressInterval);
+          setProgress(100);
           resetExportState();
         }, 100);
 
-        clearInterval(progressInterval);
-        setProgress(100);
-
         toast({
-          title: "Export successful",
-          description: `Your recording has been exported as ${selectedFormat.toUpperCase()}`,
+          title: "Success",
+          description: `Recording exported as ${selectedFormat.toUpperCase()}`,
         });
       }
     } catch (error) {
       console.error('Export error:', error);
-      setExportError('There was an error exporting your recording. Please try again.');
+      setExportError(error instanceof Error ? error.message : 'Export failed. Please try again.');
       toast({
         variant: "destructive",
         title: "Export failed",
-        description: "There was an error exporting your recording. Please try again.",
+        description: error instanceof Error ? error.message : 'Please try again',
       });
     } finally {
       setIsExporting(false);
@@ -139,9 +111,9 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
   return (
     <div className="space-y-4">
       {exportError && (
-        <div className="bg-destructive/15 text-destructive px-4 py-2 rounded-md text-sm">
-          {exportError}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{exportError}</AlertDescription>
+        </Alert>
       )}
       
       <div className="space-y-2">
@@ -152,6 +124,7 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
           onChange={(e) => setFilename(e.target.value)}
           disabled={isExporting}
           placeholder="Enter filename"
+          className="w-full"
         />
       </div>
 
