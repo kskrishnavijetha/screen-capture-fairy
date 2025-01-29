@@ -302,6 +302,33 @@ export type Database = {
         }
         Relationships: []
       }
+      video_reactions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          emoji: string
+          id: string
+          timestamp: number
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          emoji: string
+          id?: string
+          timestamp: number
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          emoji?: string
+          id?: string
+          timestamp?: number
+          video_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

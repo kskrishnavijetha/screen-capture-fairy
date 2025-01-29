@@ -6,6 +6,7 @@ import { CommentSection } from './video/CommentSection';
 import { CollaborativeControls } from './video/CollaborativeControls';
 import { AnnotationControls } from './video/AnnotationControls';
 import { TimelineView } from './video/timeline/TimelineView';
+import { EmojiReactions } from './video/EmojiReactions';
 
 interface MediaPlayerProps {
   recordedBlob: Blob;
@@ -20,11 +21,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
   const [videoUrl, setVideoUrl] = useState<string>('');
 
   useEffect(() => {
-    // Create and set video URL when component mounts or blob changes
     const url = URL.createObjectURL(recordedBlob);
     setVideoUrl(url);
 
-    // Cleanup URL when component unmounts
     return () => {
       if (url) {
         URL.revokeObjectURL(url);
@@ -95,6 +94,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+        />
+        <EmojiReactions
+          videoId={videoId}
+          currentTime={currentTime}
+          duration={videoRef.current?.duration || 0}
         />
         <div className="absolute bottom-4 right-4">
           <CollaborativeControls
