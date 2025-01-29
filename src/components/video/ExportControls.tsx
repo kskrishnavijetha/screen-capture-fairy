@@ -44,6 +44,12 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
   };
 
   const saveEncryptedRecording = async (encryptedData: ArrayBuffer, iv: Uint8Array) => {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      throw new Error('Authentication required to save encrypted recordings');
+    }
+
     const { data: bucketData, error: bucketError } = await supabase
       .storage
       .getBucket('secure_files');
@@ -79,7 +85,8 @@ export const ExportControls = ({ recordedBlob }: ExportControlsProps) => {
         file_size: encryptedBlob.size,
         mime_type: 'application/octet-stream',
         is_encrypted: true,
-        encryption_key: Array.from(iv).join(',') // Store IV for later decryption
+        encryption_key: Array.from(iv).join(','), // Store IV for later decryption
+        owner_id: user.id // Add the owner_id field
       });
 
     if (dbError) {
