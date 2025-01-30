@@ -12,7 +12,7 @@ interface RecordingControlsProps {
   onStop: () => void;
   duration: number;
   onMaxDurationReached?: () => void;
-  onHighlight: () => void;  // Added this prop
+  onHighlight: () => void;
 }
 
 export const RecordingControls = ({
@@ -22,7 +22,7 @@ export const RecordingControls = ({
   onStop,
   duration,
   onMaxDurationReached,
-  onHighlight  // Added this prop
+  onHighlight
 }: RecordingControlsProps) => {
   const [elapsedTime, setElapsedTime] = useState(0);
   
@@ -80,8 +80,8 @@ export const RecordingControls = ({
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 p-4 space-y-4 bg-gradient-to-t from-black/80 to-transparent">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-20">
+    <div className="fixed inset-x-0 bottom-0 p-4 space-y-4">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-32">
         <Timer 
           duration={elapsedTime} 
           onMaxDurationReached={onMaxDurationReached}
@@ -93,7 +93,7 @@ export const RecordingControls = ({
           <Button 
             onClick={isPaused ? onResume : onPause}
             variant="outline"
-            className="w-full bg-black/50 border-white/10 hover:bg-black/70"
+            className="w-full bg-black/50 border-white/10 hover:bg-black/70 text-white"
           >
             {isPaused ? (
               <>
@@ -111,7 +111,7 @@ export const RecordingControls = ({
           <Button 
             onClick={takeScreenshot}
             variant="outline"
-            className="w-full bg-black/50 border-white/10 hover:bg-black/70"
+            className="w-full bg-black/50 border-white/10 hover:bg-black/70 text-white"
           >
             <Camera className="mr-2 h-5 w-5" />
             Take Screenshot
@@ -121,7 +121,7 @@ export const RecordingControls = ({
         <Button 
           onClick={onStop}
           variant="destructive"
-          className="w-full"
+          className="w-full bg-red-500 hover:bg-red-600"
         >
           <StopCircle className="mr-2 h-5 w-5" />
           Stop Recording

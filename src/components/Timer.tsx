@@ -19,7 +19,7 @@ export const Timer = ({
   }, [duration, maxDuration, onMaxDurationReached]);
 
   return (
-    <div className="font-mono text-4xl font-bold text-white">
+    <div className="font-mono text-5xl font-bold text-white tracking-wider">
       {formatTime(Math.min(duration, maxDuration))}
     </div>
   );
