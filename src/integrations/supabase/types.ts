@@ -36,6 +36,33 @@ export type Database = {
         }
         Relationships: []
       }
+      annotations_canvas: {
+        Row: {
+          canvas_data: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          updated_at: string
+          video_id: string
+        }
+        Insert: {
+          canvas_data: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          updated_at?: string
+          video_id: string
+        }
+        Update: {
+          canvas_data?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          updated_at?: string
+          video_id?: string
+        }
+        Relationships: []
+      }
       "file sharing": {
         Row: {
           created_at: string
