@@ -10,6 +10,9 @@ import { KeyMomentsView } from './video/KeyMomentsView';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 import { Separator } from './ui/separator';
 import { Card } from './ui/card';
+import { Progress } from './ui/progress';
+import { Button } from './ui/button';
+import { Wand2 } from 'lucide-react';
 
 interface VideoEditorProps {
   recordedBlob: Blob | null;
@@ -29,7 +32,11 @@ export const VideoEditor = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [removeSilences, setRemoveSilences] = useState(false);
   const [removeFillerWords, setRemoveFillerWords] = useState(false);
+  const [autoTransitions, setAutoTransitions] = useState(false);
+  const [speedAdjustment, setSpeedAdjustment] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+
+  const { isProcessing, progress, processVideo } = useVideoProcessing();
 
   useEffect(() => {
     if (recordedBlob) {
@@ -52,6 +59,32 @@ export const VideoEditor = ({
   const handleHighlightClick = (time: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime = time;
+    }
+  };
+
+  const handleProcessVideo = async () => {
+    if (!recordedBlob) return;
+
+    try {
+      const processedBlob = await processVideo(recordedBlob, {
+        removeSilences,
+        removeFillerWords,
+        autoTransitions,
+        speedAdjustment
+      });
+      
+      onSave(processedBlob);
+      toast({
+        title: "Video processed successfully",
+        description: "Your video has been enhanced with AI editing features.",
+      });
+    } catch (error) {
+      console.error('Error processing video:', error);
+      toast({
+        title: "Processing failed",
+        description: "There was an error processing your video. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -106,6 +139,48 @@ export const VideoEditor = ({
                 enabled={removeFillerWords}
                 onToggle={setRemoveFillerWords}
               />
+              
+              {/* New Auto-Editing Controls */}
+              <div className="flex items-center justify-between space-x-4 p-4 rounded-lg border bg-card">
+                <div className="flex items-center space-x-3">
+                  <Wand2 className="h-5 w-5 text-muted-foreground" />
+                  <span>Smart Transitions</span>
+                </div>
+                <Switch
+                  checked={autoTransitions}
+                  onCheckedChange={setAutoTransitions}
+                />
+              </div>
+
+              <div className="flex items-center justify-between space-x-4 p-4 rounded-lg border bg-card">
+                <div className="flex items-center space-x-3">
+                  <Wand2 className="h-5 w-5 text-muted-foreground" />
+                  <span>Dynamic Speed</span>
+                </div>
+                <Switch
+                  checked={speedAdjustment}
+                  onCheckedChange={setSpeedAdjustment}
+                />
+              </div>
+
+              {/* Process Button */}
+              <Button 
+                className="w-full"
+                onClick={handleProcessVideo}
+                disabled={isProcessing}
+              >
+                {isProcessing ? 'Processing...' : 'Process Video'}
+              </Button>
+
+              {/* Progress Bar */}
+              {isProcessing && (
+                <div className="space-y-2">
+                  <Progress value={progress} />
+                  <p className="text-sm text-muted-foreground text-center">
+                    {progress}% complete
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
