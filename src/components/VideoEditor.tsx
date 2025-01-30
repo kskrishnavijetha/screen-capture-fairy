@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch"; // Add this import
 import { ShareControls } from './video/ShareControls';
 import { EmbedControls } from './video/EmbedControls';
 import { ExportControls } from './video/ExportControls';
