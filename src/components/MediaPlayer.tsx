@@ -7,6 +7,7 @@ import { CollaborativeControls } from './video/CollaborativeControls';
 import { AnnotationControls } from './video/AnnotationControls';
 import { TimelineView } from './video/timeline/TimelineView';
 import { EmojiReactions } from './video/EmojiReactions';
+import { toast } from './ui/use-toast';
 
 interface MediaPlayerProps {
   recordedBlob: Blob;
@@ -21,8 +22,32 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
   const [videoUrl, setVideoUrl] = useState<string>('');
 
   useEffect(() => {
-    const url = URL.createObjectURL(recordedBlob);
+    // Ensure the blob has the correct type for video and audio
+    const url = URL.createObjectURL(
+      new Blob([recordedBlob], { 
+        type: 'video/webm; codecs=vp8,opus' 
+      })
+    );
     setVideoUrl(url);
+
+    // Test audio playback
+    const video = videoRef.current;
+    if (video) {
+      video.onloadedmetadata = () => {
+        // Check if video has audio tracks
+        if (video.mozHasAudio || // Firefox
+            Boolean(video.webkitAudioDecodedByteCount) || // Chrome
+            Boolean(video.audioTracks?.length)) { // Standard
+          console.log('Audio tracks detected');
+        } else {
+          toast({
+            title: "Audio Issue",
+            description: "No audio track detected in the recording.",
+            variant: "destructive"
+          });
+        }
+      };
+    }
 
     return () => {
       if (url) {
@@ -48,9 +73,19 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
     if (!video) return;
 
     if (playing) {
-      video.play().catch(error => {
-        console.error('Error playing video:', error);
-      });
+      // Ensure both video and audio are unmuted
+      video.muted = false;
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error('Error playing video:', error);
+          toast({
+            title: "Playback Error",
+            description: "There was an error playing the video. Please try again.",
+            variant: "destructive"
+          });
+        });
+      }
     } else {
       video.pause();
     }
@@ -94,6 +129,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+          muted={false}
         />
         <EmojiReactions
           videoId={videoId}
