@@ -103,9 +103,9 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
         {/* Main camera preview */}
         <div 
           ref={containerRef}
-          className="absolute left-1/2 -translate-x-1/2 bottom-32 flex flex-col items-center pointer-events-auto z-10"
+          className="absolute left-1/2 -translate-x-1/2 bottom-48 flex flex-col items-center pointer-events-auto z-20"
         >
-          <div className="relative w-32 h-32 rounded-full overflow-hidden mb-4 shadow-xl border-2 border-white/10 bg-black/90">
+          <div className="relative w-40 h-40 rounded-full overflow-hidden mb-4 shadow-xl border-2 border-white/10 bg-black/90">
             <video
               ref={videoRef}
               autoPlay
@@ -128,7 +128,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
           </div>
 
           {/* Controls below camera */}
-          <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm rounded-full px-6 py-3 flex items-center gap-4 shadow-lg z-20">
+          <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm rounded-full px-6 py-3 flex items-center gap-4 shadow-lg z-30">
             <div className="flex items-center gap-2">
               <span className="text-xs text-white/80">Background</span>
               <Switch
@@ -141,12 +141,12 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
         </div>
 
         {/* Gesture controls positioned on the right */}
-        <div className="fixed top-32 right-4 w-64 pointer-events-auto z-30">
+        <div className="fixed top-32 right-4 w-64 pointer-events-auto z-40">
           <GestureControls onConfigChange={handleGestureConfigChange} />
         </div>
         
         {/* Zoom controller */}
-        <div className="pointer-events-auto absolute bottom-4 left-4 z-20">
+        <div className="pointer-events-auto absolute bottom-24 left-4 z-30">
           <ZoomController videoRef={videoRef} isRecording={isRecording} />
         </div>
       </div>
