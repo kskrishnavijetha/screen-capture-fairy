@@ -103,9 +103,9 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
         {/* Main camera preview */}
         <div 
           ref={containerRef}
-          className="absolute left-1/2 -translate-x-1/2 bottom-48 flex flex-col items-center pointer-events-auto z-20"
+          className="absolute left-1/2 -translate-x-1/2 bottom-64 flex flex-col items-center pointer-events-auto z-20"
         >
-          <div className="relative w-40 h-40 rounded-full overflow-hidden mb-4 shadow-xl border-2 border-white/10 bg-black/90">
+          <div className="relative w-48 h-48 rounded-full overflow-hidden mb-4 shadow-xl border-2 border-white/10 bg-black/90">
             <video
               ref={videoRef}
               autoPlay
@@ -141,12 +141,12 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
         </div>
 
         {/* Gesture controls positioned on the right */}
-        <div className="fixed top-32 right-4 w-64 pointer-events-auto z-40">
+        <div className="fixed top-4 right-4 w-64 pointer-events-auto z-40">
           <GestureControls onConfigChange={handleGestureConfigChange} />
         </div>
         
         {/* Zoom controller */}
-        <div className="pointer-events-auto absolute bottom-24 left-4 z-30">
+        <div className="pointer-events-auto absolute bottom-32 left-4 z-30">
           <ZoomController videoRef={videoRef} isRecording={isRecording} />
         </div>
       </div>
