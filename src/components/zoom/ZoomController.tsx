@@ -100,8 +100,15 @@ export const ZoomController: React.FC<ZoomControllerProps> = ({ videoRef, isReco
         // Only process every few frames for performance
         if (Math.random() > 0.1) return;
 
+        // Ensure srcObject is a MediaStream before accessing video tracks
+        const mediaStream = videoRef.current.srcObject as MediaStream;
+        if (!mediaStream || !mediaStream.getVideoTracks) return;
+
         // Capture current frame
-        const imageCapture = new ImageCapture(videoRef.current.srcObject.getVideoTracks()[0]);
+        const videoTrack = mediaStream.getVideoTracks()[0];
+        if (!videoTrack) return;
+
+        const imageCapture = new ImageCapture(videoTrack);
         const frame = await imageCapture.grabFrame();
 
         // Detect objects in frame
