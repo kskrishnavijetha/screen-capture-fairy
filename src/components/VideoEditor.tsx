@@ -6,6 +6,7 @@ import { ExportControls } from './video/ExportControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
 import { EmotionDetection } from './video/EmotionDetection';
+import { KeyMomentsView } from './video/KeyMomentsView';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 import { Separator } from './ui/separator';
 import { Card } from './ui/card';
@@ -77,6 +78,13 @@ export const VideoEditor = ({
         </Card>
         
         <EmotionDetection
+          videoId={videoUrl || ''}
+          currentTime={currentTime}
+          onHighlightClick={handleHighlightClick}
+          transcription={transcription}
+        />
+
+        <KeyMomentsView
           videoId={videoUrl || ''}
           currentTime={currentTime}
           onHighlightClick={handleHighlightClick}

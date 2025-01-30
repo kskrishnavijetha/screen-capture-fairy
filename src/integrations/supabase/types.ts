@@ -302,6 +302,39 @@ export type Database = {
         }
         Relationships: []
       }
+      video_key_moments: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          moment_type: string
+          timestamp: number
+          video_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          moment_type: string
+          timestamp: number
+          video_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          moment_type?: string
+          timestamp?: number
+          video_id?: string
+        }
+        Relationships: []
+      }
       video_reactions: {
         Row: {
           created_at: string
