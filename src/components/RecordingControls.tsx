@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { StopCircle, Pause, Play, Camera } from 'lucide-react';
 import { Timer } from './Timer';
 import { useToast } from "@/components/ui/use-toast";
+import { VoiceCommandListener } from './VoiceCommandListener';
 
 interface RecordingControlsProps {
   isPaused: boolean;
@@ -77,6 +78,15 @@ export const RecordingControls = ({
     }
   };
 
+  const handleHighlight = () => {
+    // This is a placeholder for the highlight functionality
+    // You can implement the actual highlight logic here
+    toast({
+      title: "Moment Highlighted",
+      description: "This moment has been marked as important",
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-center mb-4">
@@ -86,25 +96,35 @@ export const RecordingControls = ({
         />
       </div>
       <div className="grid grid-cols-2 gap-4">
-        {!isPaused ? (
-          <Button 
-            onClick={onPause}
-            variant="outline"
-            className="w-full"
-          >
-            <Pause className="mr-2 h-5 w-5" />
-            Pause Recording
-          </Button>
-        ) : (
-          <Button 
-            onClick={onResume}
-            variant="outline"
-            className="w-full"
-          >
-            <Play className="mr-2 h-5 w-5" />
-            Resume Recording
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {!isPaused ? (
+            <Button 
+              onClick={onPause}
+              variant="outline"
+              className="flex-1"
+            >
+              <Pause className="mr-2 h-5 w-5" />
+              Pause Recording
+            </Button>
+          ) : (
+            <Button 
+              onClick={onResume}
+              variant="outline"
+              className="flex-1"
+            >
+              <Play className="mr-2 h-5 w-5" />
+              Resume Recording
+            </Button>
+          )}
+          <VoiceCommandListener
+            onPause={onPause}
+            onResume={onResume}
+            onStop={onStop}
+            onHighlight={handleHighlight}
+            isRecording={true}
+            isPaused={isPaused}
+          />
+        </div>
         <Button 
           onClick={takeScreenshot}
           variant="outline"
