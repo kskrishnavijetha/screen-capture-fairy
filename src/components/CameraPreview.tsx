@@ -4,6 +4,7 @@ import { ZoomController } from './zoom/ZoomController';
 import { BackgroundRemoval } from './video/BackgroundRemoval';
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/use-toast";
+import { GestureControls, type GestureConfig } from './video/GestureControls';
 
 interface CameraPreviewProps {
   isRecording: boolean;
@@ -18,6 +19,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [backgroundRemoval, setBackgroundRemoval] = useState(false);
+  const [gestureConfig, setGestureConfig] = useState<GestureConfig | null>(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -161,6 +163,33 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
     }
   }, [isDragging, dragStart]);
 
+  const handleGestureConfigChange = (config: GestureConfig) => {
+    setGestureConfig(config);
+    if (config.enabled) {
+      toast({
+        title: "Gesture Recognition Enabled",
+        description: `Now detecting ${config.gesture} gestures`,
+      });
+    }
+  };
+
+  const getEmojiPosition = () => {
+    if (!gestureConfig) return {};
+    
+    switch (gestureConfig.position) {
+      case 'top-left':
+        return { top: '1rem', left: '1rem' };
+      case 'top-right':
+        return { top: '1rem', right: '1rem' };
+      case 'bottom-left':
+        return { bottom: '1rem', left: '1rem' };
+      case 'bottom-right':
+        return { bottom: '1rem', right: '1rem' };
+      default:
+        return { top: '1rem', right: '1rem' };
+    }
+  };
+
   if (captureMode !== 'camera' && captureMode !== 'both') {
     return null;
   }
@@ -200,6 +229,15 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
         />
         <div className="absolute inset-0 rounded-full ring-2 ring-primary/20 pointer-events-none" />
         
+        {gestureConfig?.enabled && (
+          <div
+            className="absolute text-4xl pointer-events-none animate-bounce"
+            style={getEmojiPosition()}
+          >
+            {gestureConfig.emoji}
+          </div>
+        )}
+        
         <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-background/80 px-3 py-1.5 rounded-full shadow-lg">
           <span className="text-xs">Background</span>
           <Switch
@@ -209,6 +247,11 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
           />
         </div>
       </div>
+      
+      <div className="fixed bottom-4 right-4 w-64">
+        <GestureControls onConfigChange={handleGestureConfigChange} />
+      </div>
+      
       <ZoomController videoRef={videoRef} isRecording={isRecording} />
     </>
   );
