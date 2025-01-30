@@ -33,6 +33,7 @@ export const RecordingComponent = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [currentRecordingIndex, setCurrentRecordingIndex] = useState(0);
   const [recordings, setRecordings] = useState<{ blob: Blob; timestamp: Date }[]>([]);
+  const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
     const loadRecordings = () => {
@@ -167,6 +168,7 @@ export const RecordingComponent = () => {
           setRecordedBlob(blob);
           navigate('/playback', { state: { recordedBlob: blob } });
         }}
+        onAudioStreamReady={setAudioStream}
         isRecording={isRecording}
         setIsRecording={setIsRecording}
         setIsPaused={setIsPaused}
@@ -186,26 +188,29 @@ export const RecordingComponent = () => {
       )}
 
       {isRecording && (
-        <RecordingControls
-          isPaused={isPaused}
-          onPause={() => {
-            const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
-            if (pauseButton) pauseButton.click();
-          }}
-          onResume={() => {
-            const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
-            if (pauseButton) pauseButton.click();
-          }}
-          onStop={() => {
-            const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
-            if (stopButton) stopButton.click();
-          }}
-          duration={duration}
-          onMaxDurationReached={() => {
-            const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
-            if (stopButton) stopButton.click();
-          }}
-        />
+        <>
+          <RecordingControls
+            isPaused={isPaused}
+            onPause={() => {
+              const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
+              if (pauseButton) pauseButton.click();
+            }}
+            onResume={() => {
+              const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
+              if (pauseButton) pauseButton.click();
+            }}
+            onStop={() => {
+              const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
+              if (stopButton) stopButton.click();
+            }}
+            duration={duration}
+            onMaxDurationReached={() => {
+              const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
+              if (stopButton) stopButton.click();
+            }}
+          />
+          <LiveCaptions isRecording={isRecording} audioStream={audioStream || undefined} />
+        </>
       )}
 
       <CameraPreview isRecording={isRecording} captureMode={captureMode} />
