@@ -15,9 +15,15 @@ interface EmotionDetectionProps {
   videoId: string;
   currentTime: number;
   onHighlightClick: (time: number) => void;
+  transcription?: string;
 }
 
-export const EmotionDetection = ({ videoId, currentTime, onHighlightClick }: EmotionDetectionProps) => {
+export const EmotionDetection = ({ 
+  videoId, 
+  currentTime, 
+  onHighlightClick,
+  transcription = '' 
+}: EmotionDetectionProps) => {
   const [highlights, setHighlights] = useState<EmotionHighlight[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -39,8 +45,12 @@ export const EmotionDetection = ({ videoId, currentTime, onHighlightClick }: Emo
   const analyzeEmotion = async () => {
     try {
       setIsAnalyzing(true);
+      
       const { data, error } = await supabase.functions.invoke('analyze-emotion', {
-        body: { videoId }
+        body: { 
+          videoId,
+          transcription
+        }
       });
 
       if (error) throw error;
@@ -79,7 +89,9 @@ export const EmotionDetection = ({ videoId, currentTime, onHighlightClick }: Emo
         {highlights.map((highlight, index) => (
           <div
             key={index}
-            className="flex items-center justify-between p-2 hover:bg-accent rounded-lg cursor-pointer"
+            className={`flex items-center justify-between p-2 hover:bg-accent rounded-lg cursor-pointer ${
+              Math.abs(currentTime - highlight.timestamp) < 1 ? 'bg-accent' : ''
+            }`}
             onClick={() => onHighlightClick(highlight.timestamp)}
           >
             <div className="flex items-center gap-2">

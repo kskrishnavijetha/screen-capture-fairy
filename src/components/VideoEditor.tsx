@@ -14,9 +14,15 @@ interface VideoEditorProps {
   recordedBlob: Blob | null;
   timestamps: Array<{ time: number; label: string }>;
   onSave: (newBlob: Blob) => void;
+  transcription?: string;
 }
 
-export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorProps) => {
+export const VideoEditor = ({ 
+  recordedBlob, 
+  timestamps, 
+  onSave,
+  transcription = '' 
+}: VideoEditorProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -74,6 +80,7 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
           videoId={videoUrl || ''}
           currentTime={currentTime}
           onHighlightClick={handleHighlightClick}
+          transcription={transcription}
         />
       </div>
 
