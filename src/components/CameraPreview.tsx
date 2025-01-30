@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ZoomController } from './zoom/ZoomController';
 
 interface CameraPreviewProps {
   isRecording: boolean;
@@ -10,7 +11,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 20, y: 20 }); // Default position in top-left
+  const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const isMobile = useIsMobile();
@@ -137,33 +138,36 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   }
 
   return (
-    <div
-      ref={containerRef}
-      className={`fixed cursor-move overflow-hidden transition-transform duration-200 ${
-        isDragging ? 'opacity-75 scale-105' : ''
-      }`}
-      style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        width: isMobile ? '120px' : '180px',
-        height: isMobile ? '120px' : '180px',
-        zIndex: 1000,
-        touchAction: 'none',
-        borderRadius: '50%',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
-        border: '2px solid rgba(255, 255, 255, 0.1)',
-        background: '#1A1F2C'
-      }}
-      onMouseDown={handleMouseDown}
-      onTouchStart={handleTouchStart}
-    >
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className="w-full h-full object-cover rounded-full transform scale-[1.02]"
-      />
-      <div className="absolute inset-0 rounded-full ring-2 ring-primary/20 pointer-events-none" />
-    </div>
+    <>
+      <div
+        ref={containerRef}
+        className={`fixed cursor-move overflow-hidden transition-transform duration-200 ${
+          isDragging ? 'opacity-75 scale-105' : ''
+        }`}
+        style={{
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          width: isMobile ? '120px' : '180px',
+          height: isMobile ? '120px' : '180px',
+          zIndex: 1000,
+          touchAction: 'none',
+          borderRadius: '50%',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+          border: '2px solid rgba(255, 255, 255, 0.1)',
+          background: '#1A1F2C'
+        }}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+      >
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="w-full h-full object-cover rounded-full transform scale-[1.02]"
+        />
+        <div className="absolute inset-0 rounded-full ring-2 ring-primary/20 pointer-events-none" />
+      </div>
+      <ZoomController videoRef={videoRef} isRecording={isRecording} />
+    </>
   );
 };
