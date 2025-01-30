@@ -14,14 +14,18 @@ serve(async (req) => {
   }
 
   try {
-    const { videoId, transcription, frameData } = await req.json();
-
     if (!openAIApiKey) {
       throw new Error('OpenAI API key is not configured');
     }
 
-    console.log('Analyzing emotions for video:', videoId);
-    console.log('Transcription length:', transcription?.length);
+    const { videoId, transcription, frameData } = await req.json();
+
+    if (!videoId) {
+      throw new Error('Video ID is required');
+    }
+
+    console.log('Processing request for video:', videoId);
+    console.log('Transcription available:', !!transcription);
     console.log('Frame data available:', !!frameData);
 
     // Analyze both text and visual data
@@ -41,12 +45,19 @@ serve(async (req) => {
           {
             role: 'user',
             content: `Analyze the emotional content in this data:
-              Transcription: ${transcription}
-              Visual Data: ${frameData ? JSON.stringify(frameData) : 'No visual data available'}`
+              Transcription: ${transcription || 'No transcription available'}
+              Visual Data: ${frameData ? `${frameData.length} frames available` : 'No visual data available'}`
           }
         ],
+        max_tokens: 2000,
       }),
     });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('OpenAI API error:', error);
+      throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`);
+    }
 
     const data = await response.json();
     console.log('OpenAI response received');
@@ -68,7 +79,6 @@ serve(async (req) => {
                        line.toLowerCase().includes('happy') ? 'happy' :
                        line.toLowerCase().includes('sad') ? 'sad' : 'neutral';
         
-        // Calculate confidence based on multimodal analysis
         const confidence = line.toLowerCase().includes('high') ? 0.9 :
                          line.toLowerCase().includes('medium') ? 0.7 : 0.5;
         
@@ -88,7 +98,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in enhanced emotion analysis:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        details: error instanceof Error ? error.stack : undefined
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -3,10 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { 
   Heart, Star, Laugh, Frown, 
   PartyPopper, ThumbsUp, ThumbsDown,
-  Flame, Coffee, Battery
+  Flame, Coffee, Battery, RefreshCcw
 } from 'lucide-react';
 import { ConfidenceThresholdControls } from './ConfidenceThresholdControls';
 import { extractFrames } from '@/utils/frameExtraction';
@@ -46,6 +47,7 @@ export const EmotionDetection = ({
 }: EmotionDetectionProps) => {
   const [highlights, setHighlights] = useState<EmotionHighlight[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.5);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
@@ -65,13 +67,18 @@ export const EmotionDetection = ({
   const analyzeEmotion = async () => {
     try {
       setIsAnalyzing(true);
+      setError(null);
       
-      let frameData: string[] = [];
-      if (videoElement) {
-        frameData = await extractFrames(videoElement);
+      if (!videoElement) {
+        throw new Error('Video element not found');
       }
+
+      console.log('Starting frame extraction...');
+      const frameData = await extractFrames(videoElement);
+      console.log('Frames extracted:', frameData.length);
       
-      const { data, error } = await supabase.functions.invoke('analyze-emotion-enhanced', {
+      console.log('Calling emotion analysis function...');
+      const { data, error: functionError } = await supabase.functions.invoke('analyze-emotion-enhanced', {
         body: { 
           videoId,
           transcription,
@@ -79,8 +86,15 @@ export const EmotionDetection = ({
         }
       });
 
-      if (error) throw error;
+      if (functionError) {
+        throw functionError;
+      }
 
+      if (!data?.highlights) {
+        throw new Error('No highlights data received');
+      }
+
+      console.log('Analysis complete:', data);
       setHighlights(data.highlights);
       toast({
         title: "Analysis complete",
@@ -88,10 +102,11 @@ export const EmotionDetection = ({
       });
     } catch (error) {
       console.error('Error analyzing emotions:', error);
+      setError(error instanceof Error ? error.message : 'Could not analyze emotions in the video');
       toast({
         variant: "destructive",
         title: "Analysis failed",
-        description: "Could not analyze emotions in the video",
+        description: error instanceof Error ? error.message : 'Could not analyze emotions in the video',
       });
     } finally {
       setIsAnalyzing(false);
@@ -104,14 +119,30 @@ export const EmotionDetection = ({
     <Card className="p-4 space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Emotional Highlights</h3>
-        <Badge 
-          variant={isAnalyzing ? "secondary" : "default"}
-          className="cursor-pointer"
+        <Button 
+          variant={error ? "destructive" : "default"}
+          size="sm"
           onClick={analyzeEmotion}
+          disabled={isAnalyzing}
         >
-          {isAnalyzing ? 'Analyzing...' : 'Analyze Emotions'}
-        </Badge>
+          {isAnalyzing ? (
+            <>
+              <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
+              Analyzing...
+            </>
+          ) : (
+            <>
+              {error ? 'Retry Analysis' : 'Analyze Emotions'}
+            </>
+          )}
+        </Button>
       </div>
+
+      {error && (
+        <div className="bg-destructive/15 text-destructive p-3 rounded-md text-sm">
+          {error}
+        </div>
+      )}
 
       <ConfidenceThresholdControls
         threshold={confidenceThreshold}
@@ -140,7 +171,7 @@ export const EmotionDetection = ({
           </div>
         ))}
         
-        {filteredHighlights.length === 0 && !isAnalyzing && (
+        {filteredHighlights.length === 0 && !isAnalyzing && !error && (
           <div className="text-center text-muted-foreground py-4">
             No emotional highlights detected yet
           </div>
