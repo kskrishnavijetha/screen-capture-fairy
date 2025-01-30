@@ -98,49 +98,58 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="fixed bottom-32 left-1/2 -translate-x-1/2 flex flex-col items-center"
-      style={{ zIndex: 1000 }}
-    >
-      <div className="relative w-32 h-32 rounded-full overflow-hidden mb-4 shadow-xl border-2 border-white/10 bg-black/90">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="w-full h-full object-cover scale-[1.02]"
-        />
-        <BackgroundRemoval
-          videoRef={videoRef}
-          enabled={backgroundRemoval}
-          onToggle={setBackgroundRemoval}
-        />
-        <div className="absolute inset-0 rounded-full ring-2 ring-white/10 pointer-events-none" />
-        
-        {gestureConfig?.enabled && (
-          <div className="absolute text-4xl pointer-events-none animate-bounce top-2 right-2">
-            {gestureConfig.emoji}
+    <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
+      <div className="relative w-full max-w-screen-xl mx-auto px-4">
+        {/* Main camera preview */}
+        <div 
+          ref={containerRef}
+          className="absolute left-1/2 -translate-x-1/2 bottom-32 flex flex-col items-center pointer-events-auto"
+        >
+          <div className="relative w-32 h-32 rounded-full overflow-hidden mb-4 shadow-xl border-2 border-white/10 bg-black/90">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover scale-[1.02]"
+            />
+            <BackgroundRemoval
+              videoRef={videoRef}
+              enabled={backgroundRemoval}
+              onToggle={setBackgroundRemoval}
+            />
+            <div className="absolute inset-0 rounded-full ring-2 ring-white/10 pointer-events-none" />
+            
+            {gestureConfig?.enabled && (
+              <div className="absolute text-4xl pointer-events-none animate-bounce top-2 right-2">
+                {gestureConfig.emoji}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm rounded-full px-6 py-3 flex items-center gap-4 shadow-lg">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-white/80">Background</span>
-          <Switch
-            checked={backgroundRemoval}
-            onCheckedChange={setBackgroundRemoval}
-            className="data-[state=checked]:bg-primary"
-          />
+          {/* Controls below camera */}
+          <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm rounded-full px-6 py-3 flex items-center gap-4 shadow-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-white/80">Background</span>
+              <Switch
+                checked={backgroundRemoval}
+                onCheckedChange={setBackgroundRemoval}
+                className="data-[state=checked]:bg-primary"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Gesture controls positioned on the right */}
+        <div className="fixed top-32 right-4 w-64 pointer-events-auto">
+          <GestureControls onConfigChange={handleGestureConfigChange} />
+        </div>
+        
+        {/* Zoom controller */}
+        <div className="pointer-events-auto">
+          <ZoomController videoRef={videoRef} isRecording={isRecording} />
         </div>
       </div>
-      
-      <div className="fixed bottom-4 right-4 w-64">
-        <GestureControls onConfigChange={handleGestureConfigChange} />
-      </div>
-      
-      <ZoomController videoRef={videoRef} isRecording={isRecording} />
     </div>
   );
 };
