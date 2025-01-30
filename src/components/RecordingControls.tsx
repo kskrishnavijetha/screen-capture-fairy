@@ -12,6 +12,7 @@ interface RecordingControlsProps {
   onStop: () => void;
   duration: number;
   onMaxDurationReached?: () => void;
+  onHighlight: () => void;  // Added this prop
 }
 
 export const RecordingControls = ({
@@ -20,7 +21,8 @@ export const RecordingControls = ({
   onResume,
   onStop,
   duration,
-  onMaxDurationReached
+  onMaxDurationReached,
+  onHighlight  // Added this prop
 }: RecordingControlsProps) => {
   const [elapsedTime, setElapsedTime] = useState(0);
   
@@ -131,6 +133,7 @@ export const RecordingControls = ({
           onPause={onPause}
           onResume={onResume}
           onStop={onStop}
+          onHighlight={onHighlight}
           isRecording={true}
           isPaused={isPaused}
         />
