@@ -34,10 +34,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({ recordedBlob }) => {
     const video = videoRef.current;
     if (video) {
       video.onloadedmetadata = () => {
-        // Check if video has audio tracks
-        if (video.mozHasAudio || // Firefox
-            Boolean(video.webkitAudioDecodedByteCount) || // Chrome
-            Boolean(video.audioTracks?.length)) { // Standard
+        // Check if video has audio tracks using type-safe properties
+        const hasAudio = !!(
+          video.mozHasAudio || // Firefox
+          video.webkitAudioDecodedByteCount || // Chrome
+          (video.audioTracks && video.audioTracks.length) // Standard
+        );
+
+        if (hasAudio) {
           console.log('Audio tracks detected');
         } else {
           toast({

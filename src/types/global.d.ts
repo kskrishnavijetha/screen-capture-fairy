@@ -57,3 +57,12 @@ declare class SpeechRecognition extends EventTarget {
   stop(): void;
   abort(): void;
 }
+
+// Extend HTMLVideoElement with browser-specific audio properties
+interface HTMLVideoElement extends HTMLMediaElement {
+  mozHasAudio?: boolean;
+  webkitAudioDecodedByteCount?: number;
+  audioTracks?: {
+    length: number;
+  };
+}
