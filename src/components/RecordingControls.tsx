@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { StopCircle, Pause, Play, Camera } from 'lucide-react';
+import { Pause, Play, Camera, StopCircle } from 'lucide-react';
 import { Timer } from './Timer';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { VoiceCommandListener } from './VoiceCommandListener';
 
 interface RecordingControlsProps {
@@ -22,7 +22,6 @@ export const RecordingControls = ({
   duration,
   onMaxDurationReached
 }: RecordingControlsProps) => {
-  const { toast } = useToast();
   const [elapsedTime, setElapsedTime] = useState(0);
   
   useEffect(() => {
@@ -78,70 +77,64 @@ export const RecordingControls = ({
     }
   };
 
-  const handleHighlight = () => {
-    // This is a placeholder for the highlight functionality
-    // You can implement the actual highlight logic here
-    toast({
-      title: "Moment Highlighted",
-      description: "This moment has been marked as important",
-    });
-  };
-
   return (
-    <div className="space-y-4">
-      <div className="flex justify-center mb-4">
+    <div className="fixed inset-x-0 bottom-0 p-4 space-y-4 bg-gradient-to-t from-black/80 to-transparent">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-20">
         <Timer 
           duration={elapsedTime} 
           onMaxDurationReached={onMaxDurationReached}
         />
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center gap-2">
-          {!isPaused ? (
-            <Button 
-              onClick={onPause}
-              variant="outline"
-              className="flex-1"
-            >
-              <Pause className="mr-2 h-5 w-5" />
-              Pause Recording
-            </Button>
-          ) : (
-            <Button 
-              onClick={onResume}
-              variant="outline"
-              className="flex-1"
-            >
-              <Play className="mr-2 h-5 w-5" />
-              Resume Recording
-            </Button>
-          )}
-          <VoiceCommandListener
-            onPause={onPause}
-            onResume={onResume}
-            onStop={onStop}
-            onHighlight={handleHighlight}
-            isRecording={true}
-            isPaused={isPaused}
-          />
+      
+      <div className="max-w-xl mx-auto space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <Button 
+            onClick={isPaused ? onResume : onPause}
+            variant="outline"
+            className="w-full bg-black/50 border-white/10 hover:bg-black/70"
+          >
+            {isPaused ? (
+              <>
+                <Play className="mr-2 h-5 w-5" />
+                Resume Recording
+              </>
+            ) : (
+              <>
+                <Pause className="mr-2 h-5 w-5" />
+                Pause Recording
+              </>
+            )}
+          </Button>
+          
+          <Button 
+            onClick={takeScreenshot}
+            variant="outline"
+            className="w-full bg-black/50 border-white/10 hover:bg-black/70"
+          >
+            <Camera className="mr-2 h-5 w-5" />
+            Take Screenshot
+          </Button>
         </div>
+
         <Button 
-          onClick={takeScreenshot}
-          variant="outline"
+          onClick={onStop}
+          variant="destructive"
           className="w-full"
         >
-          <Camera className="mr-2 h-5 w-5" />
-          Take Screenshot
+          <StopCircle className="mr-2 h-5 w-5" />
+          Stop Recording
         </Button>
       </div>
-      <Button 
-        onClick={onStop}
-        variant="destructive"
-        className="w-full"
-      >
-        <StopCircle className="mr-2 h-5 w-5" />
-        Stop Recording
-      </Button>
+
+      <div className="fixed bottom-4 right-4">
+        <VoiceCommandListener
+          onPause={onPause}
+          onResume={onResume}
+          onStop={onStop}
+          isRecording={true}
+          isPaused={isPaused}
+        />
+      </div>
     </div>
   );
 };

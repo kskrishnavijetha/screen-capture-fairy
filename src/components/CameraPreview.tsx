@@ -198,17 +198,16 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
     <>
       <div
         ref={containerRef}
-        className={`fixed cursor-move overflow-hidden transition-transform duration-200 ${
+        className={`fixed bottom-32 left-1/2 -translate-x-1/2 cursor-move overflow-hidden transition-transform duration-200 ${
           isDragging ? 'opacity-75 scale-105' : ''
         }`}
         style={{
-          transform: `translate(${position.x}px, ${position.y}px)`,
-          width: isMobile ? '120px' : '180px',
-          height: isMobile ? '120px' : '180px',
+          width: '120px',
+          height: '120px',
           zIndex: 1000,
           touchAction: 'none',
           borderRadius: '50%',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
           border: '2px solid rgba(255, 255, 255, 0.1)',
           background: '#1A1F2C'
         }}
@@ -238,8 +237,8 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
           </div>
         )}
         
-        <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-background/80 px-3 py-1.5 rounded-full shadow-lg">
-          <span className="text-xs">Background</span>
+        <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-black/80 px-3 py-1.5 rounded-full shadow-lg">
+          <span className="text-xs text-white/80">Background</span>
           <Switch
             checked={backgroundRemoval}
             onCheckedChange={setBackgroundRemoval}
