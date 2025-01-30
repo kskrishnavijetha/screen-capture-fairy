@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ZoomController } from './zoom/ZoomController';
+import { BackgroundRemoval } from './video/BackgroundRemoval';
+import { Switch } from "@/components/ui/switch";
 
 interface CameraPreviewProps {
   isRecording: boolean;
@@ -14,6 +16,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [backgroundRemoval, setBackgroundRemoval] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -165,7 +168,22 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
           muted
           className="w-full h-full object-cover rounded-full transform scale-[1.02]"
         />
+        <BackgroundRemoval
+          videoRef={videoRef}
+          enabled={backgroundRemoval}
+          onToggle={setBackgroundRemoval}
+        />
         <div className="absolute inset-0 rounded-full ring-2 ring-primary/20 pointer-events-none" />
+        
+        {/* Background removal toggle */}
+        <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-background/80 px-3 py-1.5 rounded-full shadow-lg">
+          <span className="text-xs">Background</span>
+          <Switch
+            checked={backgroundRemoval}
+            onCheckedChange={setBackgroundRemoval}
+            className="data-[state=checked]:bg-primary"
+          />
+        </div>
       </div>
       <ZoomController videoRef={videoRef} isRecording={isRecording} />
     </>
