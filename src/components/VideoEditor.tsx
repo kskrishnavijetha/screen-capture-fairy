@@ -5,6 +5,7 @@ import { EmbedControls } from './video/EmbedControls';
 import { ExportControls } from './video/ExportControls';
 import { SilenceControls } from './video/SilenceControls';
 import { FillerWordControls } from './video/FillerWordControls';
+import { EmotionDetection } from './video/EmotionDetection';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 import { Separator } from './ui/separator';
 import { Card } from './ui/card';
@@ -41,6 +42,12 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
     setCurrentTime(time);
   };
 
+  const handleHighlightClick = (time: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+    }
+  };
+
   if (!recordedBlob) return null;
 
   return (
@@ -62,6 +69,12 @@ export const VideoEditor = ({ recordedBlob, timestamps, onSave }: VideoEditorPro
             />
           </div>
         </Card>
+        
+        <EmotionDetection
+          videoId={videoUrl || ''}
+          currentTime={currentTime}
+          onHighlightClick={handleHighlightClick}
+        />
       </div>
 
       {/* Controls */}
