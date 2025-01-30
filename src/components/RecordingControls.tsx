@@ -80,7 +80,7 @@ export const RecordingControls = ({
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 p-4 space-y-4">
+    <div className="fixed inset-x-0 bottom-0 p-4 z-50">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-32">
         <Timer 
           duration={elapsedTime} 
