@@ -8,7 +8,6 @@ import { DownloadRecording } from '@/components/DownloadRecording';
 import { CameraPreview } from '@/components/CameraPreview';
 import { RecordingManager } from '@/components/RecordingManager';
 import { CountdownTimer } from '@/components/CountdownTimer';
-import { LiveCaptions } from '@/components/video/LiveCaptions';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
