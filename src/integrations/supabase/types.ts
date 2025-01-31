@@ -176,6 +176,33 @@ export type Database = {
         }
         Relationships: []
       }
+      realtime_annotations: {
+        Row: {
+          annotation_data: Json
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string | null
+          video_id: string
+        }
+        Insert: {
+          annotation_data: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+          video_id: string
+        }
+        Update: {
+          annotation_data?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+          video_id?: string
+        }
+        Relationships: []
+      }
       Screen: {
         Row: {
           created_at: string

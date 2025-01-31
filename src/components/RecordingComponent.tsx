@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DrawingCanvas } from './drawing/DrawingCanvas';
 
+// ... keep existing code (imports and component setup)
+
 export const RecordingComponent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
