@@ -51,7 +51,7 @@ export const GestureControls: React.FC<GestureControlsProps> = ({ onConfigChange
   };
 
   return (
-    <Card className="bg-black/80 backdrop-blur-sm border-white/10 p-4 space-y-4 text-white shadow-xl">
+    <Card className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <Label htmlFor="gesture-detection" className="font-medium">
           Gesture Detection
@@ -60,7 +60,6 @@ export const GestureControls: React.FC<GestureControlsProps> = ({ onConfigChange
           id="gesture-detection"
           checked={config.enabled}
           onCheckedChange={(enabled) => handleConfigChange({ enabled })}
-          className="data-[state=checked]:bg-primary"
         />
       </div>
 
@@ -71,12 +70,12 @@ export const GestureControls: React.FC<GestureControlsProps> = ({ onConfigChange
           onValueChange={(gesture) => handleConfigChange({ gesture })}
           disabled={!config.enabled}
         >
-          <SelectTrigger id="gesture-type" className="bg-black/50 border-white/10">
+          <SelectTrigger id="gesture-type">
             <SelectValue placeholder="Select gesture" />
           </SelectTrigger>
-          <SelectContent className="bg-black/90 border-white/10">
+          <SelectContent>
             {GESTURES.map(({ value, label, icon: Icon }) => (
-              <SelectItem key={value} value={value} className="text-white">
+              <SelectItem key={value} value={value}>
                 <div className="flex items-center gap-2">
                   <Icon className="h-4 w-4" />
                   <span>{label}</span>
@@ -94,12 +93,12 @@ export const GestureControls: React.FC<GestureControlsProps> = ({ onConfigChange
           onValueChange={(emoji) => handleConfigChange({ emoji })}
           disabled={!config.enabled}
         >
-          <SelectTrigger id="emoji-type" className="bg-black/50 border-white/10">
+          <SelectTrigger id="emoji-type">
             <SelectValue placeholder="Select emoji" />
           </SelectTrigger>
-          <SelectContent className="bg-black/90 border-white/10">
+          <SelectContent>
             {EMOJIS.map(({ value, label }) => (
-              <SelectItem key={value} value={value} className="text-white">
+              <SelectItem key={value} value={value}>
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{value}</span>
                   <span>{label}</span>
@@ -119,12 +118,12 @@ export const GestureControls: React.FC<GestureControlsProps> = ({ onConfigChange
           }
           disabled={!config.enabled}
         >
-          <SelectTrigger id="position" className="bg-black/50 border-white/10">
+          <SelectTrigger id="position">
             <SelectValue placeholder="Select position" />
           </SelectTrigger>
-          <SelectContent className="bg-black/90 border-white/10">
+          <SelectContent>
             {POSITIONS.map(({ value, label }) => (
-              <SelectItem key={value} value={value} className="text-white">
+              <SelectItem key={value} value={value}>
                 {label}
               </SelectItem>
             ))}

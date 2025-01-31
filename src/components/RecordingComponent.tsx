@@ -109,14 +109,6 @@ export const RecordingComponent = () => {
     }
   };
 
-  const handleHighlight = () => {
-    // Implement highlight functionality here
-    toast({
-      title: "Moment Highlighted",
-      description: "This moment has been marked as a highlight",
-    });
-  };
-
   return (
     <div className={`text-center ${isMobile ? 'p-4' : 'space-y-6 w-full max-w-md mx-auto'}`}>
       <div className="flex justify-between items-center mb-4">
@@ -217,7 +209,6 @@ export const RecordingComponent = () => {
               const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
               if (stopButton) stopButton.click();
             }}
-            onHighlight={handleHighlight}
           />
           <LiveCaptions isRecording={isRecording} audioStream={audioStream || undefined} />
         </>

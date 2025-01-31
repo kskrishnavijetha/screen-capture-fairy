@@ -15,6 +15,9 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [backgroundRemoval, setBackgroundRemoval] = useState(false);
   const [gestureConfig, setGestureConfig] = useState<GestureConfig | null>(null);
   const isMobile = useIsMobile();
@@ -37,6 +40,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
             streamRef.current = stream;
             videoRef.current.srcObject = stream;
             
+            // Ensure the video plays
             try {
               await videoRef.current.play();
               console.log('Video preview started playing');
@@ -83,6 +87,82 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
     return cleanup;
   }, [isRecording, captureMode, isMobile]);
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !containerRef.current) return;
+
+    const newX = e.clientX - dragStart.x;
+    const newY = e.clientY - dragStart.y;
+
+    const maxX = window.innerWidth - (containerRef.current.offsetWidth || 0);
+    const maxY = window.innerHeight - (containerRef.current.offsetHeight || 0);
+
+    const constrainedX = Math.max(0, Math.min(newX, maxX));
+    const constrainedY = Math.max(0, Math.min(newY, maxY));
+
+    setPosition({
+      x: constrainedX,
+      y: constrainedY
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!containerRef.current) return;
+    
+    setIsDragging(true);
+    setDragStart({
+      x: e.touches[0].clientX - position.x,
+      y: e.touches[0].clientY - position.y
+    });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || !containerRef.current) return;
+
+    const newX = e.touches[0].clientX - dragStart.x;
+    const newY = e.touches[0].clientY - dragStart.y;
+
+    const maxX = window.innerWidth - (containerRef.current.offsetWidth || 0);
+    const maxY = window.innerHeight - (containerRef.current.offsetHeight || 0);
+
+    const constrainedX = Math.max(0, Math.min(newX, maxX));
+    const constrainedY = Math.max(0, Math.min(newY, maxY));
+
+    setPosition({
+      x: constrainedX,
+      y: constrainedY
+    });
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove as any);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove as any);
+      document.addEventListener('touchend', handleMouseUp);
+
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove as any);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('touchmove', handleTouchMove as any);
+        document.removeEventListener('touchend', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragStart]);
+
   const handleGestureConfigChange = (config: GestureConfig) => {
     setGestureConfig(config);
     if (config.enabled) {
@@ -93,63 +173,86 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
     }
   };
 
+  const getEmojiPosition = () => {
+    if (!gestureConfig) return {};
+    
+    switch (gestureConfig.position) {
+      case 'top-left':
+        return { top: '1rem', left: '1rem' };
+      case 'top-right':
+        return { top: '1rem', right: '1rem' };
+      case 'bottom-left':
+        return { bottom: '1rem', left: '1rem' };
+      case 'bottom-right':
+        return { bottom: '1rem', right: '1rem' };
+      default:
+        return { top: '1rem', right: '1rem' };
+    }
+  };
+
   if (captureMode !== 'camera' && captureMode !== 'both') {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 pointer-events-none">
-      <div className="relative w-full h-full max-w-screen-xl mx-auto">
-        {/* Main camera preview */}
-        <div 
-          ref={containerRef}
-          className="absolute left-1/2 -translate-x-1/2 bottom-64 flex flex-col items-center pointer-events-auto z-20"
-        >
-          <div className="relative w-48 h-48 rounded-full overflow-hidden mb-4 shadow-xl border-2 border-white/10 bg-black/90">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover scale-[1.02]"
-            />
-            <BackgroundRemoval
-              videoRef={videoRef}
-              enabled={backgroundRemoval}
-              onToggle={setBackgroundRemoval}
-            />
-            <div className="absolute inset-0 rounded-full ring-2 ring-white/10 pointer-events-none" />
-            
-            {gestureConfig?.enabled && (
-              <div className="absolute text-4xl pointer-events-none animate-bounce top-2 right-2">
-                {gestureConfig.emoji}
-              </div>
-            )}
-          </div>
-
-          {/* Controls below camera */}
-          <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm rounded-full px-6 py-3 flex items-center gap-4 shadow-lg z-30">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-white/80">Background</span>
-              <Switch
-                checked={backgroundRemoval}
-                onCheckedChange={setBackgroundRemoval}
-                className="data-[state=checked]:bg-primary"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Gesture controls positioned on the right */}
-        <div className="fixed top-4 right-4 w-64 pointer-events-auto z-40">
-          <GestureControls onConfigChange={handleGestureConfigChange} />
-        </div>
+    <>
+      <div
+        ref={containerRef}
+        className={`fixed cursor-move overflow-hidden transition-transform duration-200 ${
+          isDragging ? 'opacity-75 scale-105' : ''
+        }`}
+        style={{
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          width: isMobile ? '120px' : '180px',
+          height: isMobile ? '120px' : '180px',
+          zIndex: 1000,
+          touchAction: 'none',
+          borderRadius: '50%',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+          border: '2px solid rgba(255, 255, 255, 0.1)',
+          background: '#1A1F2C'
+        }}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+      >
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="w-full h-full object-cover rounded-full transform scale-[1.02]"
+        />
+        <BackgroundRemoval
+          videoRef={videoRef}
+          enabled={backgroundRemoval}
+          onToggle={setBackgroundRemoval}
+        />
+        <div className="absolute inset-0 rounded-full ring-2 ring-primary/20 pointer-events-none" />
         
-        {/* Zoom controller */}
-        <div className="pointer-events-auto absolute bottom-32 left-4 z-30">
-          <ZoomController videoRef={videoRef} isRecording={isRecording} />
+        {gestureConfig?.enabled && (
+          <div
+            className="absolute text-4xl pointer-events-none animate-bounce"
+            style={getEmojiPosition()}
+          >
+            {gestureConfig.emoji}
+          </div>
+        )}
+        
+        <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-background/80 px-3 py-1.5 rounded-full shadow-lg">
+          <span className="text-xs">Background</span>
+          <Switch
+            checked={backgroundRemoval}
+            onCheckedChange={setBackgroundRemoval}
+            className="data-[state=checked]:bg-primary"
+          />
         </div>
       </div>
-    </div>
+      
+      <div className="fixed bottom-4 right-4 w-64">
+        <GestureControls onConfigChange={handleGestureConfigChange} />
+      </div>
+      
+      <ZoomController videoRef={videoRef} isRecording={isRecording} />
+    </>
   );
 };
