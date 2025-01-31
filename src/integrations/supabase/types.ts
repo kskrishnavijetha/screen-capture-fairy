@@ -119,39 +119,6 @@ export type Database = {
           },
         ]
       }
-      integration_preferences: {
-        Row: {
-          access_token: string | null
-          created_at: string
-          id: string
-          provider: string
-          refresh_token: string | null
-          settings: Json | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          access_token?: string | null
-          created_at?: string
-          id?: string
-          provider: string
-          refresh_token?: string | null
-          settings?: Json | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          access_token?: string | null
-          created_at?: string
-          id?: string
-          provider?: string
-          refresh_token?: string | null
-          settings?: Json | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -418,36 +385,6 @@ export type Database = {
           emoji?: string
           id?: string
           timestamp?: number
-          video_id?: string
-        }
-        Relationships: []
-      }
-      video_transcriptions: {
-        Row: {
-          content: string
-          created_at: string
-          created_by: string | null
-          id: string
-          metadata: Json | null
-          summary: string | null
-          video_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          metadata?: Json | null
-          summary?: string | null
-          video_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          metadata?: Json | null
-          summary?: string | null
           video_id?: string
         }
         Relationships: []

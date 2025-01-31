@@ -1,6 +1,6 @@
 import { Resolution } from '@/types/recording';
 import { CaptureMode } from '@/components/CaptureModeSelector';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 const getDisplayMediaConstraints = (frameRate: number, resolution: Resolution) => ({
   video: {
@@ -33,11 +33,7 @@ const getUserMediaConstraints = (frameRate: number, resolution: Resolution) => (
 export const stopMediaStream = (stream: MediaStream | null) => {
   if (stream) {
     stream.getTracks().forEach(track => {
-      try {
-        track.stop();
-      } catch (error) {
-        console.error('Error stopping track:', error);
-      }
+      track.stop();
     });
   }
 };
@@ -49,16 +45,17 @@ export const getMediaStream = async (
 ): Promise<MediaStream | null> => {
   try {
     let combinedStream: MediaStream;
-    console.log('Getting media stream for mode:', mode);
 
     switch (mode) {
       case 'screen': {
+        // Get screen capture with system audio
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           ...getDisplayMediaConstraints(frameRate, resolution),
-          audio: true
+          audio: true // Enable system audio capture
         });
         
         try {
+          // Get microphone audio separately
           const audioStream = await navigator.mediaDevices.getUserMedia({
             audio: {
               echoCancellation: true,
@@ -69,12 +66,14 @@ export const getMediaStream = async (
             video: false
           });
           
+          // Combine all tracks
           combinedStream = new MediaStream([
             ...displayStream.getVideoTracks(),
             ...displayStream.getAudioTracks(),
             ...audioStream.getAudioTracks()
           ]);
         } catch (audioError) {
+          // If microphone access fails, continue with just screen capture
           console.warn('Microphone access denied, continuing with screen audio only:', audioError);
           combinedStream = displayStream;
         }
@@ -98,6 +97,7 @@ export const getMediaStream = async (
           getUserMediaConstraints(frameRate, resolution)
         );
         
+        // Combine all tracks
         combinedStream = new MediaStream([
           ...displayStream.getVideoTracks(),
           ...displayStream.getAudioTracks(),
@@ -111,10 +111,10 @@ export const getMediaStream = async (
         throw new Error('Invalid capture mode');
     }
 
+    // Verify audio tracks are present
     if (combinedStream.getAudioTracks().length === 0) {
-      console.warn('No audio tracks found in stream');
       toast({
-        variant: "default",
+        variant: "default",  // Changed from "warning" to "default"
         title: "No audio detected",
         description: "Make sure you've granted permission for audio capture"
       });

@@ -32,20 +32,17 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
   const chunksRef = useRef<Blob[]>([]);
 
   const cleanup = () => {
-    try {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+    if (mediaRecorderRef.current) {
+      if (mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
       }
       mediaRecorderRef.current = null;
-
-      if (streamRef.current) {
-        stopMediaStream(streamRef.current);
-        streamRef.current = null;
-      }
-      chunksRef.current = [];
-    } catch (error) {
-      console.error('Cleanup error:', error);
     }
+    if (streamRef.current) {
+      stopMediaStream(streamRef.current);
+      streamRef.current = null;
+    }
+    chunksRef.current = [];
   };
 
   useEffect(() => {
@@ -58,14 +55,9 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
     try {
       cleanup(); // Clean up any existing recordings
       
-      console.log('Starting recording with mode:', captureMode);
       const stream = await getMediaStream(captureMode, frameRate, resolution);
+      if (!stream) return;
       
-      if (!stream) {
-        throw new Error('Failed to get media stream');
-      }
-      
-      console.log('Got media stream:', stream.getTracks().map(t => t.kind));
       streamRef.current = stream;
       chunksRef.current = [];
 
@@ -76,34 +68,20 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
       };
 
       mediaRecorderRef.current = new MediaRecorder(stream, options);
-      console.log('MediaRecorder created:', mediaRecorderRef.current.state);
 
       mediaRecorderRef.current.ondataavailable = (event) => {
-        console.log('Data available:', event.data?.size);
         if (event.data && event.data.size > 0) {
           chunksRef.current.push(event.data);
         }
       };
 
       mediaRecorderRef.current.onstop = () => {
-        console.log('Recording stopped, chunks:', chunksRef.current.length);
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
         onRecordingStop(blob);
         cleanup();
       };
 
-      mediaRecorderRef.current.onerror = (event) => {
-        console.error('MediaRecorder error:', event);
-        cleanup();
-        toast({
-          variant: "destructive",
-          title: "Recording error",
-          description: "Failed to record. Please try again."
-        });
-      };
-
       mediaRecorderRef.current.start(1000);
-      console.log('Recording started');
       setIsRecording(true);
       setIsPaused(false);
       onRecordingStart();
@@ -117,16 +95,10 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
       cleanup();
       setIsRecording(false);
       setIsPaused(false);
-      toast({
-        variant: "destructive",
-        title: "Recording failed",
-        description: error instanceof Error ? error.message : "Failed to start recording"
-      });
     }
   };
 
   const stopRecording = () => {
-    console.log('Stopping recording...');
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
@@ -137,29 +109,12 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
   const togglePause = () => {
     if (!mediaRecorderRef.current) return;
 
-    try {
-      if (mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.pause();
-        setIsPaused(true);
-        toast({
-          title: "Recording paused",
-          description: "Your recording is paused"
-        });
-      } else if (mediaRecorderRef.current.state === 'paused') {
-        mediaRecorderRef.current.resume();
-        setIsPaused(false);
-        toast({
-          title: "Recording resumed",
-          description: "Your recording has resumed"
-        });
-      }
-    } catch (error) {
-      console.error('Error toggling pause:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to pause/resume recording"
-      });
+    if (mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.pause();
+      setIsPaused(true);
+    } else if (mediaRecorderRef.current.state === 'paused') {
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
     }
   };
 
