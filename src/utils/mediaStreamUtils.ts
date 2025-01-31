@@ -53,14 +53,12 @@ export const getMediaStream = async (
 
     switch (mode) {
       case 'screen': {
-        // Get screen capture with system audio
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           ...getDisplayMediaConstraints(frameRate, resolution),
-          audio: true // Enable system audio capture
+          audio: true
         });
         
         try {
-          // Get microphone audio separately
           const audioStream = await navigator.mediaDevices.getUserMedia({
             audio: {
               echoCancellation: true,
@@ -71,13 +69,11 @@ export const getMediaStream = async (
             video: false
           });
           
-          // Combine all tracks
           combinedStream = new MediaStream([
             ...displayStream.getVideoTracks(),
             ...displayStream.getAudioTracks(),
             ...audioStream.getAudioTracks()
           ]);
-          console.log('Combined stream tracks:', combinedStream.getTracks().map(t => t.kind));
         } catch (audioError) {
           console.warn('Microphone access denied, continuing with screen audio only:', audioError);
           combinedStream = displayStream;
@@ -102,7 +98,6 @@ export const getMediaStream = async (
           getUserMediaConstraints(frameRate, resolution)
         );
         
-        // Combine all tracks
         combinedStream = new MediaStream([
           ...displayStream.getVideoTracks(),
           ...displayStream.getAudioTracks(),
@@ -116,7 +111,6 @@ export const getMediaStream = async (
         throw new Error('Invalid capture mode');
     }
 
-    // Verify audio tracks are present
     if (combinedStream.getAudioTracks().length === 0) {
       console.warn('No audio tracks found in stream');
       toast({
