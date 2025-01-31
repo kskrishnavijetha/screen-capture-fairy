@@ -10,7 +10,6 @@ interface RecordingManagerProps {
   resolution: Resolution;
   onRecordingStart: () => void;
   onRecordingStop: (blob: Blob) => void;
-  onAudioStreamReady?: (stream: MediaStream) => void;
   isRecording: boolean;
   setIsRecording: (isRecording: boolean) => void;
   isPaused: boolean;
@@ -23,7 +22,6 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
   resolution,
   onRecordingStart,
   onRecordingStop,
-  onAudioStreamReady,
   isRecording,
   setIsRecording,
   isPaused,
@@ -32,7 +30,6 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const audioStreamRef = useRef<MediaStream | null>(null);
 
   const cleanup = () => {
     try {
@@ -45,12 +42,6 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
         stopMediaStream(streamRef.current);
         streamRef.current = null;
       }
-
-      if (audioStreamRef.current) {
-        stopMediaStream(audioStreamRef.current);
-        audioStreamRef.current = null;
-      }
-
       chunksRef.current = [];
     } catch (error) {
       console.error('Cleanup error:', error);
@@ -65,32 +56,13 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
 
   const startRecording = async () => {
     try {
-      cleanup();
+      cleanup(); // Clean up any existing recordings
       
       console.log('Starting recording with mode:', captureMode);
       const stream = await getMediaStream(captureMode, frameRate, resolution);
       
       if (!stream) {
         throw new Error('Failed to get media stream');
-      }
-
-      // Get audio stream for captions
-      try {
-        const audioStream = await navigator.mediaDevices.getUserMedia({ 
-          audio: true,
-          video: false
-        });
-        audioStreamRef.current = audioStream;
-        if (onAudioStreamReady) {
-          onAudioStreamReady(audioStream);
-        }
-      } catch (audioError) {
-        console.error('Error accessing microphone:', audioError);
-        toast({
-          variant: "destructive",
-          title: "Microphone Access Error",
-          description: "Failed to access microphone for captions. Please check permissions."
-        });
       }
       
       console.log('Got media stream:', stream.getTracks().map(t => t.kind));

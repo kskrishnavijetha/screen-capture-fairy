@@ -3,7 +3,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ZoomController } from './zoom/ZoomController';
 import { BackgroundRemoval } from './video/BackgroundRemoval';
 import { Switch } from "@/components/ui/switch";
-import { toast } from "@/components/ui/use-toast";
 
 interface CameraPreviewProps {
   isRecording: boolean;
@@ -25,7 +24,6 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
       if ((captureMode === 'camera' || captureMode === 'both') && videoRef.current) {
         try {
           if (!streamRef.current) {
-            console.log('Requesting camera access...');
             const stream = await navigator.mediaDevices.getUserMedia({ 
               video: {
                 width: { ideal: isMobile ? 640 : 1280 },
@@ -34,41 +32,18 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
               },
               audio: false
             });
-            console.log('Camera access granted:', stream.getVideoTracks()[0].label);
             streamRef.current = stream;
             videoRef.current.srcObject = stream;
-            
-            // Ensure the video plays
-            try {
-              await videoRef.current.play();
-              console.log('Video preview started playing');
-            } catch (playError) {
-              console.error('Error playing video:', playError);
-              toast({
-                variant: "destructive",
-                title: "Preview Error",
-                description: "Failed to start video preview. Please check camera permissions."
-              });
-            }
           }
         } catch (error) {
           console.error('Error accessing camera:', error);
-          toast({
-            variant: "destructive",
-            title: "Camera Access Error",
-            description: "Failed to access camera. Please check permissions."
-          });
         }
       }
     };
 
     const cleanup = () => {
       if (streamRef.current) {
-        console.log('Cleaning up camera stream');
-        streamRef.current.getTracks().forEach(track => {
-          track.stop();
-          console.log('Stopped track:', track.label);
-        });
+        streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
       }
       if (videoRef.current) {
@@ -200,6 +175,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
         />
         <div className="absolute inset-0 rounded-full ring-2 ring-primary/20 pointer-events-none" />
         
+        {/* Background removal toggle */}
         <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-background/80 px-3 py-1.5 rounded-full shadow-lg">
           <span className="text-xs">Background</span>
           <Switch
