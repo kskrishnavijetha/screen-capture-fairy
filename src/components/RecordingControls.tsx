@@ -43,26 +43,26 @@ export const RecordingControls = ({
 
   const takeScreenshot = async () => {
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ 
-        video: { displaySurface: 'monitor' } 
-      });
-      
-      const track = stream.getVideoTracks()[0];
-      const imageCapture = new ImageCapture(track);
-      const bitmap = await imageCapture.grabFrame();
-      
+      const videoElement = document.querySelector('video');
+      if (!videoElement) {
+        throw new Error('No video element found');
+      }
+
       const canvas = document.createElement('canvas');
-      canvas.width = bitmap.width;
-      canvas.height = bitmap.height;
+      canvas.width = videoElement.videoWidth;
+      canvas.height = videoElement.videoHeight;
       const context = canvas.getContext('2d');
-      context?.drawImage(bitmap, 0, 0);
+      
+      if (!context) {
+        throw new Error('Could not get canvas context');
+      }
+
+      context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
       
       const link = document.createElement('a');
       link.download = `screenshot-${new Date().toISOString()}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-      
-      stream.getTracks().forEach(track => track.stop());
       
       toast({
         title: "Screenshot captured",
@@ -78,17 +78,32 @@ export const RecordingControls = ({
     }
   };
 
-  const handleHighlight = () => {
-    // This is a placeholder for the highlight functionality
-    // You can implement the actual highlight logic here
+  const handlePauseResume = () => {
+    if (isPaused) {
+      onResume();
+      toast({
+        title: "Recording resumed",
+        description: "Your recording has resumed",
+      });
+    } else {
+      onPause();
+      toast({
+        title: "Recording paused",
+        description: "Your recording is paused",
+      });
+    }
+  };
+
+  const handleStop = () => {
+    onStop();
     toast({
-      title: "Moment Highlighted",
-      description: "This moment has been marked as important",
+      title: "Recording stopped",
+      description: "Your recording has been stopped",
     });
   };
 
   return (
-    <div className="space-y-4">
+    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 space-y-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 rounded-lg border shadow-lg">
       <div className="flex justify-center mb-4">
         <Timer 
           duration={elapsedTime} 
@@ -96,46 +111,34 @@ export const RecordingControls = ({
         />
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center gap-2">
-          {!isPaused ? (
-            <Button 
-              onClick={onPause}
-              variant="outline"
-              className="flex-1"
-            >
-              <Pause className="mr-2 h-5 w-5" />
-              Pause Recording
-            </Button>
-          ) : (
-            <Button 
-              onClick={onResume}
-              variant="outline"
-              className="flex-1"
-            >
+        <Button 
+          onClick={handlePauseResume}
+          variant="outline"
+          className="flex-1"
+        >
+          {isPaused ? (
+            <>
               <Play className="mr-2 h-5 w-5" />
-              Resume Recording
-            </Button>
+              Resume
+            </>
+          ) : (
+            <>
+              <Pause className="mr-2 h-5 w-5" />
+              Pause
+            </>
           )}
-          <VoiceCommandListener
-            onPause={onPause}
-            onResume={onResume}
-            onStop={onStop}
-            onHighlight={handleHighlight}
-            isRecording={true}
-            isPaused={isPaused}
-          />
-        </div>
+        </Button>
         <Button 
           onClick={takeScreenshot}
           variant="outline"
-          className="w-full"
+          className="flex-1"
         >
           <Camera className="mr-2 h-5 w-5" />
-          Take Screenshot
+          Screenshot
         </Button>
       </div>
       <Button 
-        onClick={onStop}
+        onClick={handleStop}
         variant="destructive"
         className="w-full"
       >

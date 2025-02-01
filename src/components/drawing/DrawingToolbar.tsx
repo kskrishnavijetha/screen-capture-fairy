@@ -38,8 +38,8 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
   ];
 
   return (
-    <div className="absolute top-4 left-4 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-lg border shadow-lg p-2 space-y-2">
-      <div className="flex gap-1">
+    <div className="fixed left-4 top-1/4 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-lg border shadow-lg p-2 space-y-2">
+      <div className="flex flex-col gap-1">
         {tools.map(({ id, icon: Icon, label }) => (
           <Button
             key={id}
@@ -54,7 +54,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         ))}
       </div>
       
-      <div className="flex gap-1">
+      <div className="flex flex-col gap-1">
         {colors.map((color) => (
           <button
             key={color}
@@ -67,7 +67,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         ))}
       </div>
 
-      <div className="flex gap-1">
+      <div className="flex flex-col gap-1">
         <Button
           variant="outline"
           size="icon"
