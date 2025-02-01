@@ -12,8 +12,8 @@ export const Timer = ({
   onMaxDurationReached 
 }: TimerProps) => {
   useEffect(() => {
-    if (duration >= maxDuration) {
-      onMaxDurationReached?.();
+    if (duration >= maxDuration && onMaxDurationReached) {
+      onMaxDurationReached();
     }
   }, [duration, maxDuration, onMaxDurationReached]);
 

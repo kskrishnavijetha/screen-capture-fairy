@@ -112,9 +112,17 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
     if (mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
+      toast({
+        title: "Recording paused",
+        description: "Your recording is paused"
+      });
     } else if (mediaRecorderRef.current.state === 'paused') {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
+      toast({
+        title: "Recording resumed",
+        description: "Your recording has resumed"
+      });
     }
   };
 

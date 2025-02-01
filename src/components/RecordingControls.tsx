@@ -22,37 +22,12 @@ export const RecordingControls = ({
   onMaxDurationReached
 }: RecordingControlsProps) => {
   const { toast } = useToast();
-  const [localDuration, setLocalDuration] = useState(duration);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (!isPaused) {
-      interval = setInterval(() => {
-        setLocalDuration(prev => prev + 1);
-      }, 1000);
-    }
-    
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [isPaused]);
   
   const handlePauseResume = () => {
     if (isPaused) {
       onResume();
-      toast({
-        title: "Recording resumed",
-        description: "Your recording has resumed",
-      });
     } else {
       onPause();
-      toast({
-        title: "Recording paused",
-        description: "Your recording is paused",
-      });
     }
   };
 
@@ -93,19 +68,11 @@ export const RecordingControls = ({
     }
   };
 
-  const handleStop = () => {
-    onStop();
-    toast({
-      title: "Recording stopped",
-      description: "Your recording has been stopped",
-    });
-  };
-
   return (
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 space-y-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 rounded-lg border shadow-lg">
       <div className="flex justify-center mb-4">
         <Timer 
-          duration={localDuration} 
+          duration={duration} 
           onMaxDurationReached={onMaxDurationReached}
         />
       </div>
@@ -132,7 +99,7 @@ export const RecordingControls = ({
         </Button>
       </div>
       <Button 
-        onClick={handleStop}
+        onClick={onStop}
         variant="destructive"
         className="w-full"
       >
