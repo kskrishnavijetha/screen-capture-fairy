@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
+import { Canvas as FabricCanvas, PencilBrush, Rect, Circle } from 'fabric';
 import { DrawingToolbar } from './DrawingToolbar';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
@@ -64,10 +64,36 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ videoId, isRecordi
     try {
       fabricCanvas.isDrawingMode = activeTool === 'draw';
       
-      if (activeTool === 'draw' && fabricCanvas.freeDrawingBrush) {
+      if (fabricCanvas.freeDrawingBrush) {
         fabricCanvas.freeDrawingBrush.color = activeColor;
         fabricCanvas.freeDrawingBrush.width = 2;
       }
+
+      // Handle shape creation
+      if (activeTool === 'rectangle') {
+        const rect = new Rect({
+          left: fabricCanvas.width! / 2 - 50,
+          top: fabricCanvas.height! / 2 - 50,
+          fill: activeColor,
+          width: 100,
+          height: 100,
+          selectable: true,
+        });
+        fabricCanvas.add(rect);
+        fabricCanvas.setActiveObject(rect);
+      } else if (activeTool === 'circle') {
+        const circle = new Circle({
+          left: fabricCanvas.width! / 2 - 50,
+          top: fabricCanvas.height! / 2 - 50,
+          fill: activeColor,
+          radius: 50,
+          selectable: true,
+        });
+        fabricCanvas.add(circle);
+        fabricCanvas.setActiveObject(circle);
+      }
+
+      fabricCanvas.renderAll();
     } catch (error) {
       console.error('Error updating canvas settings:', error);
     }

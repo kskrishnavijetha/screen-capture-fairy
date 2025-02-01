@@ -22,11 +22,11 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
   isRecording,
 }) => {
   const tools = [
-    { id: 'select', icon: Pointer, label: 'Select' },
-    { id: 'draw', icon: Paintbrush, label: 'Draw' },
-    { id: 'rectangle', icon: Square, label: 'Rectangle' },
-    { id: 'circle', icon: Circle, label: 'Circle' },
-  ] as const;
+    { id: 'select' as const, icon: Pointer, label: 'Select' },
+    { id: 'draw' as const, icon: Paintbrush, label: 'Draw' },
+    { id: 'rectangle' as const, icon: Square, label: 'Rectangle' },
+    { id: 'circle' as const, icon: Circle, label: 'Circle' },
+  ];
 
   const colors = [
     '#FF0000', // Red
