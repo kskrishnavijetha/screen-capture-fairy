@@ -1,6 +1,13 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Paintbrush, Square, Circle, Pointer, Trash2, Save } from 'lucide-react';
+import { Paintbrush, Square, Circle, Pointer, Trash2, Save, Menu } from 'lucide-react';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface DrawingToolbarProps {
   activeTool: 'select' | 'draw' | 'rectangle' | 'circle';
@@ -38,61 +45,79 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
   ];
 
   return (
-    <div className="fixed left-4 top-1/4 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-lg border shadow-lg p-2 space-y-2">
-      <div className="text-sm font-medium text-center mb-2 text-foreground/80">
-        Drawing Toolbar
-      </div>
-      
-      <div className="flex flex-col gap-1">
-        {tools.map(({ id, icon: Icon, label }) => (
-          <Button
-            key={id}
-            variant={activeTool === id ? "default" : "outline"}
-            size="icon"
-            onClick={() => onToolChange(id)}
-            className="w-8 h-8"
-            title={label}
-          >
-            <Icon className="h-4 w-4" />
-          </Button>
-        ))}
-      </div>
-      
-      <div className="flex flex-col gap-1">
-        {colors.map((color) => (
-          <button
-            key={color}
-            className={`w-8 h-8 rounded-full border-2 ${
-              color === activeColor ? 'border-primary' : 'border-transparent'
-            }`}
-            style={{ backgroundColor: color }}
-            onClick={() => onColorChange(color)}
-          />
-        ))}
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <Button
-          variant="outline"
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button 
+          variant="outline" 
           size="icon"
-          onClick={onClear}
-          className="w-8 h-8"
-          title="Clear canvas"
+          className="fixed left-4 top-1/4 z-20"
         >
-          <Trash2 className="h-4 w-4" />
+          <Menu className="h-5 w-5" />
         </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-[240px]">
+        <SheetHeader>
+          <SheetTitle>Drawing Toolbar</SheetTitle>
+        </SheetHeader>
         
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onSave}
-          className="w-8 h-8"
-          title="Save annotations"
-          disabled={!isRecording}
-        >
-          <Save className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
+        <div className="mt-4 space-y-4">
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Tools</div>
+            <div className="grid grid-cols-2 gap-2">
+              {tools.map(({ id, icon: Icon, label }) => (
+                <Button
+                  key={id}
+                  variant={activeTool === id ? "default" : "outline"}
+                  onClick={() => onToolChange(id)}
+                  className="w-full justify-start"
+                >
+                  <Icon className="mr-2 h-4 w-4" />
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Colors</div>
+            <div className="grid grid-cols-3 gap-2">
+              {colors.map((color) => (
+                <button
+                  key={color}
+                  className={`h-8 rounded-md border-2 transition-all ${
+                    color === activeColor ? 'border-primary scale-110' : 'border-transparent hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: color }}
+                  onClick={() => onColorChange(color)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Actions</div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={onClear}
+                className="flex-1"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Clear
+              </Button>
+              <Button
+                variant="outline"
+                onClick={onSave}
+                disabled={!isRecording}
+                className="flex-1"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };
