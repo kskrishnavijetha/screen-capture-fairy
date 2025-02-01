@@ -137,6 +137,10 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ videoId, isRecordi
 
   return (
     <div className="absolute inset-0 pointer-events-auto">
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 z-10 pointer-events-auto"
+      />
       <DrawingToolbar
         activeTool={activeTool}
         activeColor={activeColor}
@@ -145,10 +149,6 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ videoId, isRecordi
         onClear={clearCanvas}
         onSave={saveCanvasState}
         isRecording={isRecording}
-      />
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 z-10 pointer-events-auto"
       />
     </div>
   );
