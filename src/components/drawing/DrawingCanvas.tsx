@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
 import { DrawingToolbar } from './DrawingToolbar';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
@@ -26,11 +26,11 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ videoId, isRecordi
         isDrawingMode: true,
       });
 
-      // Initialize the canvas with default settings
-      if (canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush.color = activeColor;
-        canvas.freeDrawingBrush.width = 2;
-      }
+      // Explicitly create and set the brush
+      const brush = new PencilBrush(canvas);
+      brush.color = activeColor;
+      brush.width = 2;
+      canvas.freeDrawingBrush = brush;
 
       setFabricCanvas(canvas);
 
@@ -56,7 +56,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ videoId, isRecordi
         variant: "destructive",
       });
     }
-  }, [activeColor]);
+  }, []);
 
   useEffect(() => {
     if (!fabricCanvas) return;
