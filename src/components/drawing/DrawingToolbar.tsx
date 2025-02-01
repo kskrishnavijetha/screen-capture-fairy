@@ -39,6 +39,10 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
 
   return (
     <div className="fixed left-4 top-1/4 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-lg border shadow-lg p-2 space-y-2">
+      <div className="text-sm font-medium text-center mb-2 text-foreground/80">
+        Drawing Toolbar
+      </div>
+      
       <div className="flex flex-col gap-1">
         {tools.map(({ id, icon: Icon, label }) => (
           <Button
