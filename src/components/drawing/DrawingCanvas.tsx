@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { fabric } from 'fabric';
-import { PencilBrush } from 'fabric/fabric-impl';
+import { Canvas, PencilBrush } from 'fabric';
 import { DrawingToolbar } from './DrawingToolbar';
 import { useToast } from "@/components/ui/use-toast";
 
@@ -14,7 +13,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
   isRecording
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas | null>(null);
+  const [fabricCanvas, setFabricCanvas] = useState<Canvas | null>(null);
   const [activeTool, setActiveTool] = useState<'draw' | 'select'>('draw');
   const [activeColor, setActiveColor] = useState('#ff0000');
   const [brushSize, setBrushSize] = useState(5);
@@ -23,7 +22,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
   useEffect(() => {
     if (!canvasRef.current || fabricCanvas) return;
 
-    const canvas = new fabric.Canvas(canvasRef.current, {
+    const canvas = new Canvas(canvasRef.current, {
       width: window.innerWidth,
       height: window.innerHeight,
       backgroundColor: 'transparent',
@@ -36,7 +35,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     canvas.hoverCursor = 'pointer';
 
     // Create and set the brush
-    const brush = new fabric.PencilBrush(canvas);
+    const brush = new PencilBrush(canvas);
     brush.width = brushSize;
     brush.color = activeColor;
     canvas.freeDrawingBrush = brush;
