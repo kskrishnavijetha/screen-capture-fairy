@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { StopCircle, Pause, Play, Camera } from 'lucide-react';
 import { Timer } from './Timer';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { VoiceCommandListener } from './VoiceCommandListener';
 
 interface RecordingControlsProps {
@@ -78,6 +78,30 @@ export const RecordingControls = ({
     }
   };
 
+  const handlePauseResume = () => {
+    if (isPaused) {
+      onResume();
+      toast({
+        title: "Recording resumed",
+        description: "Your recording has resumed"
+      });
+    } else {
+      onPause();
+      toast({
+        title: "Recording paused",
+        description: "Your recording is paused"
+      });
+    }
+  };
+
+  const handleStop = () => {
+    onStop();
+    toast({
+      title: "Recording stopped",
+      description: "Your recording has been stopped"
+    });
+  };
+
   return (
     <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t">
       <div className="max-w-md mx-auto space-y-4">
@@ -90,7 +114,7 @@ export const RecordingControls = ({
         
         <div className="grid grid-cols-2 gap-4">
           <Button 
-            onClick={isPaused ? onResume : onPause}
+            onClick={handlePauseResume}
             variant="outline"
             className="w-full flex items-center justify-center gap-2"
           >
@@ -118,7 +142,7 @@ export const RecordingControls = ({
         </div>
 
         <Button 
-          onClick={onStop}
+          onClick={handleStop}
           variant="destructive"
           className="w-full flex items-center justify-center gap-2"
         >
