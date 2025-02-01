@@ -1,154 +1,128 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas, PencilBrush } from 'fabric';
+import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
 import { DrawingToolbar } from './DrawingToolbar';
-import { useToast } from "@/components/ui/use-toast";
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
 interface DrawingCanvasProps {
   videoId: string;
   isRecording: boolean;
 }
 
-export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
-  videoId,
-  isRecording
-}) => {
+export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ videoId, isRecording }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [fabricCanvas, setFabricCanvas] = useState<Canvas | null>(null);
-  const [activeTool, setActiveTool] = useState<'draw' | 'select'>('draw');
-  const [activeColor, setActiveColor] = useState('#ff0000');
-  const [brushSize, setBrushSize] = useState(5);
-  const { toast } = useToast();
+  const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
+  const [activeColor, setActiveColor] = useState('#FF0000');
+  const [activeTool, setActiveTool] = useState<'select' | 'draw' | 'rectangle' | 'circle'>('draw');
 
   useEffect(() => {
-    if (!canvasRef.current || fabricCanvas) return;
+    if (!canvasRef.current) return;
 
-    const canvas = new Canvas(canvasRef.current, {
-      width: window.innerWidth,
-      height: window.innerHeight,
-      backgroundColor: 'transparent',
-      isDrawingMode: true,
-    });
+    try {
+      const canvas = new FabricCanvas(canvasRef.current, {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        backgroundColor: 'transparent',
+        isDrawingMode: true,
+      });
 
-    // Set initial cursor styles
-    canvas.freeDrawingCursor = 'crosshair';
-    canvas.defaultCursor = 'default';
-    canvas.hoverCursor = 'pointer';
+      // Explicitly create and set the brush
+      const brush = new PencilBrush(canvas);
+      brush.color = activeColor;
+      brush.width = 2;
+      canvas.freeDrawingBrush = brush;
 
-    // Create and set the brush
-    const brush = new PencilBrush(canvas);
-    brush.width = brushSize;
-    brush.color = activeColor;
-    canvas.freeDrawingBrush = brush;
+      setFabricCanvas(canvas);
 
-    setFabricCanvas(canvas);
+      // Handle window resize
+      const handleResize = () => {
+        canvas.setDimensions({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+      };
 
-    // Cleanup
-    return () => {
-      canvas.dispose();
-    };
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        canvas.dispose();
+      };
+    } catch (error) {
+      console.error('Error initializing canvas:', error);
+      toast({
+        title: "Error",
+        description: "Failed to initialize drawing canvas",
+        variant: "destructive",
+      });
+    }
   }, []);
 
-  // Handle window resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (fabricCanvas) {
-        fabricCanvas.setWidth(window.innerWidth);
-        fabricCanvas.setHeight(window.innerHeight);
-        fabricCanvas.renderAll();
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [fabricCanvas]);
-
-  // Update canvas when tool changes
   useEffect(() => {
     if (!fabricCanvas) return;
 
     try {
       fabricCanvas.isDrawingMode = activeTool === 'draw';
       
-      // Update cursor style based on active tool
-      if (activeTool === 'draw') {
-        fabricCanvas.freeDrawingCursor = 'crosshair';
-        if (canvasRef.current) {
-          canvasRef.current.style.cursor = 'crosshair';
-        }
-      } else {
-        fabricCanvas.defaultCursor = 'default';
-        if (canvasRef.current) {
-          canvasRef.current.style.cursor = 'default';
-        }
-      }
-      
-      if (fabricCanvas.freeDrawingBrush) {
+      if (activeTool === 'draw' && fabricCanvas.freeDrawingBrush) {
         fabricCanvas.freeDrawingBrush.color = activeColor;
-        fabricCanvas.freeDrawingBrush.width = brushSize;
+        fabricCanvas.freeDrawingBrush.width = 2;
       }
-
-      fabricCanvas.renderAll();
     } catch (error) {
-      console.error('Error updating canvas:', error);
+      console.error('Error updating canvas settings:', error);
     }
-  }, [activeTool, activeColor, brushSize]);
+  }, [activeTool, activeColor, fabricCanvas]);
 
-  const handleToolChange = (tool: 'draw' | 'select') => {
-    setActiveTool(tool);
-    if (fabricCanvas) {
-      fabricCanvas.isDrawingMode = tool === 'draw';
-      
-      // Update cursor immediately
-      if (canvasRef.current) {
-        canvasRef.current.style.cursor = tool === 'draw' ? 'crosshair' : 'default';
-      }
-      
-      fabricCanvas.renderAll();
-    }
-  };
-
-  const handleColorChange = (color: string) => {
-    setActiveColor(color);
-    if (fabricCanvas && fabricCanvas.freeDrawingBrush) {
-      fabricCanvas.freeDrawingBrush.color = color;
-    }
-  };
-
-  const handleBrushSizeChange = (size: number) => {
-    setBrushSize(size);
-    if (fabricCanvas && fabricCanvas.freeDrawingBrush) {
-      fabricCanvas.freeDrawingBrush.width = size;
-    }
-  };
-
-  const handleClearCanvas = () => {
+  const saveCanvasState = async () => {
     if (!fabricCanvas) return;
-    
+
+    try {
+      const { data, error } = await supabase
+        .from('annotations_canvas')
+        .upsert({
+          video_id: videoId,
+          canvas_data: fabricCanvas.toJSON(),
+          created_by: (await supabase.auth.getUser()).data.user?.id,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Annotations saved",
+        description: "Your drawings have been saved successfully",
+      });
+    } catch (error) {
+      console.error('Error saving canvas state:', error);
+      toast({
+        title: "Error saving annotations",
+        description: "There was a problem saving your drawings",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const clearCanvas = () => {
+    if (!fabricCanvas) return;
     fabricCanvas.clear();
     fabricCanvas.backgroundColor = 'transparent';
     fabricCanvas.renderAll();
-    
-    toast({
-      title: "Canvas cleared",
-      description: "All drawings have been cleared",
-    });
   };
 
   return (
-    <div className="fixed inset-0 pointer-events-none">
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 z-10 pointer-events-auto"
-        style={{ cursor: activeTool === 'draw' ? 'crosshair' : 'default' }}
-      />
+    <div className="absolute inset-0 pointer-events-auto">
       <DrawingToolbar
         activeTool={activeTool}
         activeColor={activeColor}
-        brushSize={brushSize}
-        onToolChange={handleToolChange}
-        onColorChange={handleColorChange}
-        onBrushSizeChange={handleBrushSizeChange}
-        onClearCanvas={handleClearCanvas}
+        onToolChange={setActiveTool}
+        onColorChange={setActiveColor}
+        onClear={clearCanvas}
+        onSave={saveCanvasState}
+        isRecording={isRecording}
+      />
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 z-10 pointer-events-auto"
       />
     </div>
   );
