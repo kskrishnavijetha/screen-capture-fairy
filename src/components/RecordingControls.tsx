@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { StopCircle, Pause, Play, Camera } from 'lucide-react';
 import { Timer } from './Timer';
-import { useToast } from "@/components/ui/use-toast";
-import { VoiceCommandListener } from './VoiceCommandListener';
+import { useToast } from "@/hooks/use-toast";
 
 interface RecordingControlsProps {
   isPaused: boolean;
@@ -110,31 +109,26 @@ export const RecordingControls = ({
           onMaxDurationReached={onMaxDurationReached}
         />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex gap-2 justify-center">
         <Button 
           onClick={handlePauseResume}
           variant="outline"
-          className="flex-1"
+          size="icon"
+          className="w-10 h-10"
         >
           {isPaused ? (
-            <>
-              <Play className="mr-2 h-5 w-5" />
-              Resume
-            </>
+            <Play className="h-5 w-5" />
           ) : (
-            <>
-              <Pause className="mr-2 h-5 w-5" />
-              Pause
-            </>
+            <Pause className="h-5 w-5" />
           )}
         </Button>
         <Button 
           onClick={takeScreenshot}
           variant="outline"
-          className="flex-1"
+          size="icon"
+          className="w-10 h-10"
         >
-          <Camera className="mr-2 h-5 w-5" />
-          Screenshot
+          <Camera className="h-5 w-5" />
         </Button>
       </div>
       <Button 

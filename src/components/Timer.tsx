@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { toast } from "@/components/ui/use-toast";
+import React, { useEffect } from 'react';
 
 interface TimerProps {
   duration: number;
@@ -12,33 +11,27 @@ export const Timer = ({
   maxDuration = 240 * 60, // 4 hours in seconds
   onMaxDurationReached 
 }: TimerProps) => {
-  const [showWarning, setShowWarning] = useState(false);
-
   useEffect(() => {
-    if (duration >= maxDuration && !showWarning) {
-      setShowWarning(true);
-      toast({
-        title: "Maximum recording time reached",
-        description: "Recording will stop at 4 hours",
-        variant: "destructive"
-      });
+    if (duration >= maxDuration) {
       onMaxDurationReached?.();
     }
-  }, [duration, maxDuration, onMaxDurationReached, showWarning]);
+  }, [duration, maxDuration, onMaxDurationReached]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    
     if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+      return `${pad(hours)}:${pad(minutes)}:${pad(remainingSeconds)}`;
     }
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return `${pad(minutes)}:${pad(remainingSeconds)}`;
   };
 
   return (
-    <div className={`text-2xl font-mono font-bold ${duration >= maxDuration ? 'text-red-500' : 'text-white'}`}>
+    <div className={`text-2xl font-mono font-bold ${duration >= maxDuration ? 'text-destructive' : 'text-primary'}`}>
       {formatTime(Math.min(duration, maxDuration))}
     </div>
   );
