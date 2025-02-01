@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Circle, Rect } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingToolbar } from './DrawingToolbar';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
@@ -18,78 +18,60 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ videoId, isRecordi
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const canvas = new FabricCanvas(canvasRef.current, {
-      width: window.innerWidth,
-      height: window.innerHeight,
-      backgroundColor: 'transparent',
-      isDrawingMode: true,
-    });
-
-    canvas.freeDrawingBrush.color = activeColor;
-    canvas.freeDrawingBrush.width = 2;
-
-    setFabricCanvas(canvas);
-
-    // Subscribe to real-time updates
-    const channel = supabase
-      .channel(`canvas-${videoId}`)
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState();
-        console.log('Canvas sync state:', state);
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await channel.track({ user: videoId, timestamp: new Date().toISOString() });
-        }
+    try {
+      const canvas = new FabricCanvas(canvasRef.current, {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        backgroundColor: 'transparent',
+        isDrawingMode: true,
       });
 
-    return () => {
-      canvas.dispose();
-      supabase.removeChannel(channel);
-    };
-  }, [videoId]);
+      // Initialize the canvas with default settings
+      if (canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.color = activeColor;
+        canvas.freeDrawingBrush.width = 2;
+      }
+
+      setFabricCanvas(canvas);
+
+      // Handle window resize
+      const handleResize = () => {
+        canvas.setDimensions({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+      };
+
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        canvas.dispose();
+      };
+    } catch (error) {
+      console.error('Error initializing canvas:', error);
+      toast({
+        title: "Error",
+        description: "Failed to initialize drawing canvas",
+        variant: "destructive",
+      });
+    }
+  }, [activeColor]);
 
   useEffect(() => {
     if (!fabricCanvas) return;
 
-    fabricCanvas.isDrawingMode = activeTool === 'draw';
-    
-    if (activeTool === 'draw' && fabricCanvas.freeDrawingBrush) {
-      fabricCanvas.freeDrawingBrush.color = activeColor;
-      fabricCanvas.freeDrawingBrush.width = 2;
+    try {
+      fabricCanvas.isDrawingMode = activeTool === 'draw';
+      
+      if (activeTool === 'draw' && fabricCanvas.freeDrawingBrush) {
+        fabricCanvas.freeDrawingBrush.color = activeColor;
+        fabricCanvas.freeDrawingBrush.width = 2;
+      }
+    } catch (error) {
+      console.error('Error updating canvas settings:', error);
     }
   }, [activeTool, activeColor, fabricCanvas]);
-
-  const handleToolChange = (tool: typeof activeTool) => {
-    setActiveTool(tool);
-
-    if (!fabricCanvas) return;
-
-    if (tool === 'rectangle') {
-      const rect = new Rect({
-        left: 100,
-        top: 100,
-        fill: 'transparent',
-        stroke: activeColor,
-        strokeWidth: 2,
-        width: 100,
-        height: 100,
-      });
-      fabricCanvas.add(rect);
-      fabricCanvas.setActiveObject(rect);
-    } else if (tool === 'circle') {
-      const circle = new Circle({
-        left: 100,
-        top: 100,
-        fill: 'transparent',
-        stroke: activeColor,
-        strokeWidth: 2,
-        radius: 50,
-      });
-      fabricCanvas.add(circle);
-      fabricCanvas.setActiveObject(circle);
-    }
-  };
 
   const saveCanvasState = async () => {
     if (!fabricCanvas) return;
@@ -132,7 +114,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ videoId, isRecordi
       <DrawingToolbar
         activeTool={activeTool}
         activeColor={activeColor}
-        onToolChange={handleToolChange}
+        onToolChange={setActiveTool}
         onColorChange={setActiveColor}
         onClear={clearCanvas}
         onSave={saveCanvasState}
