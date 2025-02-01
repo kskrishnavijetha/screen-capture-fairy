@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { StopCircle, Pause, Play, Camera } from 'lucide-react';
 import { Timer } from './Timer';
@@ -22,23 +22,22 @@ export const RecordingControls = ({
   onMaxDurationReached
 }: RecordingControlsProps) => {
   const { toast } = useToast();
-  const [elapsedTime, setElapsedTime] = useState(0);
   
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (!isPaused) {
-      interval = setInterval(() => {
-        setElapsedTime(prev => prev + 1);
-      }, 1000);
+  const handlePauseResume = () => {
+    if (isPaused) {
+      onResume();
+      toast({
+        title: "Recording resumed",
+        description: "Your recording has resumed",
+      });
+    } else {
+      onPause();
+      toast({
+        title: "Recording paused",
+        description: "Your recording is paused",
+      });
     }
-    
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [isPaused]);
+  };
 
   const takeScreenshot = async () => {
     try {
@@ -77,22 +76,6 @@ export const RecordingControls = ({
     }
   };
 
-  const handlePauseResume = () => {
-    if (isPaused) {
-      onResume();
-      toast({
-        title: "Recording resumed",
-        description: "Your recording has resumed",
-      });
-    } else {
-      onPause();
-      toast({
-        title: "Recording paused",
-        description: "Your recording is paused",
-      });
-    }
-  };
-
   const handleStop = () => {
     onStop();
     toast({
@@ -105,7 +88,7 @@ export const RecordingControls = ({
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 space-y-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 rounded-lg border shadow-lg">
       <div className="flex justify-center mb-4">
         <Timer 
-          duration={elapsedTime} 
+          duration={duration} 
           onMaxDurationReached={onMaxDurationReached}
         />
       </div>
