@@ -43,26 +43,26 @@ export const RecordingControls = ({
 
   const takeScreenshot = async () => {
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ 
-        video: { displaySurface: 'monitor' } 
-      });
-      
-      const track = stream.getVideoTracks()[0];
-      const imageCapture = new ImageCapture(track);
-      const bitmap = await imageCapture.grabFrame();
-      
+      const videoElement = document.querySelector('video');
+      if (!videoElement) {
+        throw new Error('No video element found');
+      }
+
       const canvas = document.createElement('canvas');
-      canvas.width = bitmap.width;
-      canvas.height = bitmap.height;
+      canvas.width = videoElement.videoWidth;
+      canvas.height = videoElement.videoHeight;
       const context = canvas.getContext('2d');
-      context?.drawImage(bitmap, 0, 0);
+      
+      if (!context) {
+        throw new Error('Could not get canvas context');
+      }
+
+      context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
       
       const link = document.createElement('a');
       link.download = `screenshot-${new Date().toISOString()}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-      
-      stream.getTracks().forEach(track => track.stop());
       
       toast({
         title: "Screenshot captured",
@@ -78,70 +78,63 @@ export const RecordingControls = ({
     }
   };
 
-  const handleHighlight = () => {
-    // This is a placeholder for the highlight functionality
-    // You can implement the actual highlight logic here
-    toast({
-      title: "Moment Highlighted",
-      description: "This moment has been marked as important",
-    });
-  };
-
   return (
-    <div className="space-y-4">
-      <div className="flex justify-center mb-4">
-        <Timer 
-          duration={elapsedTime} 
-          onMaxDurationReached={onMaxDurationReached}
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center gap-2">
-          {!isPaused ? (
-            <Button 
-              onClick={onPause}
-              variant="outline"
-              className="flex-1"
-            >
-              <Pause className="mr-2 h-5 w-5" />
-              Pause Recording
-            </Button>
-          ) : (
-            <Button 
-              onClick={onResume}
-              variant="outline"
-              className="flex-1"
-            >
-              <Play className="mr-2 h-5 w-5" />
-              Resume Recording
-            </Button>
-          )}
-          <VoiceCommandListener
-            onPause={onPause}
-            onResume={onResume}
-            onStop={onStop}
-            onHighlight={handleHighlight}
-            isRecording={true}
-            isPaused={isPaused}
+    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t">
+      <div className="max-w-md mx-auto space-y-4">
+        <div className="flex justify-center mb-4">
+          <Timer 
+            duration={elapsedTime} 
+            onMaxDurationReached={onMaxDurationReached}
           />
         </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <Button 
+            onClick={isPaused ? onResume : onPause}
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2"
+          >
+            {isPaused ? (
+              <>
+                <Play className="h-4 w-4" />
+                Resume Recording
+              </>
+            ) : (
+              <>
+                <Pause className="h-4 w-4" />
+                Pause Recording
+              </>
+            )}
+          </Button>
+          
+          <Button 
+            onClick={takeScreenshot}
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <Camera className="h-4 w-4" />
+            Take Screenshot
+          </Button>
+        </div>
+
         <Button 
-          onClick={takeScreenshot}
-          variant="outline"
-          className="w-full"
+          onClick={onStop}
+          variant="destructive"
+          className="w-full flex items-center justify-center gap-2"
         >
-          <Camera className="mr-2 h-5 w-5" />
-          Take Screenshot
+          <StopCircle className="h-4 w-4" />
+          Stop Recording
         </Button>
+
+        <VoiceCommandListener
+          onPause={onPause}
+          onResume={onResume}
+          onStop={onStop}
+          onHighlight={() => {}}
+          isRecording={true}
+          isPaused={isPaused}
+        />
       </div>
-      <Button 
-        onClick={onStop}
-        variant="destructive"
-        className="w-full"
-      >
-        <StopCircle className="mr-2 h-5 w-5" />
-        Stop Recording
-      </Button>
     </div>
   );
 };
