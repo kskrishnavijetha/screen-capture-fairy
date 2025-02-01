@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { StopCircle, Pause, Play, Camera } from 'lucide-react';
 import { Timer } from './Timer';
@@ -22,6 +22,23 @@ export const RecordingControls = ({
   onMaxDurationReached
 }: RecordingControlsProps) => {
   const { toast } = useToast();
+  const [localDuration, setLocalDuration] = useState(duration);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (!isPaused) {
+      interval = setInterval(() => {
+        setLocalDuration(prev => prev + 1);
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isPaused]);
   
   const handlePauseResume = () => {
     if (isPaused) {
@@ -88,7 +105,7 @@ export const RecordingControls = ({
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 space-y-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 rounded-lg border shadow-lg">
       <div className="flex justify-center mb-4">
         <Timer 
-          duration={duration} 
+          duration={localDuration} 
           onMaxDurationReached={onMaxDurationReached}
         />
       </div>
