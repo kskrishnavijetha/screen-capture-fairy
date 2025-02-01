@@ -26,6 +26,11 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ videoId, isRecordi
         isDrawingMode: true,
       });
 
+      // Set cursor styles based on mode
+      canvas.freeDrawingCursor = 'crosshair';
+      canvas.defaultCursor = 'default';
+      canvas.hoverCursor = 'pointer';
+
       // Explicitly create and set the brush
       const brush = new PencilBrush(canvas);
       brush.color = activeColor;
@@ -63,6 +68,13 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ videoId, isRecordi
 
     try {
       fabricCanvas.isDrawingMode = activeTool === 'draw';
+      
+      // Update cursor style based on active tool
+      if (activeTool === 'draw') {
+        fabricCanvas.freeDrawingCursor = 'crosshair';
+      } else {
+        fabricCanvas.defaultCursor = 'default';
+      }
       
       if (fabricCanvas.freeDrawingBrush) {
         fabricCanvas.freeDrawingBrush.color = activeColor;
@@ -133,6 +145,10 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ videoId, isRecordi
     fabricCanvas.clear();
     fabricCanvas.backgroundColor = 'transparent';
     fabricCanvas.renderAll();
+    toast({
+      title: "Canvas cleared",
+      description: "All drawings have been cleared",
+    });
   };
 
   return (
@@ -140,6 +156,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ videoId, isRecordi
       <canvas
         ref={canvasRef}
         className="absolute inset-0 z-10 pointer-events-auto"
+        style={{ cursor: activeTool === 'draw' ? 'crosshair' : 'default' }}
       />
       <DrawingToolbar
         activeTool={activeTool}
