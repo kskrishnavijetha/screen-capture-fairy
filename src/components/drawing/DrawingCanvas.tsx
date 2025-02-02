@@ -56,7 +56,10 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     if (fabricRef.current.freeDrawingBrush) {
       fabricRef.current.freeDrawingBrush.color = activeColor;
       fabricRef.current.freeDrawingBrush.width = activeTool === 'highlighter' ? 20 : 2;
-      fabricRef.current.freeDrawingBrush.opacity = activeTool === 'highlighter' ? 0.5 : 1;
+      // For highlighter effect, we'll use a lower stroke opacity
+      if (activeTool === 'highlighter') {
+        fabricRef.current.freeDrawingBrush.color = activeColor + '80'; // Adding 50% opacity
+      }
     }
   }, [activeTool, activeColor]);
 
@@ -67,9 +70,16 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
       .on('broadcast', { event: 'drawing-update' }, ({ payload }) => {
         if (!fabricRef.current) return;
 
-        util.enlivenObjects([payload.object], (objects) => {
-          fabricRef.current?.add(objects[0]);
-        });
+        const options = {
+          crossOrigin: 'anonymous',
+          signal: new AbortController().signal
+        };
+
+        util.enlivenObjects([payload.object], options)
+          .then((objects) => {
+            fabricRef.current?.add(objects[0]);
+          })
+          .catch(console.error);
       })
       .subscribe();
 

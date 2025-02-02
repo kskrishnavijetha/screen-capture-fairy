@@ -13,6 +13,7 @@ import { DrawingCanvas } from './drawing/DrawingCanvas';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useRecordingState } from '@/hooks/useRecordingState';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,8 +25,13 @@ export const RecordingComponent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const [isRecording, setIsRecording] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  const { 
+    isRecording, 
+    isPaused, 
+    startRecording: handleStartRecording,
+    stopRecording: handleStopRecording,
+    togglePause: handleTogglePause 
+  } = useRecordingState();
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [duration, setDuration] = useState(0);
   const [captureMode, setCaptureMode] = useState<CaptureMode>('screen');
@@ -188,9 +194,9 @@ export const RecordingComponent = () => {
         </Button>
       </div>
 
-      <button id="start-recording" onClick={startRecording}>Start</button>
-      <button id="stop-recording" onClick={stopRecording}>Stop</button>
-      <button id="pause-recording" onClick={togglePause}>
+      <button id="start-recording" onClick={handleStartRecording}>Start</button>
+      <button id="stop-recording" onClick={handleStopRecording}>Stop</button>
+      <button id="pause-recording" onClick={handleTogglePause}>
         {isPaused ? 'Resume' : 'Pause'}
       </button>
     </div>
