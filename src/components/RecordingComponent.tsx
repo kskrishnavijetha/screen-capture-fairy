@@ -17,9 +17,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DrawingCanvas } from './drawing/DrawingCanvas';
-
-// ... keep existing code (imports and component setup)
 
 export const RecordingComponent = () => {
   const navigate = useNavigate();
@@ -211,12 +208,6 @@ export const RecordingComponent = () => {
       )}
 
       <CameraPreview isRecording={isRecording} captureMode={captureMode} />
-      {isRecording && (
-        <DrawingCanvas 
-          videoId={crypto.randomUUID()} 
-          isRecording={isRecording} 
-        />
-      )}
 
       {!isRecording && !showCountdown && (
         <Button 

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { StopCircle, Pause, Play, Camera } from 'lucide-react';
 import { Timer } from './Timer';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
+import { VoiceCommandListener } from './VoiceCommandListener';
 
 interface RecordingControlsProps {
   isPaused: boolean;
@@ -22,37 +23,46 @@ export const RecordingControls = ({
   onMaxDurationReached
 }: RecordingControlsProps) => {
   const { toast } = useToast();
+  const [elapsedTime, setElapsedTime] = useState(0);
   
-  const handlePauseResume = () => {
-    if (isPaused) {
-      onResume();
-    } else {
-      onPause();
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (!isPaused) {
+      interval = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
     }
-  };
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isPaused]);
 
   const takeScreenshot = async () => {
     try {
-      const videoElement = document.querySelector('video');
-      if (!videoElement) {
-        throw new Error('No video element found');
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = videoElement.videoWidth;
-      canvas.height = videoElement.videoHeight;
-      const context = canvas.getContext('2d');
+      const stream = await navigator.mediaDevices.getDisplayMedia({ 
+        video: { displaySurface: 'monitor' } 
+      });
       
-      if (!context) {
-        throw new Error('Could not get canvas context');
-      }
-
-      context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+      const track = stream.getVideoTracks()[0];
+      const imageCapture = new ImageCapture(track);
+      const bitmap = await imageCapture.grabFrame();
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext('2d');
+      context?.drawImage(bitmap, 0, 0);
       
       const link = document.createElement('a');
       link.download = `screenshot-${new Date().toISOString()}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
+      
+      stream.getTracks().forEach(track => track.stop());
       
       toast({
         title: "Screenshot captured",
@@ -68,46 +78,64 @@ export const RecordingControls = ({
     }
   };
 
-  const handleStop = () => {
-    onStop();
+  const handleHighlight = () => {
+    // This is a placeholder for the highlight functionality
+    // You can implement the actual highlight logic here
     toast({
-      title: "Recording stopped",
-      description: "Your recording has been stopped",
+      title: "Moment Highlighted",
+      description: "This moment has been marked as important",
     });
   };
 
   return (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 space-y-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 rounded-lg border shadow-lg">
+    <div className="space-y-4">
       <div className="flex justify-center mb-4">
         <Timer 
-          duration={duration} 
+          duration={elapsedTime} 
           onMaxDurationReached={onMaxDurationReached}
         />
       </div>
-      <div className="flex gap-2 justify-center">
-        <Button 
-          onClick={handlePauseResume}
-          variant="outline"
-          size="icon"
-          className="w-10 h-10"
-        >
-          {isPaused ? (
-            <Play className="h-5 w-5" />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex items-center gap-2">
+          {!isPaused ? (
+            <Button 
+              onClick={onPause}
+              variant="outline"
+              className="flex-1"
+            >
+              <Pause className="mr-2 h-5 w-5" />
+              Pause Recording
+            </Button>
           ) : (
-            <Pause className="h-5 w-5" />
+            <Button 
+              onClick={onResume}
+              variant="outline"
+              className="flex-1"
+            >
+              <Play className="mr-2 h-5 w-5" />
+              Resume Recording
+            </Button>
           )}
-        </Button>
+          <VoiceCommandListener
+            onPause={onPause}
+            onResume={onResume}
+            onStop={onStop}
+            onHighlight={handleHighlight}
+            isRecording={true}
+            isPaused={isPaused}
+          />
+        </div>
         <Button 
           onClick={takeScreenshot}
           variant="outline"
-          size="icon"
-          className="w-10 h-10"
+          className="w-full"
         >
-          <Camera className="h-5 w-5" />
+          <Camera className="mr-2 h-5 w-5" />
+          Take Screenshot
         </Button>
       </div>
       <Button 
-        onClick={handleStop}
+        onClick={onStop}
         variant="destructive"
         className="w-full"
       >

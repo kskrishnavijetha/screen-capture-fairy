@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { getMediaStream, stopMediaStream } from '@/utils/mediaStreamUtils';
 import { CaptureMode } from '@/components/CaptureModeSelector';
 import { Resolution } from '@/types/recording';
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 
 interface RecordingManagerProps {
   captureMode: CaptureMode;
@@ -79,12 +79,6 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
         onRecordingStop(blob);
         cleanup();
-        setIsRecording(false);
-        setIsPaused(false);
-        toast({
-          title: "Recording completed",
-          description: "Your recording has been saved"
-        });
       };
 
       mediaRecorderRef.current.start(1000);
@@ -101,17 +95,14 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
       cleanup();
       setIsRecording(false);
       setIsPaused(false);
-      toast({
-        variant: "destructive",
-        title: "Recording failed",
-        description: "Failed to start recording"
-      });
     }
   };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setIsPaused(false);
     }
   };
 
@@ -121,17 +112,9 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
     if (mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
-      toast({
-        title: "Recording paused",
-        description: "Your recording is paused"
-      });
     } else if (mediaRecorderRef.current.state === 'paused') {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
-      toast({
-        title: "Recording resumed",
-        description: "Your recording has resumed"
-      });
     }
   };
 
