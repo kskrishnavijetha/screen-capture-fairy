@@ -169,31 +169,45 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   }, [isDragging, dragStart]);
 
   const getLayoutStyles = () => {
+    const baseStyles = {
+      touchAction: 'none' as const,
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+      border: '2px solid rgba(255, 255, 255, 0.1)',
+      background: '#1A1F2C',
+    };
+
     switch (layout) {
       case 'corner':
         return {
+          ...baseStyles,
           width: isMobile ? '120px' : '180px',
           height: isMobile ? '120px' : '180px',
-          borderRadius: '50%'
+          borderRadius: '50%',
+          position: 'fixed' as const,
+          zIndex: 50
         };
       case 'side':
         return {
+          ...baseStyles,
           width: isMobile ? '160px' : '240px',
           height: isMobile ? '240px' : '360px',
-          borderRadius: '12px'
+          borderRadius: '12px',
+          position: 'fixed' as const,
+          zIndex: 50
         };
       case 'full':
         return {
+          ...baseStyles,
           width: '100%',
           height: '100%',
           borderRadius: '0px',
           position: 'fixed' as const,
           top: 0,
           left: 0,
-          zIndex: 0
+          zIndex: 40
         };
       default:
-        return {};
+        return baseStyles;
     }
   };
 
@@ -210,16 +224,11 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
       style={{
         transform: layout !== 'full' ? `translate(${position.x}px, ${position.y}px)` : undefined,
         ...getLayoutStyles(),
-        zIndex: layout === 'full' ? 0 : 1000,
-        touchAction: 'none',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
-        border: '2px solid rgba(255, 255, 255, 0.1)',
-        background: '#1A1F2C'
       }}
       onMouseDown={layout !== 'full' ? handleMouseDown : undefined}
       onTouchStart={layout !== 'full' ? handleTouchStart : undefined}
     >
-      <div className="absolute top-2 right-2 z-10 flex gap-2">
+      <div className="absolute top-2 right-2 z-[60] flex gap-2">
         <Select value={selectedCamera} onValueChange={setSelectedCamera}>
           <SelectTrigger className="w-[180px] bg-black/50 text-white">
             <SelectValue placeholder="Select camera" />
