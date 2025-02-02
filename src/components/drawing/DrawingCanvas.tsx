@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Circle, Rect, Line } from 'fabric';
+import { Canvas as FabricCanvas, Circle, Rect, Line, util } from 'fabric';
 import { DrawingTool } from './DrawingToolbar';
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
@@ -36,7 +36,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     const channel = supabase.channel(`drawing:${videoId}`)
       .on('broadcast', { event: 'draw' }, ({ payload }) => {
         if (payload.objectData) {
-          fabric.util.enlivenObjects([payload.objectData], (objects) => {
+          util.enlivenObjects([payload.objectData], (objects) => {
             canvas.add(objects[0]);
             canvas.renderAll();
           });
