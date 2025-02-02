@@ -188,60 +188,11 @@ export const RecordingComponent = () => {
         </Button>
       </div>
 
-      {showCountdown && (
-        <CountdownTimer
-          seconds={5}
-          onComplete={() => {
-            setShowCountdown(false);
-            const startButton = document.getElementById('start-recording') as HTMLButtonElement;
-            if (startButton) startButton.click();
-          }}
-          onCancel={() => setShowCountdown(false)}
-        />
-      )}
-
-      {isRecording && (
-        <RecordingControls
-          isPaused={isPaused}
-          onPause={() => {
-            const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
-            if (pauseButton) pauseButton.click();
-          }}
-          onResume={() => {
-            const pauseButton = document.getElementById('pause-recording') as HTMLButtonElement;
-            if (pauseButton) pauseButton.click();
-          }}
-          onStop={() => {
-            const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
-            if (stopButton) stopButton.click();
-          }}
-          duration={duration}
-          onMaxDurationReached={() => {
-            const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
-            if (stopButton) stopButton.click();
-          }}
-        />
-      )}
-
-      <CameraPreview isRecording={isRecording} captureMode={captureMode} />
-
-      {!isRecording && !showCountdown && (
-        <Button 
-          onClick={() => setShowCountdown(true)}
-          className={`w-full bg-primary hover:bg-primary/90 ${isMobile ? 'mt-4' : ''}`}
-        >
-          <MonitorPlay className="mr-2 h-5 w-5" />
-          Start Recording
-        </Button>
-      )}
-
-      {recordedBlob && !isRecording && (
-        <DownloadRecording
-          recordedBlob={recordedBlob}
-          filename={filename}
-          onFilenameChange={setFilename}
-        />
-      )}
+      <button id="start-recording" onClick={startRecording}>Start</button>
+      <button id="stop-recording" onClick={stopRecording}>Stop</button>
+      <button id="pause-recording" onClick={togglePause}>
+        {isPaused ? 'Resume' : 'Pause'}
+      </button>
     </div>
   );
 };
