@@ -26,7 +26,7 @@ export const getMediaStream = async (
 
     switch (mode) {
       case 'screen': {
-        // Get screen capture
+        // Get screen capture with system audio
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           video: {
             frameRate: { ideal: frameRate },
@@ -51,12 +51,14 @@ export const getMediaStream = async (
           ]);
         } catch (audioError) {
           console.warn('Microphone access denied:', audioError);
+          // Fall back to just screen capture with system audio
           combinedStream = displayStream;
         }
         break;
       }
       
       case 'camera': {
+        // For camera mode, capture both video and audio
         combinedStream = await navigator.mediaDevices.getUserMedia({
           video: {
             frameRate: { ideal: frameRate },
@@ -69,6 +71,7 @@ export const getMediaStream = async (
       }
       
       case 'both': {
+        // Get screen capture with system audio
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           video: {
             frameRate: { ideal: frameRate },
@@ -78,11 +81,13 @@ export const getMediaStream = async (
           audio: true
         });
         
+        // Get camera and microphone
         const cameraStream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: audioConstraints
         });
         
+        // Combine all tracks
         combinedStream = new MediaStream([
           ...displayStream.getVideoTracks(),
           ...displayStream.getAudioTracks(),

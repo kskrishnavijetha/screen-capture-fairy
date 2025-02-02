@@ -55,20 +55,36 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
     try {
       cleanup(); // Clean up any existing recordings
       
+      // Get the media stream with both video and audio
       const stream = await getMediaStream(captureMode, frameRate, resolution);
       if (!stream) {
         throw new Error('Failed to get media stream');
       }
-      
+
       // Verify audio tracks are present
-      const hasAudioTracks = stream.getAudioTracks().length > 0;
-      if (!hasAudioTracks) {
-        toast({
-          title: "Audio Issue",
-          description: "No audio track detected. Please ensure microphone access is granted.",
-          variant: "destructive"
-        });
-        return;
+      const audioTracks = stream.getAudioTracks();
+      if (audioTracks.length === 0) {
+        // Try to get microphone access separately
+        try {
+          const audioStream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          });
+          audioTracks.push(...audioStream.getAudioTracks());
+          // Combine the audio tracks with the existing stream
+          stream.addTrack(audioStream.getAudioTracks()[0]);
+        } catch (audioError) {
+          console.error('Failed to get audio stream:', audioError);
+          toast({
+            title: "Audio Issue",
+            description: "Please ensure microphone access is granted for audio recording.",
+            variant: "destructive"
+          });
+          return;
+        }
       }
 
       streamRef.current = stream;
