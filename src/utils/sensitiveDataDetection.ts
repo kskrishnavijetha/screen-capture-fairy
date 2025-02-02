@@ -15,7 +15,7 @@ export interface DetectionSettings {
   types: SensitiveDataType[];
 }
 
-let worker: Worker | null = null;
+let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
 
 export const initializeOCR = async () => {
   if (!worker) {
