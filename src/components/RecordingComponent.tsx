@@ -8,6 +8,8 @@ import { DownloadRecording } from '@/components/DownloadRecording';
 import { CameraPreview } from '@/components/CameraPreview';
 import { RecordingManager } from '@/components/RecordingManager';
 import { CountdownTimer } from '@/components/CountdownTimer';
+import { DrawingToolbar, type DrawingTool } from './drawing/DrawingToolbar';
+import { DrawingCanvas } from './drawing/DrawingCanvas';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -32,6 +34,9 @@ export const RecordingComponent = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [currentRecordingIndex, setCurrentRecordingIndex] = useState(0);
   const [recordings, setRecordings] = useState<{ blob: Blob; timestamp: Date }[]>([]);
+  const [activeTool, setActiveTool] = useState<DrawingTool>('pen');
+  const [activeColor, setActiveColor] = useState('#FF0000');
+  const [isDrawingEnabled, setIsDrawingEnabled] = useState(false);
 
   useEffect(() => {
     const loadRecordings = () => {
@@ -153,24 +158,35 @@ export const RecordingComponent = () => {
         </div>
       )}
 
+      {isDrawingEnabled && (
+        <>
+          <DrawingToolbar
+            activeTool={activeTool}
+            activeColor={activeColor}
+            onToolChange={setActiveTool}
+            onColorChange={setActiveColor}
+          />
+          <DrawingCanvas
+            activeTool={activeTool}
+            activeColor={activeColor}
+            videoId={recordedBlob ? URL.createObjectURL(recordedBlob) : undefined}
+          />
+        </>
+      )}
+
       <div className={`${isMobile ? 'mt-4' : ''}`}>
         <CaptureModeSelector mode={captureMode} onChange={setCaptureMode} />
       </div>
 
-      <RecordingManager
-        captureMode={captureMode}
-        frameRate={30}
-        resolution={{ width: 1920, height: 1080, label: "1080p" }}
-        onRecordingStart={() => setDuration(0)}
-        onRecordingStop={(blob) => {
-          setRecordedBlob(blob);
-          navigate('/playback', { state: { recordedBlob: blob } });
-        }}
-        isRecording={isRecording}
-        setIsRecording={setIsRecording}
-        setIsPaused={setIsPaused}
-        isPaused={isPaused}
-      />
+      <div className="flex gap-2 justify-center">
+        <Button
+          variant="outline"
+          onClick={() => setIsDrawingEnabled(!isDrawingEnabled)}
+          className="mb-4"
+        >
+          {isDrawingEnabled ? 'Disable Drawing' : 'Enable Drawing'}
+        </Button>
+      </div>
 
       {showCountdown && (
         <CountdownTimer
