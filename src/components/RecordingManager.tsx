@@ -28,6 +28,7 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const previewRef = useRef<HTMLVideoElement>(null);
 
   const startRecording = async () => {
     try {
@@ -61,6 +62,12 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
         stream = new MediaStream(tracks);
       }
 
+      // Set the stream to the preview video element
+      if (previewRef.current) {
+        previewRef.current.srcObject = stream;
+        previewRef.current.play().catch(console.error);
+      }
+
       streamRef.current = stream;
       chunksRef.current = [];
 
@@ -81,6 +88,11 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(track => track.stop());
           streamRef.current = null;
+        }
+
+        // Clear the preview
+        if (previewRef.current) {
+          previewRef.current.srcObject = null;
         }
       };
 
@@ -150,12 +162,21 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
   }, []);
 
   return (
-    <div className="hidden">
-      <button id="start-recording" onClick={startRecording}>Start</button>
-      <button id="stop-recording" onClick={stopRecording}>Stop</button>
-      <button id="pause-recording" onClick={togglePause}>
-        {isPaused ? 'Resume' : 'Pause'}
-      </button>
+    <div>
+      <div className="hidden">
+        <button id="start-recording" onClick={startRecording}>Start</button>
+        <button id="stop-recording" onClick={stopRecording}>Stop</button>
+        <button id="pause-recording" onClick={togglePause}>
+          {isPaused ? 'Resume' : 'Pause'}
+        </button>
+      </div>
+      <video
+        ref={previewRef}
+        className="w-full aspect-video bg-black rounded-lg"
+        autoPlay
+        playsInline
+        muted
+      />
     </div>
   );
 };
