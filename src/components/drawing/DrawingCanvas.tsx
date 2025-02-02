@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas, Circle, Rect, Line, util } from 'fabric';
+import { Canvas, Circle, Rect, Line, util, type FabricObject } from 'fabric';
 import type { DrawingTool } from './DrawingToolbar';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -56,9 +56,8 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     if (fabricRef.current.freeDrawingBrush) {
       fabricRef.current.freeDrawingBrush.color = activeColor;
       fabricRef.current.freeDrawingBrush.width = activeTool === 'highlighter' ? 20 : 2;
-      // For highlighter effect, we'll use a lower stroke opacity
       if (activeTool === 'highlighter') {
-        fabricRef.current.freeDrawingBrush.color = activeColor + '80'; // Adding 50% opacity
+        fabricRef.current.freeDrawingBrush.color = activeColor + '80';
       }
     }
   }, [activeTool, activeColor]);
@@ -76,8 +75,10 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
         };
 
         util.enlivenObjects([payload.object], options)
-          .then((objects) => {
-            fabricRef.current?.add(objects[0]);
+          .then((objects: FabricObject[]) => {
+            if (objects[0]) {
+              fabricRef.current?.add(objects[0]);
+            }
           })
           .catch(console.error);
       })

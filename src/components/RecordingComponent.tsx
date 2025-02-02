@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRecordingState } from '@/hooks/useRecordingState';
+import { Resolution } from '@/types/recording';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,10 +28,10 @@ export const RecordingComponent = () => {
   const isMobile = useIsMobile();
   const { 
     isRecording, 
-    isPaused, 
-    startRecording: handleStartRecording,
-    stopRecording: handleStopRecording,
-    togglePause: handleTogglePause 
+    isPaused,
+    startRecording,
+    stopRecording,
+    togglePause 
   } = useRecordingState();
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [duration, setDuration] = useState(0);
@@ -43,6 +44,8 @@ export const RecordingComponent = () => {
   const [activeTool, setActiveTool] = useState<DrawingTool>('pen');
   const [activeColor, setActiveColor] = useState('#FF0000');
   const [isDrawingEnabled, setIsDrawingEnabled] = useState(false);
+  const frameRate = 30;
+  const resolution: Resolution = { width: 1920, height: 1080, label: 'Full HD' };
 
   useEffect(() => {
     const loadRecordings = () => {
@@ -92,14 +95,29 @@ export const RecordingComponent = () => {
 
   const cleanupRecording = () => {
     if (isRecording) {
-      const stopButton = document.getElementById('stop-recording') as HTMLButtonElement;
-      if (stopButton) stopButton.click();
+      stopRecording();
     }
-    setIsRecording(false);
-    setIsPaused(false);
     setRecordedBlob(null);
     setDuration(0);
     setShowCountdown(false);
+  };
+
+  const handleStartRecording = async () => {
+    await startRecording(
+      captureMode,
+      frameRate,
+      resolution,
+      () => console.log('Recording started'),
+      (blob: Blob) => setRecordedBlob(blob)
+    );
+  };
+
+  const handleStopRecording = () => {
+    stopRecording();
+  };
+
+  const handleTogglePause = () => {
+    togglePause();
   };
 
   const handleSignOut = async () => {
@@ -194,9 +212,9 @@ export const RecordingComponent = () => {
         </Button>
       </div>
 
-      <button id="start-recording" onClick={handleStartRecording}>Start</button>
-      <button id="stop-recording" onClick={handleStopRecording}>Stop</button>
-      <button id="pause-recording" onClick={handleTogglePause}>
+      <button onClick={handleStartRecording}>Start</button>
+      <button onClick={handleStopRecording}>Stop</button>
+      <button onClick={handleTogglePause}>
         {isPaused ? 'Resume' : 'Pause'}
       </button>
     </div>
