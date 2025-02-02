@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/components/ui/use-toast";
 
 interface CameraPreviewProps {
   isRecording: boolean;
@@ -10,29 +12,63 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 20, y: 20 }); // Default position in top-left
+  const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+  const [selectedCamera, setSelectedCamera] = useState<string>('');
+  const [layout, setLayout] = useState<'corner' | 'side' | 'full'>('corner');
   const isMobile = useIsMobile();
 
   useEffect(() => {
+    const getCameras = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter(device => device.kind === 'videoinput');
+        setAvailableCameras(cameras);
+        if (cameras.length > 0 && !selectedCamera) {
+          setSelectedCamera(cameras[0].deviceId);
+        }
+      } catch (error) {
+        console.error('Error getting cameras:', error);
+        toast({
+          title: "Camera Error",
+          description: "Failed to get available cameras",
+          variant: "destructive"
+        });
+      }
+    };
+
+    getCameras();
+  }, []);
+
+  useEffect(() => {
     const showCameraPreview = async () => {
-      if ((captureMode === 'camera' || captureMode === 'both') && videoRef.current) {
+      if ((captureMode === 'camera' || captureMode === 'both') && videoRef.current && selectedCamera) {
         try {
-          if (!streamRef.current) {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-              video: {
-                width: { ideal: isMobile ? 640 : 1280 },
-                height: { ideal: isMobile ? 480 : 720 },
-                facingMode: isMobile ? "user" : undefined
-              },
-              audio: false
-            });
-            streamRef.current = stream;
-            videoRef.current.srcObject = stream;
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
           }
+
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: {
+              deviceId: selectedCamera,
+              width: { ideal: isMobile ? 640 : 1280 },
+              height: { ideal: isMobile ? 480 : 720 },
+              facingMode: isMobile ? "user" : undefined
+            },
+            audio: false
+          });
+          
+          streamRef.current = stream;
+          videoRef.current.srcObject = stream;
         } catch (error) {
           console.error('Error accessing camera:', error);
+          toast({
+            title: "Camera Error",
+            description: "Failed to access selected camera",
+            variant: "destructive"
+          });
         }
       }
     };
@@ -54,7 +90,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
     }
 
     return cleanup;
-  }, [isRecording, captureMode, isMobile]);
+  }, [isRecording, captureMode, selectedCamera, isMobile]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!containerRef.current) return;
@@ -132,6 +168,35 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
     }
   }, [isDragging, dragStart]);
 
+  const getLayoutStyles = () => {
+    switch (layout) {
+      case 'corner':
+        return {
+          width: isMobile ? '120px' : '180px',
+          height: isMobile ? '120px' : '180px',
+          borderRadius: '50%'
+        };
+      case 'side':
+        return {
+          width: isMobile ? '160px' : '240px',
+          height: isMobile ? '240px' : '360px',
+          borderRadius: '12px'
+        };
+      case 'full':
+        return {
+          width: '100%',
+          height: '100%',
+          borderRadius: '0px',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: 0
+        };
+      default:
+        return {};
+    }
+  };
+
   if (captureMode !== 'camera' && captureMode !== 'both') {
     return null;
   }
@@ -143,27 +208,51 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
         isDragging ? 'opacity-75 scale-105' : ''
       }`}
       style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        width: isMobile ? '120px' : '180px',
-        height: isMobile ? '120px' : '180px',
-        zIndex: 1000,
+        transform: layout !== 'full' ? `translate(${position.x}px, ${position.y}px)` : undefined,
+        ...getLayoutStyles(),
+        zIndex: layout === 'full' ? 0 : 1000,
         touchAction: 'none',
-        borderRadius: '50%',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
         border: '2px solid rgba(255, 255, 255, 0.1)',
         background: '#1A1F2C'
       }}
-      onMouseDown={handleMouseDown}
-      onTouchStart={handleTouchStart}
+      onMouseDown={layout !== 'full' ? handleMouseDown : undefined}
+      onTouchStart={layout !== 'full' ? handleTouchStart : undefined}
     >
+      <div className="absolute top-2 right-2 z-10 flex gap-2">
+        <Select value={selectedCamera} onValueChange={setSelectedCamera}>
+          <SelectTrigger className="w-[180px] bg-black/50 text-white">
+            <SelectValue placeholder="Select camera" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableCameras.map((camera) => (
+              <SelectItem key={camera.deviceId} value={camera.deviceId}>
+                {camera.label || `Camera ${camera.deviceId.slice(0, 4)}`}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={layout} onValueChange={(value: 'corner' | 'side' | 'full') => setLayout(value)}>
+          <SelectTrigger className="w-[100px] bg-black/50 text-white">
+            <SelectValue placeholder="Layout" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="corner">Corner</SelectItem>
+            <SelectItem value="side">Side</SelectItem>
+            <SelectItem value="full">Full</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted
-        className="w-full h-full object-cover rounded-full transform scale-[1.02]"
+        className={`w-full h-full object-cover ${layout === 'corner' ? 'rounded-full' : ''} transform scale-[1.02]`}
       />
-      <div className="absolute inset-0 rounded-full ring-2 ring-primary/20 pointer-events-none" />
+      {layout === 'corner' && (
+        <div className="absolute inset-0 rounded-full ring-2 ring-primary/20 pointer-events-none" />
+      )}
     </div>
   );
 };

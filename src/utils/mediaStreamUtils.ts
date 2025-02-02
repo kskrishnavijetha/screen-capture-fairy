@@ -33,20 +33,17 @@ export const getMediaStream = async (
 
     switch (mode) {
       case 'screen': {
-        // Get screen capture with system audio
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           video: videoConstraints,
-          audio: true // Request system audio
+          audio: true
         });
 
-        // Always try to get microphone audio
         try {
           const micStream = await navigator.mediaDevices.getUserMedia({
             audio: audioConstraints,
             video: false
           });
 
-          // Create a new stream with all tracks
           const allTracks = [
             ...displayStream.getVideoTracks(),
             ...displayStream.getAudioTracks(),
@@ -62,29 +59,55 @@ export const getMediaStream = async (
       }
       
       case 'camera': {
-        combinedStream = await navigator.mediaDevices.getUserMedia({
-          video: videoConstraints,
-          audio: audioConstraints
-        });
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        if (videoDevices.length === 0) {
+          throw new Error('No cameras found');
+        }
+
+        const cameraStreams = await Promise.all(
+          videoDevices.map(device =>
+            navigator.mediaDevices.getUserMedia({
+              video: { ...videoConstraints, deviceId: device.deviceId },
+              audio: audioConstraints
+            })
+          )
+        );
+
+        const allTracks = cameraStreams.flatMap(stream => stream.getTracks());
+        combinedStream = new MediaStream(allTracks);
         break;
       }
       
       case 'both': {
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           video: videoConstraints,
-          audio: true // Request system audio
+          audio: true
         });
         
-        const cameraStream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: audioConstraints
-        });
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
         
+        const cameraStreams = await Promise.all(
+          videoDevices.map(device =>
+            navigator.mediaDevices.getUserMedia({
+              video: { ...videoConstraints, deviceId: device.deviceId },
+              audio: false
+            })
+          )
+        );
+
+        const micStream = await navigator.mediaDevices.getUserMedia({
+          audio: audioConstraints,
+          video: false
+        });
+
         const allTracks = [
           ...displayStream.getVideoTracks(),
           ...displayStream.getAudioTracks(),
-          ...cameraStream.getVideoTracks(),
-          ...cameraStream.getAudioTracks()
+          ...cameraStreams.flatMap(stream => stream.getVideoTracks()),
+          ...micStream.getAudioTracks()
         ];
 
         combinedStream = new MediaStream(allTracks);
@@ -95,7 +118,6 @@ export const getMediaStream = async (
         throw new Error('Invalid capture mode');
     }
 
-    // Verify audio tracks
     if (combinedStream.getAudioTracks().length === 0) {
       toast({
         title: "Audio Warning",
