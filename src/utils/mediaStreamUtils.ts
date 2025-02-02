@@ -36,10 +36,7 @@ export const getMediaStream = async (
         // Get screen capture with system audio
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           video: videoConstraints,
-          audio: {
-            ...audioConstraints,
-            suppressLocalAudioPlayback: false
-          }
+          audio: true // Simplified audio constraints for screen capture
         });
 
         // Always try to get microphone audio
@@ -75,10 +72,7 @@ export const getMediaStream = async (
       case 'both': {
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           video: videoConstraints,
-          audio: {
-            ...audioConstraints,
-            suppressLocalAudioPlayback: false
-          }
+          audio: true // Simplified audio constraints for screen capture
         });
         
         const cameraStream = await navigator.mediaDevices.getUserMedia({
