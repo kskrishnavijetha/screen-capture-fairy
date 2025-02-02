@@ -1,13 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import { getMediaStream, stopMediaStream } from '@/utils/mediaStreamUtils';
-import { CaptureMode } from '@/components/CaptureModeSelector';
-import { Resolution } from '@/types/recording';
 import { toast } from "@/components/ui/use-toast";
+import { CaptureMode } from './CaptureModeSelector';
 
 interface RecordingManagerProps {
   captureMode: CaptureMode;
   frameRate: number;
-  resolution: Resolution;
+  resolution: { width: number; height: number; label: string };
   onRecordingStart: () => void;
   onRecordingStop: (blob: Blob) => void;
   isRecording: boolean;
@@ -31,68 +29,79 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
-  const cleanup = () => {
-    if (mediaRecorderRef.current) {
-      if (mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
-      mediaRecorderRef.current = null;
-    }
-    if (streamRef.current) {
-      stopMediaStream(streamRef.current);
-      streamRef.current = null;
-    }
-    chunksRef.current = [];
-  };
-
-  useEffect(() => {
-    return () => {
-      cleanup();
-    };
-  }, []);
-
   const startRecording = async () => {
     try {
-      cleanup(); // Clean up any existing recordings
+      const displayMediaOptions = {
+        video: {
+          frameRate: { ideal: frameRate },
+          width: { ideal: resolution.width },
+          height: { ideal: resolution.height }
+        },
+        audio: true
+      };
+
+      let stream: MediaStream;
       
-      const stream = await getMediaStream(captureMode, frameRate, resolution);
-      if (!stream) return;
-      
+      if (captureMode === 'screen') {
+        stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+      } else if (captureMode === 'camera') {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: displayMediaOptions.video,
+          audio: true
+        });
+      } else {
+        // Both screen and camera
+        const screenStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+        const cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
+        
+        const tracks = [...screenStream.getTracks(), ...cameraStream.getTracks()];
+        stream = new MediaStream(tracks);
+      }
+
       streamRef.current = stream;
       chunksRef.current = [];
 
-      const options = {
-        mimeType: 'video/webm;codecs=vp8,opus',
-        audioBitsPerSecond: 128000,
-        videoBitsPerSecond: 2500000
-      };
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp8,opus'
+      });
 
-      mediaRecorderRef.current = new MediaRecorder(stream, options);
-
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
           chunksRef.current.push(event.data);
         }
       };
 
-      mediaRecorderRef.current.onstop = () => {
+      mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
         onRecordingStop(blob);
-        cleanup();
+        
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
       };
 
-      mediaRecorderRef.current.start(1000);
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start(1000);
       setIsRecording(true);
       setIsPaused(false);
       onRecordingStart();
 
       toast({
         title: "Recording started",
-        description: "Your recording has begun"
+        description: "Your screen recording has begun"
       });
+
     } catch (error) {
-      console.error('Failed to start recording:', error);
-      cleanup();
+      console.error('Error starting recording:', error);
+      toast({
+        variant: "destructive",
+        title: "Recording failed",
+        description: "Failed to start recording. Please check permissions."
+      });
       setIsRecording(false);
       setIsPaused(false);
     }
@@ -103,6 +112,11 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       setIsPaused(false);
+      
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
     }
   };
 
@@ -112,11 +126,28 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
     if (mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
+      toast({
+        title: "Recording paused",
+        description: "Your recording is paused"
+      });
     } else if (mediaRecorderRef.current.state === 'paused') {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
+      toast({
+        title: "Recording resumed",
+        description: "Your recording has resumed"
+      });
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div className="hidden">
