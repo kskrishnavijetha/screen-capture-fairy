@@ -1,6 +1,42 @@
 import { Resolution } from '@/types/recording';
 import { CaptureMode } from '@/components/CaptureModeSelector';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
+
+const getDisplayMediaConstraints = (frameRate: number, resolution: Resolution) => ({
+  video: {
+    frameRate: { ideal: frameRate },
+    width: { ideal: resolution.width },
+    height: { ideal: resolution.height }
+  },
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    sampleRate: 44100,
+    autoGainControl: true
+  }
+});
+
+const getUserMediaConstraints = (frameRate: number, resolution: Resolution) => ({
+  video: {
+    frameRate: { ideal: frameRate },
+    width: { ideal: resolution.width },
+    height: { ideal: resolution.height }
+  },
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    sampleRate: 44100,
+    autoGainControl: true
+  }
+});
+
+export const stopMediaStream = (stream: MediaStream | null) => {
+  if (stream) {
+    stream.getTracks().forEach(track => {
+      track.stop();
+    });
+  }
+};
 
 export const getMediaStream = async (
   mode: CaptureMode,
@@ -8,45 +44,65 @@ export const getMediaStream = async (
   resolution: Resolution
 ): Promise<MediaStream | null> => {
   try {
-    const videoConstraints = {
-      frameRate: { ideal: frameRate },
-      width: { ideal: resolution.width },
-      height: { ideal: resolution.height }
-    };
-
-    let stream: MediaStream;
+    let combinedStream: MediaStream;
 
     switch (mode) {
       case 'screen': {
-        stream = await navigator.mediaDevices.getDisplayMedia({
-          video: videoConstraints,
-          audio: true
+        // Get screen capture with system audio
+        const displayStream = await navigator.mediaDevices.getDisplayMedia({
+          ...getDisplayMediaConstraints(frameRate, resolution),
+          audio: true // Enable system audio capture
         });
+        
+        try {
+          // Get microphone audio separately
+          const audioStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              sampleRate: 44100,
+              autoGainControl: true
+            },
+            video: false
+          });
+          
+          // Combine all tracks
+          combinedStream = new MediaStream([
+            ...displayStream.getVideoTracks(),
+            ...displayStream.getAudioTracks(),
+            ...audioStream.getAudioTracks()
+          ]);
+        } catch (audioError) {
+          // If microphone access fails, continue with just screen capture
+          console.warn('Microphone access denied, continuing with screen audio only:', audioError);
+          combinedStream = displayStream;
+        }
         break;
       }
       
       case 'camera': {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: videoConstraints,
-          audio: true
-        });
+        combinedStream = await navigator.mediaDevices.getUserMedia(
+          getUserMediaConstraints(frameRate, resolution)
+        );
         break;
       }
       
       case 'both': {
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
-          video: videoConstraints,
+          ...getDisplayMediaConstraints(frameRate, resolution),
           audio: true
         });
         
-        const cameraStream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true
-        });
+        const cameraStream = await navigator.mediaDevices.getUserMedia(
+          getUserMediaConstraints(frameRate, resolution)
+        );
         
-        stream = new MediaStream([
-          ...displayStream.getTracks(),
-          ...cameraStream.getTracks()
+        // Combine all tracks
+        combinedStream = new MediaStream([
+          ...displayStream.getVideoTracks(),
+          ...displayStream.getAudioTracks(),
+          ...cameraStream.getVideoTracks(),
+          ...cameraStream.getAudioTracks()
         ]);
         break;
       }
@@ -55,7 +111,16 @@ export const getMediaStream = async (
         throw new Error('Invalid capture mode');
     }
 
-    return stream;
+    // Verify audio tracks are present
+    if (combinedStream.getAudioTracks().length === 0) {
+      toast({
+        variant: "default",  // Changed from "warning" to "default"
+        title: "No audio detected",
+        description: "Make sure you've granted permission for audio capture"
+      });
+    }
+
+    return combinedStream;
   } catch (error: any) {
     console.error('Media stream error:', error);
     let errorMessage = 'Failed to initialize media stream';
@@ -74,12 +139,6 @@ export const getMediaStream = async (
       description: errorMessage
     });
     
-    return null;
-  }
-};
-
-export const stopMediaStream = (stream: MediaStream | null) => {
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop());
+    throw error;
   }
 };

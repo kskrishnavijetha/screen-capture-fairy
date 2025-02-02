@@ -17,8 +17,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DrawingToolbar, DrawingTool } from '@/components/drawing/DrawingToolbar';
-import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
 
 export const RecordingComponent = () => {
   const navigate = useNavigate();
@@ -34,9 +32,6 @@ export const RecordingComponent = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [currentRecordingIndex, setCurrentRecordingIndex] = useState(0);
   const [recordings, setRecordings] = useState<{ blob: Blob; timestamp: Date }[]>([]);
-  const [activeTool, setActiveTool] = useState<DrawingTool>('pen');
-  const [activeColor, setActiveColor] = useState('#FF0000');
-  const videoId = crypto.randomUUID();
 
   useEffect(() => {
     const loadRecordings = () => {
@@ -151,19 +146,6 @@ export const RecordingComponent = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      <DrawingToolbar
-        activeTool={activeTool}
-        activeColor={activeColor}
-        onToolChange={setActiveTool}
-        onColorChange={setActiveColor}
-      />
-
-      <DrawingCanvas
-        activeTool={activeTool}
-        activeColor={activeColor}
-        videoId={videoId}
-      />
 
       {recordings.length > 0 && (
         <div className="text-sm text-muted-foreground">

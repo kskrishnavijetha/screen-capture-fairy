@@ -36,33 +36,6 @@ export type Database = {
         }
         Relationships: []
       }
-      annotations_canvas: {
-        Row: {
-          canvas_data: Json
-          created_at: string
-          created_by: string | null
-          id: string
-          updated_at: string
-          video_id: string
-        }
-        Insert: {
-          canvas_data: Json
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          updated_at?: string
-          video_id: string
-        }
-        Update: {
-          canvas_data?: Json
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          updated_at?: string
-          video_id?: string
-        }
-        Relationships: []
-      }
       "file sharing": {
         Row: {
           created_at: string
@@ -119,39 +92,6 @@ export type Database = {
           },
         ]
       }
-      integration_preferences: {
-        Row: {
-          access_token: string | null
-          created_at: string
-          id: string
-          provider: string
-          refresh_token: string | null
-          settings: Json | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          access_token?: string | null
-          created_at?: string
-          id?: string
-          provider: string
-          refresh_token?: string | null
-          settings?: Json | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          access_token?: string | null
-          created_at?: string
-          id?: string
-          provider?: string
-          refresh_token?: string | null
-          settings?: Json | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -173,33 +113,6 @@ export type Database = {
           email?: string
           id?: string
           name?: string | null
-        }
-        Relationships: []
-      }
-      realtime_annotations: {
-        Row: {
-          annotation_data: Json
-          created_at: string
-          id: string
-          updated_at: string
-          user_id: string | null
-          video_id: string
-        }
-        Insert: {
-          annotation_data: Json
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id?: string | null
-          video_id: string
-        }
-        Update: {
-          annotation_data?: Json
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id?: string | null
-          video_id?: string
         }
         Relationships: []
       }
@@ -445,36 +358,6 @@ export type Database = {
           emoji?: string
           id?: string
           timestamp?: number
-          video_id?: string
-        }
-        Relationships: []
-      }
-      video_transcriptions: {
-        Row: {
-          content: string
-          created_at: string
-          created_by: string | null
-          id: string
-          metadata: Json | null
-          summary: string | null
-          video_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          metadata?: Json | null
-          summary?: string | null
-          video_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          metadata?: Json | null
-          summary?: string | null
           video_id?: string
         }
         Relationships: []
