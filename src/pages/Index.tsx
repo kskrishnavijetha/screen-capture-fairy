@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MainMenu } from "@/components/MainMenu";
 import { HomePage } from "@/components/HomePage";
+import { RecordingComponent } from "@/components/RecordingComponent";
 import { AIContentGenerator } from '@/components/AIContentGenerator';
 import { UserPresence } from '@/components/UserPresence';
 import { supabase } from '../integrations/supabase/client';
@@ -19,9 +20,6 @@ const Index = () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
       setUser(session?.user || null);
-      if (session) {
-        navigate('/recorder');
-      }
     };
 
     checkAuth();
@@ -29,9 +27,6 @@ const Index = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
       setUser(session?.user || null);
-      if (session) {
-        navigate('/recorder');
-      }
     });
 
     return () => subscription.unsubscribe();
@@ -67,6 +62,17 @@ const Index = () => {
     switch (selectedComponent) {
       case 'home':
         return <HomePage setSelectedComponent={setSelectedComponent} onSignUp={handleSignUp} />;
+      case 'recorder':
+        if (!isAuthenticated) {
+          toast({
+            title: "Authentication Required",
+            description: "Please sign in to access the Screen Recorder",
+            variant: "destructive"
+          });
+          navigate('/signin');
+          return null;
+        }
+        return <RecordingComponent />;
       case 'content':
         if (!isAuthenticated) {
           toast({
