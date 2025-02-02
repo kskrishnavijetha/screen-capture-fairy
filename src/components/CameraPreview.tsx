@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
-import { Switch } from "@/components/ui/switch";
 import { removeBackground } from '@/utils/backgroundRemoval';
+import { CameraControlsSidebar } from './camera/CameraControlsSidebar';
 
 interface CameraPreviewProps {
   isRecording: boolean;
@@ -221,59 +220,40 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   };
 
   return (
-    <div
-      ref={containerRef}
-      className={`fixed cursor-move overflow-hidden transition-transform duration-200 ${
-        isDragging ? 'opacity-75 scale-105' : ''
-      }`}
-      style={{
-        transform: layout !== 'full' ? `translate(${position.x}px, ${position.y}px)` : undefined,
-        ...getLayoutStyles(),
-      }}
-      onMouseDown={layout !== 'full' ? handleMouseDown : undefined}
-      onTouchStart={layout !== 'full' ? handleTouchStart : undefined}
-    >
-      <div className="absolute top-2 right-2 z-[60] flex gap-2">
-        <Select value={selectedCamera} onValueChange={setSelectedCamera}>
-          <SelectTrigger className="w-[180px] bg-black/50 text-white">
-            <SelectValue placeholder="Select camera" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableCameras.map((camera) => (
-              <SelectItem key={camera.deviceId} value={camera.deviceId}>
-                {camera.label || `Camera ${camera.deviceId.slice(0, 4)}`}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={layout} onValueChange={(value: 'corner' | 'side' | 'full') => setLayout(value)}>
-          <SelectTrigger className="w-[100px] bg-black/50 text-white">
-            <SelectValue placeholder="Layout" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="corner">Corner</SelectItem>
-            <SelectItem value="side">Side</SelectItem>
-            <SelectItem value="full">Full</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex items-center gap-2 bg-black/50 text-white px-3 rounded-md">
-          <span className="text-sm">BG Remove</span>
-          <Switch
-            checked={removeBackgroundEnabled}
-            onCheckedChange={setRemoveBackgroundEnabled}
-          />
-        </div>
-      </div>
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className={`w-full h-full object-cover ${layout === 'corner' ? 'rounded-full' : ''} transform scale-[1.02]`}
+    <div className="flex h-full">
+      <CameraControlsSidebar
+        selectedCamera={selectedCamera}
+        setSelectedCamera={setSelectedCamera}
+        availableCameras={availableCameras}
+        layout={layout}
+        setLayout={setLayout}
+        removeBackgroundEnabled={removeBackgroundEnabled}
+        setRemoveBackgroundEnabled={setRemoveBackgroundEnabled}
       />
-      {layout === 'corner' && (
-        <div className="absolute inset-0 rounded-full ring-2 ring-primary/20 pointer-events-none" />
-      )}
+      
+      <div
+        ref={containerRef}
+        className={`fixed cursor-move overflow-hidden transition-transform duration-200 ${
+          isDragging ? 'opacity-75 scale-105' : ''
+        }`}
+        style={{
+          transform: layout !== 'full' ? `translate(${position.x}px, ${position.y}px)` : undefined,
+          ...getLayoutStyles(),
+        }}
+        onMouseDown={layout !== 'full' ? handleMouseDown : undefined}
+        onTouchStart={layout !== 'full' ? handleTouchStart : undefined}
+      >
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={`w-full h-full object-cover ${layout === 'corner' ? 'rounded-full' : ''} transform scale-[1.02]`}
+        />
+        {layout === 'corner' && (
+          <div className="absolute inset-0 rounded-full ring-2 ring-primary/20 pointer-events-none" />
+        )}
+      </div>
     </div>
   );
 };
