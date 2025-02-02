@@ -21,79 +21,79 @@ export const getMediaStream = async (
       echoCancellation: true,
       noiseSuppression: true,
       autoGainControl: true,
-      sampleRate: 44100
+      sampleRate: 48000,
+      channelCount: 2
+    };
+
+    const videoConstraints = {
+      frameRate: { ideal: frameRate },
+      width: { ideal: resolution.width },
+      height: { ideal: resolution.height }
     };
 
     switch (mode) {
       case 'screen': {
         // Get screen capture with system audio
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
-          video: {
-            frameRate: { ideal: frameRate },
-            width: { ideal: resolution.width },
-            height: { ideal: resolution.height }
-          },
-          audio: true // Enable system audio capture
+          video: videoConstraints,
+          audio: {
+            ...audioConstraints,
+            suppressLocalAudioPlayback: false
+          }
         });
-        
+
+        // Always try to get microphone audio
         try {
-          // Always try to get microphone audio
           const micStream = await navigator.mediaDevices.getUserMedia({
             audio: audioConstraints,
             video: false
           });
-          
-          // Combine all tracks
-          combinedStream = new MediaStream([
+
+          // Create a new stream with all tracks
+          const allTracks = [
             ...displayStream.getVideoTracks(),
             ...displayStream.getAudioTracks(),
             ...micStream.getAudioTracks()
-          ]);
+          ];
+
+          combinedStream = new MediaStream(allTracks);
         } catch (audioError) {
           console.warn('Microphone access denied:', audioError);
-          // Fall back to just screen capture with system audio
           combinedStream = displayStream;
         }
         break;
       }
       
       case 'camera': {
-        // For camera mode, capture both video and audio
         combinedStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            frameRate: { ideal: frameRate },
-            width: { ideal: resolution.width },
-            height: { ideal: resolution.height }
-          },
+          video: videoConstraints,
           audio: audioConstraints
         });
         break;
       }
       
       case 'both': {
-        // Get screen capture with system audio
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
-          video: {
-            frameRate: { ideal: frameRate },
-            width: { ideal: resolution.width },
-            height: { ideal: resolution.height }
-          },
-          audio: true
+          video: videoConstraints,
+          audio: {
+            ...audioConstraints,
+            suppressLocalAudioPlayback: false
+          }
         });
         
-        // Get camera and microphone
         const cameraStream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: audioConstraints
         });
         
-        // Combine all tracks
-        combinedStream = new MediaStream([
+        const allTracks = [
           ...displayStream.getVideoTracks(),
           ...displayStream.getAudioTracks(),
           ...cameraStream.getVideoTracks(),
           ...cameraStream.getAudioTracks()
-        ]);
+        ];
+
+        combinedStream = new MediaStream(allTracks);
         break;
       }
       
@@ -105,7 +105,7 @@ export const getMediaStream = async (
     if (combinedStream.getAudioTracks().length === 0) {
       toast({
         title: "Audio Warning",
-        description: "No audio source detected. Please check your microphone settings.",
+        description: "No audio source detected. Please check your microphone and system audio settings.",
         variant: "destructive"
       });
     }
@@ -116,11 +116,11 @@ export const getMediaStream = async (
     let errorMessage = 'Failed to initialize media stream';
     
     if (error.name === 'NotAllowedError') {
-      errorMessage = 'Please grant permission to access your camera and microphone';
+      errorMessage = 'Please grant permission to access your microphone and system audio';
     } else if (error.name === 'NotFoundError') {
-      errorMessage = 'No camera or microphone found';
+      errorMessage = 'No audio devices found';
     } else if (error.name === 'NotReadableError') {
-      errorMessage = 'Your camera or microphone is already in use';
+      errorMessage = 'Your audio device is already in use';
     }
     
     toast({
