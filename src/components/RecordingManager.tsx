@@ -124,7 +124,7 @@ export const RecordingManager = ({
   };
 
   const togglePause = () => {
-    setIsPaused(prev => !prev);
+    setIsPaused(!isPaused); // Fixed: Now passing boolean directly instead of function
   };
 
   return (

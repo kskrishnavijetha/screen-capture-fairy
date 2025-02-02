@@ -1,4 +1,4 @@
-import { createWorker } from 'tesseract.js';
+import { createWorker, type Worker, createScheduler } from 'tesseract.js';
 
 // Regular expressions for sensitive data patterns
 const patterns = {
@@ -15,7 +15,7 @@ export interface DetectionSettings {
   types: SensitiveDataType[];
 }
 
-let worker: Tesseract.Worker | null = null;
+let worker: Worker | null = null;
 
 export const initializeOCR = async () => {
   if (!worker) {
@@ -36,7 +36,14 @@ export const detectSensitiveData = async (
 
   try {
     const worker = await initializeOCR();
-    const { data: { text, blocks } } = await worker.recognize(imageData);
+    // Convert ImageData to a format Tesseract can handle
+    const canvas = new OffscreenCanvas(imageData.width, imageData.height);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return [];
+    
+    ctx.putImageData(imageData, 0, 0);
+    
+    const { data: { text, blocks } } = await worker.recognize(canvas);
 
     const detectedItems: { type: SensitiveDataType; text: string; bounds: any }[] = [];
 
