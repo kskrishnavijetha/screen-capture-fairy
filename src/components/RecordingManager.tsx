@@ -56,8 +56,21 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
       cleanup(); // Clean up any existing recordings
       
       const stream = await getMediaStream(captureMode, frameRate, resolution);
-      if (!stream) return;
+      if (!stream) {
+        throw new Error('Failed to get media stream');
+      }
       
+      // Verify audio tracks are present
+      const hasAudioTracks = stream.getAudioTracks().length > 0;
+      if (!hasAudioTracks) {
+        toast({
+          title: "Audio Issue",
+          description: "No audio track detected. Please ensure microphone access is granted.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       streamRef.current = stream;
       chunksRef.current = [];
 
@@ -88,13 +101,19 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
 
       toast({
         title: "Recording started",
-        description: "Your recording has begun"
+        description: "Your recording has begun with audio enabled"
       });
     } catch (error) {
       console.error('Failed to start recording:', error);
       cleanup();
       setIsRecording(false);
       setIsPaused(false);
+      
+      toast({
+        title: "Recording Error",
+        description: "Failed to start recording. Please check microphone permissions.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -112,9 +131,17 @@ export const RecordingManager: React.FC<RecordingManagerProps> = ({
     if (mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
+      toast({
+        title: "Recording paused",
+        description: "Your recording is paused"
+      });
     } else if (mediaRecorderRef.current.state === 'paused') {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
+      toast({
+        title: "Recording resumed",
+        description: "Your recording has resumed"
+      });
     }
   };
 
