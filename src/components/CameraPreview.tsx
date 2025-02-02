@@ -187,7 +187,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
           width: '100%',
           height: '100%',
           borderRadius: '0px',
-          position: 'fixed',
+          position: 'fixed' as const,
           top: 0,
           left: 0,
           zIndex: 0
