@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { StopCircle, Pause, Play, Camera } from 'lucide-react';
 import { Timer } from './Timer';
@@ -68,6 +68,14 @@ export const RecordingControls = ({
     }
   };
 
+  const handleStop = () => {
+    onStop();
+    toast({
+      title: "Recording stopped",
+      description: "Your recording has been stopped",
+    });
+  };
+
   return (
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 space-y-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 rounded-lg border shadow-lg">
       <div className="flex justify-center mb-4">
@@ -99,7 +107,7 @@ export const RecordingControls = ({
         </Button>
       </div>
       <Button 
-        onClick={onStop}
+        onClick={handleStop}
         variant="destructive"
         className="w-full"
       >
