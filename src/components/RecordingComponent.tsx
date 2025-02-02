@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { MonitorPlay, LogOut, User, ArrowLeft, ArrowRight } from 'lucide-react';
+import { MonitorPlay, LogOut, User } from 'lucide-react';
 import { CaptureModeSelector, type CaptureMode } from '@/components/CaptureModeSelector';
 import { RecordingControls } from '@/components/RecordingControls';
 import { DownloadRecording } from '@/components/DownloadRecording';
@@ -30,42 +30,6 @@ export const RecordingComponent = () => {
   const [showCountdown, setShowCountdown] = useState(false);
   const [filename, setFilename] = useState('recording');
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [currentRecordingIndex, setCurrentRecordingIndex] = useState(0);
-  const [recordings, setRecordings] = useState<{ blob: Blob; timestamp: Date }[]>([]);
-
-  useEffect(() => {
-    const loadRecordings = () => {
-      const existingRecordings = localStorage.getItem('recordings');
-      if (existingRecordings) {
-        try {
-          const parsedRecordings = JSON.parse(existingRecordings);
-          const processedRecordings = parsedRecordings.map((recording: any) => ({
-            blob: new Blob([new Uint8Array(recording.blob)], { type: 'video/webm' }),
-            timestamp: new Date(recording.timestamp)
-          }));
-          setRecordings(processedRecordings);
-        } catch (error) {
-          console.error('Error loading recordings:', error);
-        }
-      }
-    };
-
-    loadRecordings();
-  }, []);
-
-  const navigateRecordings = (direction: 'prev' | 'next') => {
-    if (recordings.length === 0) return;
-
-    let newIndex;
-    if (direction === 'prev') {
-      newIndex = currentRecordingIndex > 0 ? currentRecordingIndex - 1 : recordings.length - 1;
-    } else {
-      newIndex = currentRecordingIndex < recordings.length - 1 ? currentRecordingIndex + 1 : 0;
-    }
-
-    setCurrentRecordingIndex(newIndex);
-    setRecordedBlob(recordings[newIndex].blob);
-  };
 
   const checkSession = async () => {
     const { data: { session }, error } = await supabase.auth.getSession();
@@ -109,25 +73,7 @@ export const RecordingComponent = () => {
   return (
     <div className={`text-center ${isMobile ? 'p-4' : 'space-y-6 w-full max-w-md mx-auto'}`}>
       <div className="flex justify-between items-center mb-4">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size={isMobile ? "sm" : "icon"}
-            onClick={() => navigateRecordings('prev')}
-            disabled={recordings.length === 0}
-          >
-            <ArrowLeft className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
-          </Button>
-          <Button
-            variant="outline"
-            size={isMobile ? "sm" : "icon"}
-            onClick={() => navigateRecordings('next')}
-            disabled={recordings.length === 0}
-          >
-            <ArrowRight className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
-          </Button>
-        </div>
-        
+        <div className="flex-1" /> {/* Empty div for spacing */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size={isMobile ? "sm" : "icon"}>
@@ -146,12 +92,6 @@ export const RecordingComponent = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      {recordings.length > 0 && (
-        <div className="text-sm text-muted-foreground">
-          Recording {currentRecordingIndex + 1} of {recordings.length}
-        </div>
-      )}
 
       <div className={`${isMobile ? 'mt-4' : ''}`}>
         <CaptureModeSelector mode={captureMode} onChange={setCaptureMode} />
