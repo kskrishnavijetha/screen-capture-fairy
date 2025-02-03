@@ -1,4 +1,4 @@
-import { createWorker, type Worker, createScheduler } from 'tesseract.js';
+import { createWorker, type Worker } from 'tesseract.js';
 
 // Regular expressions for sensitive data patterns
 const patterns = {
