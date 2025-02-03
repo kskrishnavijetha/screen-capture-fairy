@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, MonitorPlay, Home, Link2 } from 'lucide-react';
+import { Menu, MonitorPlay, Home, Link2, Shield } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -11,6 +11,7 @@ import {
 export const MENU_ITEMS = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'recorder', label: 'Screen Recorder', icon: MonitorPlay },
+  { id: 'protection', label: 'Data Protection', icon: Shield },
 ];
 
 interface MainMenuProps {
@@ -71,6 +72,14 @@ export const MainMenu = ({
           >
             <MonitorPlay className="mr-2 h-4 w-4" />
             Screen Recorder
+          </Button>
+          <Button
+            variant={selectedComponent === 'protection' ? "default" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => handleComponentClick('protection')}
+          >
+            <Shield className="mr-2 h-4 w-4" />
+            Data Protection
           </Button>
           <a 
             href="https://x.com/softwave1116" 
