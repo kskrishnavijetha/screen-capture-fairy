@@ -1,24 +1,23 @@
-import { createWorker } from 'tesseract.js';
+import { createWorker, type Worker } from 'tesseract.js';
 
 export type SensitiveDataType = 'creditCard' | 'ssn' | 'email' | 'phone';
 
 interface DetectedItem {
   type: SensitiveDataType;
-  confidence: number;
-  bbox: {
-    x0: number;
-    y0: number;
-    x1: number;
-    y1: number;
+  boundingBox: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
   };
 }
 
-interface DetectionOptions {
+interface SensitiveDataOptions {
   enabled: boolean;
   types: SensitiveDataType[];
 }
 
-let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
+let worker: Worker | null = null;
 
 export const initializeOCR = async () => {
   if (!worker) {
@@ -26,24 +25,31 @@ export const initializeOCR = async () => {
     await worker.loadLanguage('eng');
     await worker.initialize('eng');
   }
+  return worker;
 };
 
 export const detectSensitiveData = async (
   imageData: ImageData,
-  options: DetectionOptions
+  options: SensitiveDataOptions
 ): Promise<DetectedItem[]> => {
-  if (!options.enabled || !worker) {
+  if (!options.enabled || options.types.length === 0) {
     return [];
   }
 
   try {
-    // Convert ImageData to canvas for Tesseract processing
+    await initializeOCR();
+    if (!worker) {
+      throw new Error('OCR worker not initialized');
+    }
+
+    // Convert ImageData to canvas for Tesseract
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return [];
-    
     canvas.width = imageData.width;
     canvas.height = imageData.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Could not get canvas context');
+    }
     ctx.putImageData(imageData, 0, 0);
 
     const { data: { text } } = await worker.recognize(canvas);
@@ -56,14 +62,35 @@ export const detectSensitiveData = async (
         matches.forEach(match => {
           detectedItems.push({
             type: 'creditCard',
-            confidence: 0.9,
-            bbox: { x0: 0, y0: 0, x1: 100, y1: 100 }
+            boundingBox: {
+              x: 0,
+              y: 0,
+              width: 100,
+              height: 20
+            }
           });
         });
       }
     }
 
-    // Add pattern matching for other sensitive data types
+    if (options.types.includes('ssn')) {
+      const ssnPattern = /\b\d{3}-\d{2}-\d{4}\b/g;
+      const matches = text.match(ssnPattern);
+      if (matches) {
+        matches.forEach(match => {
+          detectedItems.push({
+            type: 'ssn',
+            boundingBox: {
+              x: 0,
+              y: 0,
+              width: 100,
+              height: 20
+            }
+          });
+        });
+      }
+    }
+
     if (options.types.includes('email')) {
       const emailPattern = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
       const matches = text.match(emailPattern);
@@ -71,36 +98,30 @@ export const detectSensitiveData = async (
         matches.forEach(match => {
           detectedItems.push({
             type: 'email',
-            confidence: 0.9,
-            bbox: { x0: 0, y0: 0, x1: 100, y1: 100 }
+            boundingBox: {
+              x: 0,
+              y: 0,
+              width: 100,
+              height: 20
+            }
           });
         });
       }
     }
 
     if (options.types.includes('phone')) {
-      const phonePattern = /(\+\d{1,3}[-.]?)?\(?\d{3}\)?[-.]?\d{3}[-.]?\d{4}/g;
+      const phonePattern = /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g;
       const matches = text.match(phonePattern);
       if (matches) {
         matches.forEach(match => {
           detectedItems.push({
             type: 'phone',
-            confidence: 0.9,
-            bbox: { x0: 0, y0: 0, x1: 100, y1: 100 }
-          });
-        });
-      }
-    }
-
-    if (options.types.includes('ssn')) {
-      const ssnPattern = /\b\d{3}[-]?\d{2}[-]?\d{4}\b/g;
-      const matches = text.match(ssnPattern);
-      if (matches) {
-        matches.forEach(match => {
-          detectedItems.push({
-            type: 'ssn',
-            confidence: 0.9,
-            bbox: { x0: 0, y0: 0, x1: 100, y1: 100 }
+            boundingBox: {
+              x: 0,
+              y: 0,
+              width: 100,
+              height: 20
+            }
           });
         });
       }
@@ -113,26 +134,21 @@ export const detectSensitiveData = async (
   }
 };
 
-export const blurSensitiveAreas = (
-  canvas: HTMLCanvasElement,
-  detectedItems: DetectedItem[]
-) => {
+export const blurSensitiveAreas = (canvas: HTMLCanvasElement, detectedItems: DetectedItem[]) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
   detectedItems.forEach(item => {
-    const { bbox } = item;
-    const width = bbox.x1 - bbox.x0;
-    const height = bbox.y1 - bbox.y0;
-
-    // Save the current canvas state
+    const { x, y, width, height } = item.boundingBox;
+    
+    // Save the canvas state
     ctx.save();
-
+    
     // Apply blur effect to the sensitive area
     ctx.filter = 'blur(10px)';
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(bbox.x0, bbox.y0, width, height);
-
+    ctx.fillRect(x, y, width, height);
+    
     // Restore the canvas state
     ctx.restore();
   });
