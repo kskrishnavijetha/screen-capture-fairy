@@ -1,4 +1,4 @@
-import { createWorker, type Worker, type ImageLike } from 'tesseract.js';
+import { createWorker } from 'tesseract.js';
 
 export type SensitiveDataType = 'creditCard' | 'ssn' | 'email' | 'phone';
 
@@ -23,7 +23,6 @@ let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
 export const initializeOCR = async () => {
   if (!worker) {
     worker = await createWorker();
-    await worker.load();
     await worker.loadLanguage('eng');
     await worker.initialize('eng');
   }
@@ -50,7 +49,6 @@ export const detectSensitiveData = async (
     const { data: { text } } = await worker.recognize(canvas);
     const detectedItems: DetectedItem[] = [];
 
-    // Process text for sensitive data patterns
     if (options.types.includes('creditCard')) {
       const creditCardPattern = /\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b/g;
       const matches = text.match(creditCardPattern);
