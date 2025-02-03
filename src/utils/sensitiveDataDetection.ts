@@ -1,4 +1,4 @@
-import { createWorker } from 'tesseract.js';
+import { createWorker, Worker } from 'tesseract.js';
 
 // Regular expressions for sensitive data patterns
 const patterns = {
@@ -15,7 +15,7 @@ export interface DetectionSettings {
   types: SensitiveDataType[];
 }
 
-let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
+let worker: Worker | null = null;
 
 export const initializeOCR = async () => {
   if (!worker) {
