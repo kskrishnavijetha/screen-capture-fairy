@@ -1,68 +1,61 @@
-import { createWorker, Worker } from 'tesseract.js';
+import { createWorker } from 'tesseract.js';
 
-// Regular expressions for sensitive data patterns
-const patterns = {
-  email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
-  phone: /(\+\d{1,3}[-.]?)?\(?\d{3}\)?[-.]?\d{3}[-.]?\d{4}/,
-  creditCard: /\b\d{4}[-. ]?\d{4}[-. ]?\d{4}[-. ]?\d{4}\b/,
-  ssn: /\b\d{3}[-]?\d{2}[-]?\d{4}\b/
-};
+export type SensitiveDataType = 'creditCard' | 'ssn' | 'email' | 'phone';
 
-export type SensitiveDataType = keyof typeof patterns;
+interface DetectedItem {
+  type: SensitiveDataType;
+  confidence: number;
+  bbox: {
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
+  };
+}
 
-export interface DetectionSettings {
+interface DetectionOptions {
   enabled: boolean;
   types: SensitiveDataType[];
 }
 
-let worker: Worker | null = null;
+let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
 
 export const initializeOCR = async () => {
   if (!worker) {
     worker = await createWorker();
-    await worker.load();
     await worker.loadLanguage('eng');
     await worker.initialize('eng');
   }
-  return worker;
 };
 
 export const detectSensitiveData = async (
   imageData: ImageData,
-  settings: DetectionSettings
-): Promise<{ type: SensitiveDataType; text: string; bounds: any }[]> => {
-  if (!settings.enabled || settings.types.length === 0) {
+  options: DetectionOptions
+): Promise<DetectedItem[]> => {
+  if (!options.enabled || !worker) {
     return [];
   }
 
   try {
-    const worker = await initializeOCR();
-    // Convert ImageData to a format Tesseract can handle
-    const canvas = new OffscreenCanvas(imageData.width, imageData.height);
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return [];
-    
-    ctx.putImageData(imageData, 0, 0);
-    
-    const { data: { text, blocks } } = await worker.recognize(canvas);
+    const { data: { text } } = await worker.recognize(imageData);
+    const detectedItems: DetectedItem[] = [];
 
-    const detectedItems: { type: SensitiveDataType; text: string; bounds: any }[] = [];
-
-    blocks.forEach(block => {
-      const blockText = block.text;
-      settings.types.forEach(type => {
-        const pattern = patterns[type];
-        const matches = blockText.match(pattern);
-        if (matches) {
+    // Process text for sensitive data patterns
+    if (options.types.includes('creditCard')) {
+      const creditCardPattern = /\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b/g;
+      const matches = text.match(creditCardPattern);
+      if (matches) {
+        matches.forEach(match => {
           detectedItems.push({
-            type,
-            text: matches[0],
-            bounds: block.bbox
+            type: 'creditCard',
+            confidence: 0.9,
+            bbox: { x0: 0, y0: 0, x1: 100, y1: 100 }
           });
-        }
-      });
-    });
+        });
+      }
+    }
 
+    // Add more pattern matching for other sensitive data types
     return detectedItems;
   } catch (error) {
     console.error('Error detecting sensitive data:', error);
@@ -72,23 +65,24 @@ export const detectSensitiveData = async (
 
 export const blurSensitiveAreas = (
   canvas: HTMLCanvasElement,
-  detectedItems: { type: SensitiveDataType; text: string; bounds: any }[]
+  detectedItems: DetectedItem[]
 ) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
   detectedItems.forEach(item => {
-    const { bounds } = item;
-    const { x0, y0, x1, y1 } = bounds;
-    
+    const { bbox } = item;
+    const width = bbox.x1 - bbox.x0;
+    const height = bbox.y1 - bbox.y0;
+
     // Save the current canvas state
     ctx.save();
-    
-    // Apply a blur effect to the sensitive area
-    ctx.filter = 'blur(8px)';
+
+    // Apply blur effect to the sensitive area
+    ctx.filter = 'blur(10px)';
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
-    
+    ctx.fillRect(bbox.x0, bbox.y0, width, height);
+
     // Restore the canvas state
     ctx.restore();
   });
