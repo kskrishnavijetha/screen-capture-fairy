@@ -21,7 +21,7 @@ export const initializeOCR = async () => {
   if (!worker) {
     worker = await createWorker();
     await worker.loadLanguage('eng');
-    await worker.reinitialize('eng');
+    await worker.initialize('eng');
   }
   return worker;
 };
