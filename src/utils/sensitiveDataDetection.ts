@@ -15,11 +15,12 @@ export interface DetectionSettings {
   types: SensitiveDataType[];
 }
 
-let worker: Worker | null = null;
+let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
 
 export const initializeOCR = async () => {
   if (!worker) {
     worker = await createWorker();
+    await worker.load();
     await worker.loadLanguage('eng');
     await worker.initialize('eng');
   }
