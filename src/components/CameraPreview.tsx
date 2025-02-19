@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
+import { Layout } from 'lucide-react';
 
 interface CameraPreviewProps {
   isRecording: boolean;
@@ -16,36 +17,12 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
-  const [selectedCamera, setSelectedCamera] = useState<string>('');
   const [layout, setLayout] = useState<'corner' | 'side' | 'full'>('corner');
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    const getCameras = async () => {
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const cameras = devices.filter(device => device.kind === 'videoinput');
-        setAvailableCameras(cameras);
-        if (cameras.length > 0 && !selectedCamera) {
-          setSelectedCamera(cameras[0].deviceId);
-        }
-      } catch (error) {
-        console.error('Error getting cameras:', error);
-        toast({
-          title: "Camera Error",
-          description: "Failed to get available cameras",
-          variant: "destructive"
-        });
-      }
-    };
-
-    getCameras();
-  }, []);
-
-  useEffect(() => {
     const showCameraPreview = async () => {
-      if ((captureMode === 'camera' || captureMode === 'both') && videoRef.current && selectedCamera) {
+      if ((captureMode === 'camera' || captureMode === 'both') && videoRef.current) {
         try {
           if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
@@ -53,7 +30,6 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
 
           const stream = await navigator.mediaDevices.getUserMedia({ 
             video: {
-              deviceId: selectedCamera,
               width: { ideal: isMobile ? 640 : 1280 },
               height: { ideal: isMobile ? 480 : 720 },
               facingMode: isMobile ? "user" : undefined
@@ -67,7 +43,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
           console.error('Error accessing camera:', error);
           toast({
             title: "Camera Error",
-            description: "Failed to access selected camera",
+            description: "Failed to access camera",
             variant: "destructive"
           });
         }
@@ -91,7 +67,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
     }
 
     return cleanup;
-  }, [isRecording, captureMode, selectedCamera, isMobile]);
+  }, [isRecording, captureMode, isMobile]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!containerRef.current) return;
@@ -213,33 +189,11 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   };
 
   return (
-    <div
-      ref={containerRef}
-      className={`fixed cursor-move overflow-hidden transition-transform duration-200 ${
-        isDragging ? 'opacity-75 scale-105' : ''
-      }`}
-      style={{
-        transform: layout !== 'full' ? `translate(${position.x}px, ${position.y}px)` : undefined,
-        ...getLayoutStyles(),
-      }}
-      onMouseDown={layout !== 'full' ? handleMouseDown : undefined}
-      onTouchStart={layout !== 'full' ? handleTouchStart : undefined}
-    >
-      <div className="absolute top-2 right-2 z-[60] flex gap-2">
-        <Select value={selectedCamera} onValueChange={setSelectedCamera}>
-          <SelectTrigger className="w-[180px] bg-black/50 text-white">
-            <SelectValue placeholder="Select camera" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableCameras.map((camera) => (
-              <SelectItem key={camera.deviceId} value={camera.deviceId}>
-                {camera.label || `Camera ${camera.deviceId.slice(0, 4)}`}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <>
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] flex items-center gap-2 bg-black/50 p-2 rounded-lg">
+        <Layout className="h-4 w-4 text-white" />
         <Select value={layout} onValueChange={(value: 'corner' | 'side' | 'full') => setLayout(value)}>
-          <SelectTrigger className="w-[100px] bg-black/50 text-white">
+          <SelectTrigger className="w-[100px] bg-transparent text-white border-none">
             <SelectValue placeholder="Layout" />
           </SelectTrigger>
           <SelectContent>
@@ -249,16 +203,30 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
           </SelectContent>
         </Select>
       </div>
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className={`w-full h-full object-cover ${layout === 'corner' ? 'rounded-full' : ''} transform scale-[1.02]`}
-      />
-      {layout === 'corner' && (
-        <div className="absolute inset-0 rounded-full ring-2 ring-primary/20 pointer-events-none" />
-      )}
-    </div>
+
+      <div
+        ref={containerRef}
+        className={`fixed cursor-move overflow-hidden transition-transform duration-200 ${
+          isDragging ? 'opacity-75 scale-105' : ''
+        }`}
+        style={{
+          transform: layout !== 'full' ? `translate(${position.x}px, ${position.y}px)` : undefined,
+          ...getLayoutStyles(),
+        }}
+        onMouseDown={layout !== 'full' ? handleMouseDown : undefined}
+        onTouchStart={layout !== 'full' ? handleTouchStart : undefined}
+      >
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={`w-full h-full object-cover ${layout === 'corner' ? 'rounded-full' : ''} transform scale-[1.02]`}
+        />
+        {layout === 'corner' && (
+          <div className="absolute inset-0 rounded-full ring-2 ring-primary/20 pointer-events-none" />
+        )}
+      </div>
+    </>
   );
 };
