@@ -20,69 +20,61 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   const [layout, setLayout] = useState<'corner' | 'side' | 'full'>('corner');
   const isMobile = useIsMobile();
 
-  const initializeStream = async () => {
-    try {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
+  const startStream = async () => {
+    if (!videoRef.current) return;
 
-      const stream = await navigator.mediaDevices.getUserMedia({
+    try {
+      const constraints = {
         video: {
           width: { ideal: isMobile ? 640 : 1280 },
           height: { ideal: isMobile ? 480 : 720 },
           facingMode: isMobile ? "user" : undefined,
           frameRate: { ideal: 30 }
         },
-        audio: true
-      });
+        audio: false // We don't need audio for the preview
+      };
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.muted = true;
-        await videoRef.current.play();
-      }
-
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
-      return stream;
+      videoRef.current.srcObject = stream;
+      
+      try {
+        await videoRef.current.play();
+      } catch (playError) {
+        console.error('Error playing video:', playError);
+      }
     } catch (error) {
-      console.error('Error initializing stream:', error);
+      console.error('Error accessing camera:', error);
       toast({
         title: "Camera Error",
-        description: "Failed to access camera or microphone. Please check your permissions.",
+        description: "Failed to access camera. Please check your permissions.",
         variant: "destructive"
       });
-      return null;
     }
   };
 
-  const cleanupStream = () => {
+  const stopStream = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => {
         track.stop();
       });
       streamRef.current = null;
     }
-    
+
     if (videoRef.current) {
       videoRef.current.srcObject = null;
-      videoRef.current.load();
     }
   };
 
   useEffect(() => {
-    let mounted = true;
-
-    const setupCamera = async () => {
-      if ((captureMode === 'camera' || captureMode === 'both') && isRecording && mounted) {
-        await initializeStream();
-      }
-    };
-
-    setupCamera();
+    if (isRecording && (captureMode === 'camera' || captureMode === 'both')) {
+      startStream();
+    } else {
+      stopStream();
+    }
 
     return () => {
-      mounted = false;
-      cleanupStream();
+      stopStream();
     };
   }, [isRecording, captureMode, isMobile]);
 
@@ -168,6 +160,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
       border: '2px solid rgba(255, 255, 255, 0.1)',
       background: '#1A1F2C',
+      display: isRecording && (captureMode === 'camera' || captureMode === 'both') ? 'block' : 'none'
     };
 
     switch (layout) {
@@ -204,6 +197,11 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
         return baseStyles;
     }
   };
+
+  // Only show layout controls when preview is active
+  if (!isRecording || !(captureMode === 'camera' || captureMode === 'both')) {
+    return null;
+  }
 
   return (
     <>
