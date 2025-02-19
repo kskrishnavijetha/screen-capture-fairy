@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -37,38 +38,34 @@ const SignIn = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const getErrorMessage = (error: AuthError) => {
-    if (error instanceof AuthApiError) {
-      switch (error.message) {
-        case "Invalid login credentials":
-          return 'Invalid email or password. Please check your credentials and try again.';
-        case "Email not confirmed":
-          return 'Please check your email for the confirmation link.';
-        case "Invalid email or password":
-          return 'Please check your email and password and try again.';
-        default:
-          return error.message;
-      }
-    }
-    return error.message;
-  };
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password,
       });
       
       if (error) throw error;
+
+      if (data?.session) {
+        toast({
+          title: "Success",
+          description: "Successfully signed in!",
+        });
+        navigate('/recorder');
+      }
       
     } catch (error) {
+      const err = error as AuthError;
       toast({
         variant: "destructive",
         title: "Error signing in",
-        description: getErrorMessage(error as AuthError)
+        description: err instanceof AuthApiError 
+          ? err.message
+          : "An error occurred while signing in. Please try again."
       });
     } finally {
       setLoading(false);
