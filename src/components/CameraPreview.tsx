@@ -20,73 +20,70 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   const [layout, setLayout] = useState<'corner' | 'side' | 'full'>('corner');
   const isMobile = useIsMobile();
 
-  useEffect(() => {
-    const showCameraPreview = async () => {
-      if ((captureMode === 'camera' || captureMode === 'both') && videoRef.current) {
-        try {
-          // Stop any existing streams
-          if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
-          }
-
-          // Request both video and audio permissions
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              width: { ideal: isMobile ? 640 : 1280 },
-              height: { ideal: isMobile ? 480 : 720 },
-              facingMode: isMobile ? "user" : undefined,
-              frameRate: { ideal: 30 }
-            },
-            audio: true // Enable audio capture
-          });
-
-          // Store the stream for cleanup
-          streamRef.current = stream;
-
-          // Set the stream to the video element
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-            
-            // Ensure audio is muted for preview to prevent feedback
-            videoRef.current.muted = true;
-            
-            // Play the video
-            try {
-              await videoRef.current.play();
-            } catch (playError) {
-              console.error('Error playing video:', playError);
-            }
-          }
-        } catch (error) {
-          console.error('Error accessing camera:', error);
-          toast({
-            title: "Camera Error",
-            description: "Failed to access camera or microphone. Please check your permissions.",
-            variant: "destructive"
-          });
-        }
-      }
-    };
-
-    const cleanup = () => {
+  const initializeStream = async () => {
+    try {
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => {
-          track.stop();
-        });
-        streamRef.current = null;
+        streamRef.current.getTracks().forEach(track => track.stop());
       }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: isMobile ? 640 : 1280 },
+          height: { ideal: isMobile ? 480 : 720 },
+          facingMode: isMobile ? "user" : undefined,
+          frameRate: { ideal: 30 }
+        },
+        audio: true
+      });
+
       if (videoRef.current) {
-        videoRef.current.srcObject = null;
+        videoRef.current.srcObject = stream;
+        videoRef.current.muted = true;
+        await videoRef.current.play();
+      }
+
+      streamRef.current = stream;
+      return stream;
+    } catch (error) {
+      console.error('Error initializing stream:', error);
+      toast({
+        title: "Camera Error",
+        description: "Failed to access camera or microphone. Please check your permissions.",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
+  const cleanupStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+      });
+      streamRef.current = null;
+    }
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+      videoRef.current.load();
+    }
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const setupCamera = async () => {
+      if ((captureMode === 'camera' || captureMode === 'both') && isRecording && mounted) {
+        await initializeStream();
       }
     };
 
-    if (isRecording) {
-      showCameraPreview();
-    } else {
-      cleanup();
-    }
+    setupCamera();
 
-    return cleanup;
+    return () => {
+      mounted = false;
+      cleanupStream();
+    };
   }, [isRecording, captureMode, isMobile]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
