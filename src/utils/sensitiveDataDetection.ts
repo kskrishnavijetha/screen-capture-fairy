@@ -23,10 +23,10 @@ let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
 
 export const initializeOCR = async () => {
   if (!worker) {
-    worker = await createWorker();
-    await worker.load();
-    await worker.loadLanguage('eng');
-    await worker.initialize('eng');
+    const newWorker = await createWorker();
+    await newWorker.loadLanguage('eng');
+    await newWorker.initialize('eng');
+    worker = newWorker;
   }
   return worker;
 };
@@ -40,8 +40,8 @@ export const detectSensitiveData = async (
   }
 
   try {
-    await initializeOCR();
-    if (!worker) {
+    const ocrWorker = await initializeOCR();
+    if (!ocrWorker) {
       throw new Error('OCR worker not initialized');
     }
 
@@ -55,7 +55,7 @@ export const detectSensitiveData = async (
     }
     ctx.putImageData(imageData, 0, 0);
 
-    const { data: { text } } = await worker.recognize(canvas);
+    const { data: { text } } = await ocrWorker.recognize(canvas);
     const detectedItems: DetectedItem[] = [];
 
     if (options.types.includes('creditCard')) {
