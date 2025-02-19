@@ -1,4 +1,3 @@
-
 import { createWorker } from 'tesseract.js';
 import type { Worker } from 'tesseract.js';
 
@@ -23,10 +22,9 @@ let worker: Worker | null = null;
 
 export const initializeOCR = async () => {
   if (!worker) {
-    worker = await createWorker({
-      logger: m => console.log(m)
-    });
-    await worker.reinitialize('eng');
+    worker = await createWorker('eng');
+    await worker.loadLanguage('eng');
+    await worker.initialize('eng');
   }
   return worker;
 };
