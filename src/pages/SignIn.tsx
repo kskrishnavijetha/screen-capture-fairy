@@ -1,23 +1,13 @@
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { AuthError, AuthApiError } from '@supabase/supabase-js';
+import { SignInForm } from "@/components/auth/SignInForm";
 
 const SignIn = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [stayConnected, setStayConnected] = useState(false);
-  const [resetRequestTime, setResetRequestTime] = useState(0);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -38,90 +28,6 @@ const SignIn = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password,
-      });
-      
-      if (error) throw error;
-
-      if (data?.session) {
-        toast({
-          title: "Success",
-          description: "Successfully signed in!",
-        });
-        navigate('/recorder');
-      }
-      
-    } catch (error) {
-      const err = error as AuthError;
-      toast({
-        variant: "destructive",
-        title: "Error signing in",
-        description: err instanceof AuthApiError 
-          ? err.message
-          : "An error occurred while signing in. Please try again."
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    if (!email.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please enter your email address"
-      });
-      return;
-    }
-
-    const now = Date.now();
-    const timeSinceLastRequest = now - resetRequestTime;
-    if (timeSinceLastRequest < 60000) {
-      const remainingSeconds = Math.ceil((60000 - timeSinceLastRequest) / 1000);
-      toast({
-        variant: "destructive",
-        title: "Please wait",
-        description: `You can request another reset email in ${remainingSeconds} seconds.`
-      });
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
-      if (error) throw error;
-      
-      setResetRequestTime(now);
-      
-      toast({
-        title: "Password reset email sent",
-        description: "Check your email for the password reset link"
-      });
-    } catch (error) {
-      const err = error as AuthError;
-      if (err.message.includes('rate_limit')) {
-        toast({
-          variant: "destructive",
-          title: "Too many requests",
-          description: "Please wait a minute before requesting another password reset."
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: err.message
-        });
-      }
-    }
-  };
-
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm mx-auto space-y-6">
@@ -141,73 +47,7 @@ const SignIn = () => {
           <p className="text-sm text-muted-foreground">Welcome back! Please sign in to continue.</p>
         </div>
 
-        <form onSubmit={handleSignIn} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium">
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="h-10 px-3 rounded-md"
-              autoComplete="email"
-              inputMode="email"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="password" className="text-sm font-medium">
-                Password
-              </Label>
-              <Button
-                variant="link"
-                type="button"
-                className="px-0 h-auto font-normal text-sm"
-                onClick={handleForgotPassword}
-              >
-                Forgot password?
-              </Button>
-            </div>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="h-10 px-3 rounded-md"
-              autoComplete="current-password"
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="stayConnected"
-              checked={stayConnected}
-              onCheckedChange={(checked) => setStayConnected(checked as boolean)}
-              className="rounded"
-            />
-            <Label
-              htmlFor="stayConnected"
-              className="text-sm font-normal cursor-pointer select-none"
-            >
-              Stay connected
-            </Label>
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full h-10 rounded-md"
-            disabled={loading}
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </Button>
-        </form>
+        <SignInForm />
 
         <div className="text-center">
           <Button
