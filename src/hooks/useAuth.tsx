@@ -12,6 +12,15 @@ export const useAuth = () => {
   const { toast } = useToast();
 
   const signIn = async (email: string, password: string) => {
+    if (!email.trim() || !password) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter both email and password"
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -20,7 +29,9 @@ export const useAuth = () => {
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       if (data?.session) {
         toast({
@@ -28,16 +39,34 @@ export const useAuth = () => {
           description: "Successfully signed in!",
         });
         navigate('/recorder');
+      } else {
+        throw new Error('No session created');
       }
       
     } catch (error) {
       const err = error as AuthError;
+      let errorMessage = "An error occurred while signing in. Please try again.";
+      
+      if (err instanceof AuthApiError) {
+        switch (err.status) {
+          case 400:
+            errorMessage = "Invalid email or password";
+            break;
+          case 422:
+            errorMessage = "Invalid email format";
+            break;
+          case 429:
+            errorMessage = "Too many attempts. Please try again later";
+            break;
+          default:
+            errorMessage = err.message;
+        }
+      }
+      
       toast({
         variant: "destructive",
         title: "Error signing in",
-        description: err instanceof AuthApiError 
-          ? err.message
-          : "An error occurred while signing in. Please try again."
+        description: errorMessage
       });
     } finally {
       setLoading(false);

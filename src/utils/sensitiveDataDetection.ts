@@ -1,6 +1,6 @@
 
 import { createWorker } from 'tesseract.js';
-import type { Worker, WorkerOptions } from 'tesseract.js';
+import type { Worker } from 'tesseract.js';
 
 export type SensitiveDataType = 'creditCard' | 'ssn' | 'email' | 'phone';
 
@@ -19,14 +19,14 @@ interface SensitiveDataOptions {
   types: SensitiveDataType[];
 }
 
-let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
+let worker: Worker | null = null;
 
 export const initializeOCR = async () => {
   if (!worker) {
-    const newWorker = await createWorker();
-    await newWorker.loadLanguage('eng');
-    await newWorker.initialize('eng');
-    worker = newWorker;
+    worker = await createWorker({
+      logger: m => console.log(m)
+    });
+    await worker.reinitialize('eng');
   }
   return worker;
 };
