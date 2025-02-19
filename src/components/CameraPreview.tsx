@@ -1,9 +1,8 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
-import { Switch } from "@/components/ui/switch";
-import { removeBackground } from '@/utils/backgroundRemoval';
 
 interface CameraPreviewProps {
   isRecording: boolean;
@@ -20,7 +19,6 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
   const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
   const [selectedCamera, setSelectedCamera] = useState<string>('');
   const [layout, setLayout] = useState<'corner' | 'side' | 'full'>('corner');
-  const [removeBackgroundEnabled, setRemoveBackgroundEnabled] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -63,14 +61,8 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
             audio: false
           });
 
-          if (removeBackgroundEnabled) {
-            const processedStream = await removeBackground(videoRef.current);
-            streamRef.current = processedStream;
-            videoRef.current.srcObject = processedStream;
-          } else {
-            streamRef.current = stream;
-            videoRef.current.srcObject = stream;
-          }
+          streamRef.current = stream;
+          videoRef.current.srcObject = stream;
         } catch (error) {
           console.error('Error accessing camera:', error);
           toast({
@@ -99,7 +91,7 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
     }
 
     return cleanup;
-  }, [isRecording, captureMode, selectedCamera, isMobile, removeBackgroundEnabled]);
+  }, [isRecording, captureMode, selectedCamera, isMobile]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!containerRef.current) return;
@@ -256,13 +248,6 @@ export const CameraPreview = ({ isRecording, captureMode }: CameraPreviewProps) 
             <SelectItem value="full">Full</SelectItem>
           </SelectContent>
         </Select>
-        <div className="flex items-center gap-2 bg-black/50 text-white px-3 rounded-md">
-          <span className="text-sm">BG Remove</span>
-          <Switch
-            checked={removeBackgroundEnabled}
-            onCheckedChange={setRemoveBackgroundEnabled}
-          />
-        </div>
       </div>
       <video
         ref={videoRef}
